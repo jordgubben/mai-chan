@@ -6,3 +6,8 @@ repl-temp-*
 # Sublime
 *.sublime-project
 *.sublime-workspace
+
+# Build
+build/
+dist/
+tmp/
