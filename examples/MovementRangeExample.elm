@@ -125,7 +125,7 @@ renderTile standingPosition c t =
             ]
         ]
         [ if (c == standingPosition) then
-            Html.span [ style [ ( "font-size", "300%" ) ] ] [ Html.text "🐍" ]
+            Html.span [ style [ ( "font-size", "150%" ) ] ] [ Html.text "🐍" ]
           else if (not t) then
             Html.a [ onClick (Move c), href "#go-here" ] [ Html.text "Go!" ]
           else

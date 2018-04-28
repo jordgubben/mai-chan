@@ -84,7 +84,7 @@ toHtmlTable viewCell grid =
     if Dict.isEmpty grid then
         Html.table [ class "grid" ] []
     else
-        Html.table [ class "grid" ]
+        Html.table [ class "grid", gridTableStyle ]
             (List.range (minY grid) (maxY grid)
                 |> List.reverse
                 |> List.map (\r -> toHtmlRow viewCell r grid)
@@ -113,10 +113,18 @@ toHtmlRow viewCell row grid =
         )
 
 
+gridTableStyle : Html.Attribute msg
+gridTableStyle =
+    style
+        [ ( "border-collapse", "collapse" )
+        ]
+
+
 cellTdStyle : Html.Attribute msg
 cellTdStyle =
     style
-        [ ( "width", "64px" )
-        , ( "height", "64px" )
+        [ ( "width", "32px" )
+        , ( "height", "32px" )
+        , ( "padding", "0" )
         , ( "border", "1px solid black" )
         ]
