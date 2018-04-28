@@ -1,5 +1,29 @@
 module Grid exposing (Grid, Coords, empty, put, get, numRows, numCols, toHtmlTable)
 
+{-| Tile grid for (board game like) strategy games.
+
+
+# Types
+
+@docs Coords, Grid
+
+
+# Creation
+
+@docs empty, put
+
+
+# Analysis
+
+@docs get, numRows, numCols
+
+
+# Rendering
+
+@docs toHtmlTable
+
+-}
+
 import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes exposing (style, class)
@@ -27,13 +51,17 @@ main =
 
 
 
--- Types
+-- # Types
 
 
+{-| Two-dimentional coordinates on the grid.
+-}
 type alias Coords =
     ( Int, Int )
 
 
+{-| A Grid of tiles.
+-}
 type alias Grid a =
     Dict Coords a
 
@@ -42,11 +70,15 @@ type alias Grid a =
 -- # Editing
 
 
+{-| An empty Grid to start from.
+-}
 empty : Grid a
 empty =
     Dict.empty
 
 
+{-| Place a tile in the Grid.
+-}
 put : Coords -> a -> Grid a -> Grid a
 put ( x, y ) cell =
     Dict.insert ( x, y ) cell
@@ -56,6 +88,8 @@ put ( x, y ) cell =
 -- # Retrieval
 
 
+{-| Get a tile from a grid by position.
+-}
 get : Coords -> Grid a -> Maybe a
 get =
     Dict.get
@@ -65,11 +99,15 @@ get =
 -- # Bounds
 
 
+{-| Number of grid rows.
+-}
 numRows : Grid a -> Int
 numRows =
     Bounds.numRows
 
 
+{-| Number of grid columns.
+-}
 numCols : Grid a -> Int
 numCols =
     Bounds.numCols
@@ -79,6 +117,8 @@ numCols =
 -- # Render
 
 
+{-| Render grid as a HTML table.
+-}
 toHtmlTable : (( Int, Int ) -> a -> Html msg) -> Grid a -> Html msg
 toHtmlTable viewCell grid =
     if Dict.isEmpty grid then
