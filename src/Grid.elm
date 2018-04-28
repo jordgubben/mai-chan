@@ -1,8 +1,9 @@
-module Grid exposing (..)
+module Grid exposing (Grid, Coords, empty, put, get, numRows, numCols, toHtmlTable)
 
 import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes exposing (style, class)
+import Grid.Bounds as Bounds exposing (minY, minX, maxY, maxX)
 
 
 -- Example usage
@@ -65,39 +66,13 @@ get =
 
 
 numRows : Grid a -> Int
-numRows grid =
-    if Dict.isEmpty grid then
-        0
-    else
-        (maxY grid) - (minY grid) + 1
+numRows =
+    Bounds.numRows
 
 
 numCols : Grid a -> Int
-numCols grid =
-    if Dict.isEmpty grid then
-        0
-    else
-        (maxX grid) - (minX grid) + 1
-
-
-minX : Grid a -> Int
-minX grid =
-    grid |> Dict.keys |> List.map Tuple.first |> List.minimum |> Maybe.withDefault 0
-
-
-maxX : Grid a -> Int
-maxX grid =
-    grid |> Dict.keys |> List.map Tuple.first |> List.maximum |> Maybe.withDefault 0
-
-
-minY : Grid a -> Int
-minY grid =
-    grid |> Dict.keys |> List.map Tuple.second |> List.minimum |> Maybe.withDefault 0
-
-
-maxY : Grid a -> Int
-maxY grid =
-    grid |> Dict.keys |> List.map Tuple.second |> List.maximum |> Maybe.withDefault 0
+numCols =
+    Bounds.numCols
 
 
 
