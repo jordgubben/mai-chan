@@ -35,19 +35,31 @@ import Grid.Bounds as Bounds exposing (minY, minX, maxY, maxX)
 
 main : Html msg
 main =
-    empty
-        |> put ( 0, 0 ) "Origo"
-        |> put ( 5, 3 ) "Upper right"
-        |> put ( -2, 3 ) "Upper left"
-        |> put ( 5, -4 ) "Lower left"
-        |> put ( -2, -4 ) "Lower right"
-        |> toHtmlTable
-            (\coords content ->
-                Html.div [ style [ ( "width", "64px" ), ( "height", "64px" ), ( "overflow", "hidden" ) ] ]
-                    [ (Html.em [ style [ ( "font-size", "10px" ) ] ] [ Html.text (toString coords) ])
-                    , (Html.p [] [ Html.text content ])
+    let
+        grid =
+            empty
+                |> put ( 0, 0 ) "Origo"
+                |> put ( 5, 3 ) "Upper right"
+                |> put ( -2, 3 ) "Upper left"
+                |> put ( 5, -4 ) "Lower right"
+                |> put ( -2, -4 ) "Lower left"
+
+        cell coords content =
+            Html.div
+                [ style
+                    [ ( "font-size", "10px" )
+                    , ( "background-color", "lightblue" )
                     ]
-            )
+                ]
+                [ (Html.em [] [ Html.text (toString coords) ])
+                , (Html.p [] [ Html.text content ])
+                ]
+    in
+        Html.div []
+            [ (grid |> toHtmlTable cell)
+            , Html.p [] [ Html.text "---" ]
+            , (grid |> toHtmlDiv ( 32, 32 ) cell)
+            ]
 
 
 
@@ -168,3 +180,64 @@ cellTdStyle =
         , ( "padding", "0" )
         , ( "border", "1px solid black" )
         ]
+
+
+{-| Render grid using HTML divs.
+
+Parameters are:
+
+  - Tile size
+  - Content render func
+  - Grid to render
+
+-}
+toHtmlDiv : ( Int, Int ) -> (( Int, Int ) -> a -> Html msg) -> Grid a -> Html msg
+toHtmlDiv ( tileWidth, tileHeight ) viewTile grid =
+    let
+        gridWidth =
+            Bounds.numCols grid * tileWidth
+
+        gridHeight =
+            Bounds.numRows grid * tileHeight
+    in
+        Html.div
+            [ class "grid"
+            , style
+                [ ( "position", "relative" )
+                , "width" % gridWidth
+                , "height" % gridHeight
+                ]
+            ]
+            (Dict.toList grid
+                |> List.map
+                    (\( ( x, y ), content ) ->
+                        let
+                            tileLeft =
+                                (x - Bounds.minX grid) * tileWidth
+
+                            tileBottom =
+                                (y - Bounds.minY grid) * tileHeight
+                        in
+                            Html.div
+                                [ class "grid-cell"
+                                , style
+                                    [ ( "position", "absolute" )
+                                    , "width" % tileWidth
+                                    , "height" % tileHeight
+                                    , "bottom" % tileBottom
+                                    , "left" % tileLeft
+                                    , ( "overflow", "hidden" )
+                                    ]
+                                ]
+                                [ viewTile ( x, y ) content ]
+                    )
+            )
+
+
+{-|
+
+    Local operator for css sizes and offsets in pixels
+-}
+(%) : String -> number -> ( String, String )
+(%) magnitude pixels =
+    ( magnitude, (toString pixels) ++ "px" )
