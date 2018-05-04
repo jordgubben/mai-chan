@@ -1,4 +1,4 @@
-module Grid exposing (Grid, Coords, empty, put, get, numRows, numCols, toHtmlTable)
+module Grid exposing (Grid, Coords, empty, put, get, numRows, numCols, toHtmlTable, toHtmlDiv)
 
 {-| Tile grid for (board game like) strategy games.
 
@@ -20,7 +20,7 @@ module Grid exposing (Grid, Coords, empty, put, get, numRows, numCols, toHtmlTab
 
 # Rendering
 
-@docs toHtmlTable
+@docs toHtmlTable, toHtmlDiv
 
 -}
 
