@@ -194,44 +194,46 @@ Parameters are:
 toHtmlDiv : ( Int, Int ) -> (( Int, Int ) -> a -> Html msg) -> Grid a -> Html msg
 toHtmlDiv ( tileWidth, tileHeight ) viewTile grid =
     let
+        -- Outer div properties
         gridWidth =
             Bounds.numCols grid * tileWidth
 
         gridHeight =
             Bounds.numRows grid * tileHeight
-    in
-        Html.div
-            [ class "grid"
-            , style
+
+        gridStyle =
+            style
                 [ ( "position", "relative" )
                 , "width" % gridWidth
                 , "height" % gridHeight
                 ]
-            ]
-            (Dict.toList grid
-                |> List.map
-                    (\( ( x, y ), content ) ->
-                        let
-                            tileLeft =
-                                (x - Bounds.minX grid) * tileWidth
 
-                            tileBottom =
-                                (y - Bounds.minY grid) * tileHeight
-                        in
-                            Html.div
-                                [ class "grid-cell"
-                                , style
-                                    [ ( "position", "absolute" )
-                                    , "width" % tileWidth
-                                    , "height" % tileHeight
-                                    , "bottom" % tileBottom
-                                    , "left" % tileLeft
-                                    , ( "overflow", "hidden" )
-                                    ]
-                                ]
-                                [ viewTile ( x, y ) content ]
-                    )
-            )
+        -- Create inner div(s) for every tile in grid
+        tileDiv ( ( x, y ), content ) =
+            let
+                tileLeft =
+                    (x - Bounds.minX grid) * tileWidth
+
+                tileBottom =
+                    (y - Bounds.minY grid) * tileHeight
+            in
+                Html.div
+                    [ class "grid-cell"
+                    , style
+                        [ ( "position", "absolute" )
+                        , "width" % tileWidth
+                        , "height" % tileHeight
+                        , "bottom" % tileBottom
+                        , "left" % tileLeft
+                        , ( "overflow", "hidden" )
+                        ]
+                    ]
+                    [ viewTile ( x, y ) content ]
+    in
+        -- Wrap tiles in a common outer div
+        Html.div
+            [ class "grid", gridStyle ]
+            (Dict.toList grid |> List.map tileDiv)
 
 
 {-|

@@ -18,10 +18,10 @@ renderingSuite =
         [ describe "Grid.toHtmlTable"
             [ test "Creates a table spanning all the cells" <|
                 \() ->
-                    rectangularExampleGrid
+                    exampleGrid
                         |> Grid.toHtmlTable (\_ _ -> (Html.text ""))
                         |> expectCellCountEquals
-                            ((Grid.numRows rectangularExampleGrid) * (Grid.numCols rectangularExampleGrid))
+                            ((Grid.numRows exampleGrid) * (Grid.numCols exampleGrid))
             , test "If the grid is empty, then the table is empty" <|
                 \() ->
                     Grid.empty
@@ -31,15 +31,15 @@ renderingSuite =
         , describe "Grid.toHtmlDiv"
             [ test "Creates a div containing a div for each grid tile " <|
                 \() ->
-                    rectangularExampleGrid
+                    exampleGrid
                         |> Grid.toHtmlDiv ( 16, 16 ) (\_ _ -> (Html.text ""))
-                        |> expectTileDivCountEquals (Dict.size rectangularExampleGrid)
+                        |> expectTileDivCountEquals (Dict.size exampleGrid)
             , test "Creates an outer div large anough to house all tiles" <|
                 \() ->
-                    rectangularExampleGrid
+                    exampleGrid
                         |> Grid.toHtmlDiv ( 16, 16 ) (\_ _ -> (Html.text ""))
                         |> expectTileDivSize
-                            ( 16 * Grid.numCols rectangularExampleGrid, 16 * Grid.numRows rectangularExampleGrid )
+                            ( 16 * Grid.numCols exampleGrid, 16 * Grid.numRows exampleGrid )
             , test "If the grid is empty, then there are no inner divs" <|
                 \() ->
                     Grid.empty
@@ -53,8 +53,8 @@ renderingSuite =
 -- # Helpers
 
 
-rectangularExampleGrid : Grid String
-rectangularExampleGrid =
+exampleGrid : Grid String
+exampleGrid =
     Grid.empty
         |> Grid.put ( 0, 0 ) "a"
         |> Grid.put ( 0, -1 ) "down"
