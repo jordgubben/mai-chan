@@ -1,4 +1,4 @@
-module Grid exposing (Grid, Coords, empty, put, get, numRows, numCols, toHtmlTable, toHtmlDiv)
+module Grid exposing (Grid, Coords, empty, fromList, put, get, numRows, numCols, toHtmlTable, toHtmlDiv)
 
 {-| Tile grid for (board game like) strategy games.
 
@@ -10,7 +10,7 @@ module Grid exposing (Grid, Coords, empty, put, get, numRows, numCols, toHtmlTab
 
 # Creation
 
-@docs empty, put
+@docs empty, fromList, put
 
 
 # Analysis
@@ -79,7 +79,7 @@ type alias Grid a =
 
 
 
--- # Editing
+-- # Creation
 
 
 {-| An empty Grid to start from.
@@ -87,6 +87,17 @@ type alias Grid a =
 empty : Grid a
 empty =
     Dict.empty
+
+
+{-| Create a grid from a list of coordnates+tile pairs
+-}
+fromList : List ( Coords, a ) -> Grid a
+fromList =
+    Dict.fromList
+
+
+
+-- # Editing
 
 
 {-| Place a tile in the Grid.
