@@ -42,11 +42,18 @@ renderTile _ tile =
 grid : Grid.Grid Tile
 grid =
     Grid.empty
+        -- Solo turf
         |> Grid.put ( 0, 0 ) turfTile
-        |> Grid.put ( 2, 4 ) (staticTile ( 0, 0 ))
-        |> Grid.put ( 2, 3 ) (staticTile ( 0, 4 ))
-        |> Grid.put ( 3, 4 ) (staticTile ( 5, 0 ))
-        |> Grid.put ( 3, 3 ) (staticTile ( 5, 4 ))
+        -- 3x3 block
+        |> Grid.put ( 2, 5 ) turfEdgeTopLeft
+        |> Grid.put ( 2, 4 ) turfEdgeLeft
+        |> Grid.put ( 2, 3 ) turfEdgeBottomLeft
+        |> Grid.put ( 3, 5 ) turfEdgeTop
+        |> Grid.put ( 3, 4 ) turfNoEdges
+        |> Grid.put ( 3, 3 ) turfEdgeBottom
+        |> Grid.put ( 4, 5 ) turfEdgeTopRight
+        |> Grid.put ( 4, 4 ) turfEdgeRight
+        |> Grid.put ( 4, 3 ) turfEdgeBottomRight
 
 
 
@@ -56,6 +63,51 @@ grid =
 turfTile : Tile
 turfTile =
     staticTile ( 2, 2 )
+
+
+turfEdgeTopLeft : Tile
+turfEdgeTopLeft =
+    staticTile ( 0, 0 )
+
+
+turfEdgeLeft : Tile
+turfEdgeLeft =
+    staticTile ( 0, 2 )
+
+
+turfEdgeBottomLeft : Tile
+turfEdgeBottomLeft =
+    staticTile ( 0, 4 )
+
+
+turfEdgeTop : Tile
+turfEdgeTop =
+    staticTile ( 4, 0 )
+
+
+turfNoEdges : Tile
+turfNoEdges =
+    staticTile ( 4, 2 )
+
+
+turfEdgeBottom : Tile
+turfEdgeBottom =
+    staticTile ( 4, 4 )
+
+
+turfEdgeTopRight : Tile
+turfEdgeTopRight =
+    staticTile ( 5, 0 )
+
+
+turfEdgeRight : Tile
+turfEdgeRight =
+    staticTile ( 5, 2 )
+
+
+turfEdgeBottomRight : Tile
+turfEdgeBottomRight =
+    staticTile ( 5, 4 )
 
 
 staticTile : ( Int, Int ) -> Tile
