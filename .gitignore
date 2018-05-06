@@ -11,3 +11,6 @@ repl-temp-*
 build/
 dist/
 tmp/
+
+# OS files
+.DS_Store
