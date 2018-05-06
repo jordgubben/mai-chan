@@ -1,6 +1,7 @@
 module Grid.EdgeDetection exposing (..)
 
 import Set exposing (Set)
+import Dict exposing (Dict)
 
 
 -- Type(s)
@@ -22,8 +23,31 @@ type alias EdgeSet a =
     }
 
 
+type TerrainPalette t
+    = TerrainPalette (Dict String t)
 
--- Functions
+
+
+-- # Terrain sculpting
+
+
+emptyPalette : TerrainPalette a
+emptyPalette =
+    TerrainPalette Dict.empty
+
+
+addEdgeTile : EdgeSet Bool -> t -> TerrainPalette t -> TerrainPalette t
+addEdgeTile edgeSet tile (TerrainPalette dict) =
+    TerrainPalette (Dict.insert (toString edgeSet) tile dict)
+
+
+getEdgeTile : EdgeSet Bool -> TerrainPalette t -> Maybe t
+getEdgeTile edgeSet (TerrainPalette dict) =
+    Dict.get (toString edgeSet) dict
+
+
+
+-- # Edge detection
 
 
 edges : Coords -> Area -> EdgeSet Bool

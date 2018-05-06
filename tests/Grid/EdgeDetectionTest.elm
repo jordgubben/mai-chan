@@ -7,6 +7,33 @@ import Fuzz exposing (..)
 import Expect exposing (Expectation)
 
 
+-- Test: Terrain scuplting
+
+
+terrainSculptingSuite =
+    describe "Terrain sculpting"
+        [ describe "TerrainPalette"
+            [ fuzz4 bool bool bool bool "Can store and retrive tiles based on EdgeSet" <|
+                (\t b l r ->
+                    let
+                        edgeSet =
+                            (EdgeSet t b l r)
+
+                        exampleTile =
+                            "Example tile"
+
+                        palette =
+                            EdgeDetection.emptyPalette
+                                |> EdgeDetection.addEdgeTile edgeSet exampleTile
+                    in
+                        EdgeDetection.getEdgeTile edgeSet palette
+                            |> Expect.equal (Just exampleTile)
+                )
+            ]
+        ]
+
+
+
 -- Test: EdgeDetection.edges
 
 
