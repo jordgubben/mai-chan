@@ -3,10 +3,41 @@ module GridTest exposing (..)
 import Dict
 import Html
 import Grid exposing (Grid)
-import Expect exposing (Expectation)
+import Expect exposing (Expectation, equal)
 import Test exposing (..)
+import Fuzz exposing (..)
 import Test.Html.Query as Query
 import Test.Html.Selector exposing (tag, class, style, all)
+
+
+-- # Test: Transformaton
+
+
+transformationSuite : Test
+transformationSuite =
+    describe "Grid transformation"
+        [ describe "Grid.translate"
+            [ test "Moves grid content in the given direction" <|
+                (\_ ->
+                    let
+                        original =
+                            Grid.fromList [ ( ( 0, 0 ), True ), ( ( 1, -2 ), True ) ]
+
+                        translated =
+                            Grid.translate ( 3, 5 ) original
+
+                        expected =
+                            Grid.fromList [ ( ( 3, 5 ), True ), ( ( 4, 3 ), True ) ]
+                    in
+                        translated |> equal expected
+                )
+            , fuzz (tuple ( int, int )) "Translate one way and then the other returns the grid to it's original state" <|
+                (\( x, y ) ->
+                    exampleGrid |> Grid.translate ( x, y ) |> Grid.translate ( -x, -y ) |> equal exampleGrid
+                )
+            ]
+        ]
+
 
 
 -- # Test: Rendering

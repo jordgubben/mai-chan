@@ -1,4 +1,4 @@
-module Grid exposing (Grid, Coords, empty, fromList, put, get, numRows, numCols, toHtmlTable, toHtmlDiv)
+module Grid exposing (Grid, Coords, empty, fromList, put, get, numRows, numCols, translate, toHtmlTable, toHtmlDiv)
 
 {-| Tile grid for (board game like) strategy games.
 
@@ -16,6 +16,13 @@ module Grid exposing (Grid, Coords, empty, fromList, put, get, numRows, numCols,
 # Analysis
 
 @docs get, numRows, numCols
+
+
+# Transformation
+
+A Grid can be transformed in various ways.
+
+@docs translate
 
 
 # Rendering
@@ -94,6 +101,19 @@ empty =
 fromList : List ( Coords, a ) -> Grid a
 fromList =
     Dict.fromList
+
+
+
+-- # Transformations
+
+
+{-| Translate (move) all cells in a grid in the given direction.
+-}
+translate : ( Int, Int ) -> Grid a -> Grid a
+translate ( dx, dy ) grid =
+    Dict.toList grid
+        |> List.map (Tuple.mapFirst (\( x, y ) -> ( x + dx, y + dy )))
+        |> Dict.fromList
 
 
 
