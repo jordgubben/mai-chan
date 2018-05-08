@@ -36,6 +36,62 @@ transformationSuite =
                     exampleGrid |> Grid.translate ( x, y ) |> Grid.translate ( -x, -y ) |> equal exampleGrid
                 )
             ]
+        , describe "Grid.rotCv"
+            [ test "Rotates clockwise" <|
+                (\_ ->
+                    let
+                        original =
+                            Grid.fromList [ ( ( -1, -1 ), 'n' ), ( ( 1, 3 ), 'P' ) ]
+
+                        rot1 =
+                            Grid.rotCv original
+
+                        rot2 =
+                            Grid.rotCv rot1
+
+                        rot3 =
+                            Grid.rotCv rot2
+
+                        rot4 =
+                            Grid.rotCv rot3
+                    in
+                        Expect.all
+                            [ (\_ -> rot1 |> equal (Grid.fromList [ ( ( -1, 1 ), 'n' ), ( ( 3, -1 ), 'P' ) ]))
+                            , (\_ -> rot2 |> equal (Grid.fromList [ ( ( 1, 1 ), 'n' ), ( ( -1, -3 ), 'P' ) ]))
+                            , (\_ -> rot3 |> equal (Grid.fromList [ ( ( 1, -1 ), 'n' ), ( ( -3, 1 ), 'P' ) ]))
+                            , (\_ -> rot4 |> equal original)
+                            ]
+                            never
+                )
+            ]
+        , describe "Grid.rotCcv"
+            [ test "Rotates counter clockwise" <|
+                (\_ ->
+                    let
+                        original =
+                            Grid.fromList [ ( ( -1, -1 ), 'n' ), ( ( 1, 3 ), 'P' ) ]
+
+                        rot1 =
+                            Grid.rotCcv original
+
+                        rot2 =
+                            Grid.rotCcv rot1
+
+                        rot3 =
+                            Grid.rotCcv rot2
+
+                        rot4 =
+                            Grid.rotCcv rot3
+                    in
+                        Expect.all
+                            [ (\_ -> rot1 |> equal (Grid.fromList [ ( ( 1, -1 ), 'n' ), ( ( -3, 1 ), 'P' ) ]))
+                            , (\_ -> rot2 |> equal (Grid.fromList [ ( ( 1, 1 ), 'n' ), ( ( -1, -3 ), 'P' ) ]))
+                            , (\_ -> rot3 |> equal (Grid.fromList [ ( ( -1, 1 ), 'n' ), ( ( 3, -1 ), 'P' ) ]))
+                            , (\_ -> rot4 |> equal original)
+                            ]
+                            never
+                )
+            ]
         ]
 
 
