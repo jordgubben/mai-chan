@@ -43,7 +43,7 @@ grid : Grid.Grid Tile
 grid =
     Grid.empty
         -- Solo turf
-        |> Grid.put ( 0, 0 ) turfTile
+        |> Grid.put ( 0, 0 ) turfSoloTile
         -- 3x3 block
         |> Grid.put ( 2, 5 ) turfEdgeTopLeft
         |> Grid.put ( 2, 4 ) turfEdgeLeft
@@ -57,11 +57,11 @@ grid =
 
 
 
--- Tile(s)
+-- # Turf tile
 
 
-turfTile : Tile
-turfTile =
+turfSoloTile : Tile
+turfSoloTile =
     staticTile ( 2, 2 )
 
 
@@ -110,6 +110,46 @@ turfEdgeBottomRight =
     staticTile ( 5, 4 )
 
 
+
+-- Pipes
+
+
+turfEdgeTopBottom : Tile
+turfEdgeTopBottom =
+    staticTile ( 7, 0 )
+
+
+turfEdgeLeftRight : Tile
+turfEdgeLeftRight =
+    staticTile ( 6, 1 )
+
+
+
+-- Ends
+
+
+turfEdgeTopBottomLeft : Tile
+turfEdgeTopBottomLeft =
+    staticTile ( 6, 5 )
+
+
+turfEdgeTopBottomRight : Tile
+turfEdgeTopBottomRight =
+    staticTile ( 9, 6 )
+
+
+turfEdgeTopLeftRight : Tile
+turfEdgeTopLeftRight =
+    staticTile ( 8, 4 )
+
+
+turfEdgeBottomLeftRight : Tile
+turfEdgeBottomLeftRight =
+    staticTile ( 7, 7 )
+
+
+{-| Pick one static tile from the tile map.
+-}
 staticTile : ( Int, Int ) -> Tile
 staticTile tileLoc =
     { baseTile

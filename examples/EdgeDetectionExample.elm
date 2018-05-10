@@ -9,28 +9,50 @@ import Html exposing (Html)
 import Html.Attributes exposing (style)
 import Grid
 import Grid.EdgeDetection as EdgeDetection exposing (EdgeSet)
+import FloatingIslandsTiles exposing (staticTile, renderTile)
 
 
 main : Html msg
 main =
     let
+        box =
+            [ [ ( 0, 2 ), ( 1, 2 ), ( 2, 2 ) ]
+            , [ ( 0, 1 ), ( 1, 1 ), ( 2, 1 ) ]
+            , [ ( 0, 0 ), ( 1, 0 ), ( 2, 0 ) ]
+            ]
+                |> List.concat
+                |> List.map (\c -> ( c, True ))
+                |> Grid.fromList
+
         cross =
             [ ( 0, 0 ), ( 1, 0 ), ( 2, 0 ), ( -1, 0 ), ( -2, 0 ), ( 0, 1 ), ( 0, 2 ), ( 0, -1 ), ( 0, -2 ) ]
                 |> List.map (\c -> ( c, True ))
                 |> Grid.fromList
 
-        crossArea =
-            Dict.keys cross |> Set.fromList
+        landscape =
+            Dict.union
+                (cross |> Grid.translate ( -1, -1 ))
+                (box |> Grid.translate ( 1, 1 ))
 
-        crossWithEdedges =
-            Dict.map (\coords _ -> EdgeDetection.edges coords crossArea) cross
+        landscapeArea =
+            Dict.keys landscape |> Set.fromList
+
+        landscapeWithEdedges =
+            Dict.map (\coords _ -> EdgeDetection.edges coords landscapeArea) landscape
     in
         Html.div []
             (List.map outerBox
-                [ Grid.toHtmlDiv ( 32, 32 ) (\_ _ -> filler "darkblue") cross
-                , Grid.toHtmlDiv ( 32, 32 )
+                [ Grid.toHtmlDiv ( 16, 16 ) (\_ _ -> filler "darkblue") landscape
+                , Grid.toHtmlDiv ( 16, 16 )
                     (\_ edges -> edgeBox "darkgreen" "lightgreen" edges)
-                    crossWithEdedges
+                    landscapeWithEdedges
+                , Grid.toHtmlDiv ( 16, 16 )
+                    (\_ edges ->
+                        (EdgeDetection.getEdgeTile edges turfPalette)
+                            |> Maybe.withDefault FloatingIslandsTiles.turfSoloTile
+                            |> FloatingIslandsTiles.renderTile never
+                    )
+                    landscapeWithEdedges
                 ]
             )
 
@@ -83,3 +105,74 @@ edgeBox edgeColor fillColor edges =
                 ]
             ]
             []
+
+
+turfPalette : EdgeDetection.TerrainPalette FloatingIslandsTiles.Tile
+turfPalette =
+    EdgeDetection.emptyPalette
+        |> (EdgeDetection.addEdgeTile
+                { top = False, bottom = False, left = False, right = False }
+                FloatingIslandsTiles.turfNoEdges
+           )
+        |> (EdgeDetection.addEdgeTile
+                { top = True, bottom = False, left = True, right = False }
+                FloatingIslandsTiles.turfEdgeTopLeft
+           )
+        |> (EdgeDetection.addEdgeTile
+                { top = False, bottom = False, left = True, right = False }
+                FloatingIslandsTiles.turfEdgeLeft
+           )
+        |> (EdgeDetection.addEdgeTile
+                { top = False, bottom = False, left = True, right = False }
+                FloatingIslandsTiles.turfEdgeLeft
+           )
+        |> (EdgeDetection.addEdgeTile
+                { top = False, bottom = True, left = True, right = False }
+                FloatingIslandsTiles.turfEdgeBottomLeft
+           )
+        |> (EdgeDetection.addEdgeTile
+                { top = True, bottom = False, left = False, right = False }
+                FloatingIslandsTiles.turfEdgeTop
+           )
+        |> (EdgeDetection.addEdgeTile
+                { top = False, bottom = True, left = False, right = False }
+                FloatingIslandsTiles.turfEdgeBottom
+           )
+        |> (EdgeDetection.addEdgeTile
+                { top = True, bottom = False, left = False, right = True }
+                FloatingIslandsTiles.turfEdgeTopRight
+           )
+        |> (EdgeDetection.addEdgeTile
+                { top = False, bottom = False, left = False, right = True }
+                FloatingIslandsTiles.turfEdgeRight
+           )
+        |> (EdgeDetection.addEdgeTile
+                { top = False, bottom = True, left = False, right = True }
+                FloatingIslandsTiles.turfEdgeBottomRight
+           )
+        -- Pipes
+        |> (EdgeDetection.addEdgeTile
+                { top = True, bottom = True, left = False, right = False }
+                FloatingIslandsTiles.turfEdgeTopBottom
+           )
+        |> (EdgeDetection.addEdgeTile
+                { top = False, bottom = False, left = True, right = True }
+                FloatingIslandsTiles.turfEdgeLeftRight
+           )
+        -- Ends
+        |> (EdgeDetection.addEdgeTile
+                { top = False, bottom = True, left = True, right = True }
+                FloatingIslandsTiles.turfEdgeBottomLeftRight
+           )
+        |> (EdgeDetection.addEdgeTile
+                { top = True, bottom = False, left = True, right = True }
+                FloatingIslandsTiles.turfEdgeTopLeftRight
+           )
+        |> (EdgeDetection.addEdgeTile
+                { top = True, bottom = True, left = False, right = True }
+                FloatingIslandsTiles.turfEdgeTopBottomRight
+           )
+        |> (EdgeDetection.addEdgeTile
+                { top = True, bottom = True, left = True, right = False }
+                FloatingIslandsTiles.turfEdgeTopBottomLeft
+           )
