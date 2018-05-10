@@ -10,6 +10,26 @@ import Test.Html.Query as Query
 import Test.Html.Selector exposing (tag, class, style, all)
 
 
+-- # Test: Drawing
+
+
+drawingSuite : Test
+drawingSuite =
+    describe "Drawing"
+        [ describe "Grid.drawBox : t -> {w,h} -> Grid t"
+            [ test "Draws a grid with the defined width and height" <|
+                (\_ ->
+                    Grid.drawBox "Tile" { width = 3, height = 4 }
+                        |> Expect.all
+                            [ Grid.numRows >> equal 4
+                            , Grid.numCols >> equal 3
+                            ]
+                )
+            ]
+        ]
+
+
+
 -- # Test: Transformaton
 
 

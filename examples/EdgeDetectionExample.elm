@@ -6,23 +6,36 @@ module EdgeDetectionExample exposing (..)
 import Set exposing (Set)
 import Dict exposing (Dict)
 import Html exposing (Html)
+import Html.Events exposing (onClick)
 import Html.Attributes exposing (style)
 import Grid
 import Grid.EdgeDetection as EdgeDetection exposing (EdgeSet)
 import FloatingIslandsTiles exposing (staticTile, renderTile)
 
 
-main : Html msg
+main : Program Never Model Msg
 main =
-    let
+    Html.beginnerProgram { model = initialModel, update = update, view = view }
+
+
+
+-- App types
+
+
+type alias Model =
+    { landscape : Grid.Grid Bool
+    }
+
+
+type Msg
+    = Toggle Grid.Coords
+
+
+initialModel : Model
+initialModel =
+    (let
         box =
-            [ [ ( 0, 2 ), ( 1, 2 ), ( 2, 2 ) ]
-            , [ ( 0, 1 ), ( 1, 1 ), ( 2, 1 ) ]
-            , [ ( 0, 0 ), ( 1, 0 ), ( 2, 0 ) ]
-            ]
-                |> List.concat
-                |> List.map (\c -> ( c, True ))
-                |> Grid.fromList
+            Grid.drawBox True { width = 5, height = 5 }
 
         cross =
             [ ( 0, 0 ), ( 1, 0 ), ( 2, 0 ), ( -1, 0 ), ( -2, 0 ), ( 0, 1 ), ( 0, 2 ), ( 0, -1 ), ( 0, -2 ) ]
@@ -33,7 +46,31 @@ main =
             Dict.union
                 (cross |> Grid.translate ( -1, -1 ))
                 (box |> Grid.translate ( 1, 1 ))
+                |> Grid.translate ( 3, 3 )
+     in
+        { landscape = landscape }
+    )
 
+
+
+-- App functions
+
+
+update : Msg -> Model -> Model
+update msg model =
+    case msg of
+        Toggle coords ->
+            case (Dict.get coords model.landscape) of
+                Just True ->
+                    { model | landscape = Dict.remove coords model.landscape }
+
+                _ ->
+                    { model | landscape = Grid.put coords True model.landscape }
+
+
+view : Model -> Html Msg
+view { landscape } =
+    let
         landscapeArea =
             Dict.keys landscape |> Set.fromList
 
@@ -42,7 +79,31 @@ main =
     in
         Html.div []
             (List.map outerBox
-                [ Grid.toHtmlDiv ( 16, 16 ) (\_ _ -> filler "darkblue") landscape
+                [ Grid.toHtmlDiv
+                    ( 16, 16 )
+                    (\coords value ->
+                        let
+                            color =
+                                if value then
+                                    "darkblue"
+                                else
+                                    "lightblue"
+                        in
+                            Html.div
+                                [ style
+                                    [ ( "width", "100%" )
+                                    , ( "height", "100%" )
+                                    , ( "background-color", color )
+                                    , ( "cursor", "pointer" )
+                                    ]
+                                , onClick (Toggle coords)
+                                ]
+                                [ Html.text " " ]
+                    )
+                    (Dict.union
+                        landscape
+                        canvas
+                    )
                 , Grid.toHtmlDiv ( 16, 16 )
                     (\_ edges -> edgeBox "darkgreen" "lightgreen" edges)
                     landscapeWithEdedges
@@ -57,6 +118,19 @@ main =
             )
 
 
+{-| Paintable area.
+-}
+canvas : Grid.Grid Bool
+canvas =
+    (Grid.drawBox False
+        { width = Grid.numCols initialModel.landscape
+        , height = Grid.numRows initialModel.landscape
+        }
+    )
+
+
+{-| Wrapper element used to line up the different views next to each other.
+-}
 outerBox : Html msg -> Html msg
 outerBox content =
     Html.div

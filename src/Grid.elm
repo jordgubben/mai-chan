@@ -1,4 +1,4 @@
-module Grid exposing (Grid, Coords, empty, fromList, put, get, numRows, numCols, translate, rotCv, rotCcv, toHtmlTable, toHtmlDiv)
+module Grid exposing (Grid, Coords, empty, fromList, put, drawBox, get, numRows, numCols, translate, rotCv, rotCcv, toHtmlTable, toHtmlDiv)
 
 {-| Tile grid for (board game like) strategy games.
 
@@ -10,7 +10,12 @@ module Grid exposing (Grid, Coords, empty, fromList, put, get, numRows, numCols,
 
 # Creation
 
-@docs empty, fromList, put
+@docs empty, fromList
+
+
+# Drawing
+
+@docs put, drawBox
 
 
 # Analysis
@@ -79,6 +84,12 @@ type alias Coords =
     ( Int, Int )
 
 
+type alias Size n =
+    { width : n
+    , height : n
+    }
+
+
 {-| A Grid of tiles.
 -}
 type alias Grid a =
@@ -101,6 +112,21 @@ empty =
 fromList : List ( Coords, a ) -> Grid a
 fromList =
     Dict.fromList
+
+
+
+-- Drawing
+
+
+{-| Draw a box that expands on positive axises from the origo (0,0).
+-}
+drawBox : t -> Size Int -> Grid t
+drawBox tile { width, height } =
+    List.range 0 (width - 1)
+        |> List.map (\x -> List.range 0 (height - 1) |> List.map (\y -> ( x, y )))
+        |> List.concat
+        |> List.map (\c -> ( c, tile ))
+        |> fromList
 
 
 
