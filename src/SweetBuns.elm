@@ -2,7 +2,7 @@ module SweetBuns exposing (..)
 
 import Dict
 import Html exposing (Html)
-import Html.Attributes as Att exposing (style)
+import Html.Attributes as Att exposing (class, style)
 import Html.Events as Ev exposing (onMouseEnter, onMouseLeave)
 import Grid exposing (..)
 
@@ -17,33 +17,33 @@ type alias Bun =
 
 
 type alias FullTile =
-    String
+    { content : Maybe Bun
+    , back : String
+    }
 
 
 type alias Model =
     { selectedTile : Coords
+    , buns : Grid Bun
     }
 
 
 type Msg
-    = EnterTile Coords
-    | LeaveTile Coords
+    = SelectColumn Coords
 
 
 initialModel : Model
 initialModel =
     { selectedTile = ( 0, 0 )
+    , buns = initialBuns
     }
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        EnterTile coords ->
+        SelectColumn coords ->
             { model | selectedTile = coords }
-
-        _ ->
-            model
 
 
 view : Model -> Html Msg
@@ -52,12 +52,22 @@ view model =
         ( selX, selY ) =
             model.selectedTile
 
-        highlightColumn : Grid FullTile
-        highlightColumn =
-            List.range 0 12 |> List.map (\ranY -> ( ( selX, -ranY ), "O" )) |> Grid.fromList
-
+        finalGrid : Grid FullTile
         finalGrid =
-            back |> Dict.union highlightColumn |> Dict.union buns
+            back
+                |> Dict.map
+                    (\( x, y ) tile ->
+                        if x == selX then
+                            { tile | back = "pink" }
+                        else
+                            tile
+                    )
+                |> Dict.map
+                    (\coords tile ->
+                        { tile
+                            | content = (Dict.get coords model.buns)
+                        }
+                    )
     in
         Html.div []
             [ Grid.toHtmlDiv ( tileSide, tileSide ) renderTile finalGrid
@@ -73,13 +83,13 @@ renderTile coords tile =
         [ style
             [ ( "width", toString (tileSide) ++ "px" )
             , ( "height", toString (tileSide) ++ "px" )
-            , ( "background-color", "lightgray" )
+            , ( "background-color", tile.back )
             , ( "border", "1px solid darkgray" )
             ]
-        , onMouseEnter (EnterTile coords)
-        , onMouseLeave (LeaveTile coords)
+        , onMouseEnter (SelectColumn coords)
         ]
-        [ Html.text tile
+        [ Html.text (Maybe.withDefault "" tile.content)
+        , Html.span [ class "debug" ] [ Html.text (toString coords) ]
         ]
 
 
@@ -88,8 +98,8 @@ tileSide =
     32
 
 
-buns : Grid Bun
-buns =
+initialBuns : Grid Bun
+initialBuns =
     Grid.fromList
         [ ( ( 0, 0 ), "🍪" )
         , ( ( 1, 0 ), "🍪" )
@@ -102,10 +112,5 @@ buns =
 
 back : Grid FullTile
 back =
-    Grid.drawBox " " { width = 6, height = 12 }
-        |> Grid.translate ( 0, -12 )
-
-
-all : Grid FullTile
-all =
-    Dict.union buns back
+    Grid.drawBox { content = Nothing, back = "lightgray" } { width = 6, height = 12 }
+        |> Grid.translate ( 0, -11 )
