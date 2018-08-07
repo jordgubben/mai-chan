@@ -61,11 +61,21 @@ step terrain buns =
                 canMove nc =
                     not (Set.member nc terrain || Dict.member nc g)
 
+                right =
+                    ( x + 1, y )
+
+                left =
+                    ( x - 1, y )
+
                 down =
                     ( x, y - 1 )
             in
                 if canMove down then
                     Grid.put down b g
+                else if canMove right then
+                    Grid.put right b g
+                else if canMove left then
+                    Grid.put left b g
                 else
                     Grid.put ( x, y ) b g
         )
@@ -151,10 +161,10 @@ initialBuns =
 
 terrain : Set Coords
 terrain =
-    Set.fromList [ ( 1, -3 ), ( 4, -3 ) ]
+    Set.fromList [ ( 1, -3 ), ( 4, -3 ), ( 3, -8 ), ( 4, -7 ), ( 5, -6 ) ]
 
 
 back : Grid FullTile
 back =
-    Grid.drawBox { content = Nothing, back = "lightgray" } { width = 6, height = 12 }
-        |> Grid.translate ( 0, -11 )
+    Grid.drawBox { content = Nothing, back = "lightgray" } { width = 10, height = 12 }
+        |> Grid.translate ( -2, -11 )
