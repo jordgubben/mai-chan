@@ -161,10 +161,16 @@ initialBuns =
 
 terrain : Set Coords
 terrain =
-    Set.fromList [ ( 1, -3 ), ( 4, -3 ), ( 3, -8 ), ( 4, -7 ), ( 5, -6 ) ]
+    Set.union
+        (Grid.lineRect () { width = 8, height = 10 }
+            |> Grid.translate ( -1, -8 )
+            |> Dict.keys
+            |> Set.fromList
+        )
+        (Set.fromList [ ( 1, -3 ), ( 4, -3 ), ( 3, -8 ), ( 4, -7 ), ( 5, -6 ) ])
 
 
 back : Grid FullTile
 back =
     Grid.drawBox { content = Nothing, back = "lightgray" } { width = 10, height = 12 }
-        |> Grid.translate ( -2, -11 )
+        |> Grid.translate ( -2, -10 )
