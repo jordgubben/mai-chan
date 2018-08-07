@@ -1,4 +1,4 @@
-module Grid exposing (Grid, Coords, empty, fromList, put, drawBox, get, numRows, numCols, translate, rotCv, rotCcv, toHtmlTable, toHtmlDiv)
+module Grid exposing (Grid, Coords, empty, fromList, put, drawBox, lineRect, get, numRows, numCols, translate, rotCv, rotCcv, toHtmlTable, toHtmlDiv)
 
 {-| Tile grid for (board game like) strategy games.
 
@@ -15,7 +15,7 @@ module Grid exposing (Grid, Coords, empty, fromList, put, drawBox, get, numRows,
 
 # Drawing
 
-@docs put, drawBox
+@docs put, drawBox, lineRect
 
 
 # Analysis
@@ -118,7 +118,7 @@ fromList =
 -- Drawing
 
 
-{-| Draw a box that expands on positive axises from the origo (0,0).
+{-| Draw a filled box that expands on positive axises from the origo (0,0).
 -}
 drawBox : t -> Size Int -> Grid t
 drawBox tile { width, height } =
@@ -127,6 +127,28 @@ drawBox tile { width, height } =
         |> List.concat
         |> List.map (\c -> ( c, tile ))
         |> fromList
+
+
+{-| Draw edges of a box that expands on positive axises from the origo (0,0).
+-}
+lineRect : t -> Size Int -> Grid t
+lineRect tile { width, height } =
+    let
+        leftSide =
+            List.range 0 (height - 1) |> List.map (\y -> ( 0, y ))
+
+        rightSide =
+            List.range 0 (height - 1) |> List.map (\y -> ( width - 1, y ))
+
+        topSide =
+            List.range 0 (width - 1) |> List.map (\x -> ( x, height - 1 ))
+
+        bottomSide =
+            List.range 0 (width - 1) |> List.map (\x -> ( x, 0 ))
+    in
+        List.concat [ leftSide, rightSide, topSide, bottomSide ]
+            |> List.map (\coords -> ( coords, tile ))
+            |> fromList
 
 
 

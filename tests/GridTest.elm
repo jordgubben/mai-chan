@@ -26,6 +26,19 @@ drawingSuite =
                             ]
                 )
             ]
+        , describe "Grid.lineRect : t -> {w,h} -> Grid t"
+            [ test "Draws a grid with the defined width and height" <|
+                (\_ ->
+                    Grid.lineRect "Tile" { width = 5, height = 8 }
+                        |> Expect.all
+                            [ Grid.numRows >> equal 8
+                            , Grid.numCols >> equal 5
+                            , Dict.get ( 1, 1 ) >> equal Nothing
+                            , Dict.get ( 4, 7 ) >> equal (Just "Tile")
+                            , Dict.size >> equal (8 * 2 + 3 * 2)
+                            ]
+                )
+            ]
         ]
 
 
