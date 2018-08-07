@@ -1,5 +1,6 @@
 module SweetBuns exposing (..)
 
+import Set exposing (Set)
 import Dict
 import Html exposing (Html, text)
 import Html.Attributes as Att exposing (class, style)
@@ -47,12 +48,29 @@ update msg model =
             { model | selectedTile = coords }
 
         StepBuns ->
-            { model | buns = step model.buns }
+            { model | buns = step terrain model.buns }
 
 
-step : Grid Bun -> Grid Bun
-step buns =
-    Dict.foldl (\( x, y ) b g -> Grid.put ( x, y - 1 ) b g) Grid.empty buns
+{-| Move all buns downwards (if possible).
+-}
+step : Set Coords -> Grid Bun -> Grid Bun
+step terrain buns =
+    Dict.foldl
+        (\( x, y ) b g ->
+            let
+                canMove nc =
+                    not (Set.member nc terrain || Dict.member nc g)
+
+                down =
+                    ( x, y - 1 )
+            in
+                if canMove down then
+                    Grid.put down b g
+                else
+                    Grid.put ( x, y ) b g
+        )
+        Grid.empty
+        buns
 
 
 view : Model -> Html Msg
@@ -64,6 +82,7 @@ view model =
         finalGrid : Grid FullTile
         finalGrid =
             back
+                -- Render highlighed column
                 |> Dict.map
                     (\( x, y ) tile ->
                         if x == selX then
@@ -71,6 +90,15 @@ view model =
                         else
                             tile
                     )
+                -- Render terrain
+                |> Dict.map
+                    (\( x, y ) tile ->
+                        if Set.member ( x, y ) terrain then
+                            { tile | back = "black" }
+                        else
+                            tile
+                    )
+                -- Render buns
                 |> Dict.map
                     (\coords tile ->
                         { tile
@@ -116,8 +144,14 @@ initialBuns =
         , ( ( 2, 0 ), "🍪" )
         , ( ( 3, 0 ), "🍪" )
         , ( ( 4, 0 ), "🍪" )
+        , ( ( 4, -1 ), "🍩" )
         , ( ( 5, 0 ), "🍪" )
         ]
+
+
+terrain : Set Coords
+terrain =
+    Set.fromList [ ( 1, -3 ), ( 4, -3 ) ]
 
 
 back : Grid FullTile
