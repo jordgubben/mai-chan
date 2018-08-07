@@ -1,9 +1,9 @@
 module SweetBuns exposing (..)
 
 import Dict
-import Html exposing (Html)
+import Html exposing (Html, text)
 import Html.Attributes as Att exposing (class, style)
-import Html.Events as Ev exposing (onMouseEnter, onMouseLeave)
+import Html.Events as Ev exposing (onMouseEnter, onMouseLeave, onClick)
 import Grid exposing (..)
 
 
@@ -30,6 +30,7 @@ type alias Model =
 
 type Msg
     = SelectColumn Coords
+    | StepBuns
 
 
 initialModel : Model
@@ -44,6 +45,14 @@ update msg model =
     case msg of
         SelectColumn coords ->
             { model | selectedTile = coords }
+
+        StepBuns ->
+            { model | buns = step model.buns }
+
+
+step : Grid Bun -> Grid Bun
+step buns =
+    Dict.foldl (\( x, y ) b g -> Grid.put ( x, y - 1 ) b g) Grid.empty buns
 
 
 view : Model -> Html Msg
@@ -74,6 +83,7 @@ view model =
             , Html.p []
                 [ (model.selectedTile |> toString |> Html.text)
                 ]
+            , Html.button [ onClick StepBuns ] [ text "Step" ]
             ]
 
 
