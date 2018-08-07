@@ -96,6 +96,35 @@ bunStepSuit =
                 in
                     equal movedState expectedState
             )
+        , test "Do not overwrite each other" <|
+            (\_ ->
+                let
+                    -- Given two buns destined to end up tn the same place
+                    initialState =
+                        Grid.fromList
+                            [ ( ( 1, 2 ), "@1" )
+                            , ( ( 1, 1 ), "@2" )
+                            , ( ( 2, 1 ), "@3" )
+                            ]
+
+                    terrain =
+                        Set.fromList [ ( 0, 0 ), ( 1, 0 ), ( 2, 0 ), ( 3, 1 ) ]
+
+                    -- When progressing movement
+                    movedState =
+                        SweetBuns.step terrain initialState
+
+                    -- Then all buns still are there
+                    -- (Exact placement is not relevant)
+                    expectedState =
+                        Grid.fromList
+                            [ ( ( 2, 2 ), "@1" )
+                            , ( ( 0, 1 ), "@2" )
+                            , ( ( 2, 1 ), "@3" )
+                            ]
+                in
+                    equal movedState expectedState
+            )
         ]
 
 

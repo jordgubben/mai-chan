@@ -58,8 +58,10 @@ step terrain buns =
     Dict.foldl
         (\( x, y ) b g ->
             let
+                -- Can not moved to a tile occupied by a bun or terrain
+                -- (Both old and new possitons taken account for)
                 canMove nc =
-                    not (Set.member nc terrain || Dict.member nc g)
+                    not (Set.member nc terrain || Dict.member nc g || Dict.member nc buns)
 
                 right =
                     ( x + 1, y )
@@ -137,7 +139,9 @@ renderTile coords tile =
         , onMouseEnter (SelectColumn coords)
         ]
         [ Html.text (Maybe.withDefault "" tile.content)
-        , Html.span [ class "debug" ] [ Html.text (toString coords) ]
+        , Html.span
+            [ class "debug", style [ ( "font-size", "25%" ) ] ]
+            [ Html.text (toString coords) ]
         ]
 
 
@@ -151,7 +155,7 @@ initialBuns =
     Grid.fromList
         [ ( ( 0, 0 ), "🍪" )
         , ( ( 1, 0 ), "🍪" )
-        , ( ( 2, 0 ), "🍪" )
+        , ( ( 2, 0 ), "🍭" )
         , ( ( 3, 0 ), "🍪" )
         , ( ( 4, 0 ), "🍪" )
         , ( ( 4, -1 ), "🍩" )
