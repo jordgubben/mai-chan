@@ -2,6 +2,7 @@ module SweetBuns exposing (..)
 
 import Set exposing (Set)
 import Dict
+import Time exposing (Time, second)
 import Html exposing (Html, text)
 import Html.Attributes as Att exposing (class, style)
 import Html.Events as Ev exposing (onMouseEnter, onMouseLeave, onClick)
@@ -10,7 +11,8 @@ import Grid exposing (..)
 
 main : Program Never Model Msg
 main =
-    Html.beginnerProgram { model = initialModel, update = update, view = view }
+    Html.program
+        { init = ( initialModel, Cmd.none ), update = update, view = view, subscriptions = subscriptions }
 
 
 type alias FullTile =
@@ -29,6 +31,7 @@ type Msg
     = SelectColumn Coords
     | StepBuns
     | Rotate Coords
+    | Tick Time
 
 
 type Thingy
@@ -43,38 +46,21 @@ initialModel =
     }
 
 
-update : Msg -> Model -> Model
+
+-- # UPDATE
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SelectColumn coords ->
-            { model | selectedTile = coords }
+            ( { model | selectedTile = coords }, Cmd.none )
+
+        Tick _ ->
+            ( advanceThings model, Cmd.none )
 
         StepBuns ->
-            let
-                ( buns, obstacles ) =
-                    Dict.partition
-                        (\_ t ->
-                            case t of
-                                Bun _ ->
-                                    True
-
-                                _ ->
-                                    False
-                        )
-                        model.things
-
-                terrain =
-                    Set.union
-                        outerFrame
-                        (obstacles |> Dict.keys |> Set.fromList)
-
-                buns_ =
-                    step terrain buns
-
-                things_ =
-                    Dict.union buns_ obstacles
-            in
-                { model | things = things_ }
+            ( advanceThings model, Cmd.none )
 
         Rotate ( x, y ) ->
             let
@@ -91,7 +77,37 @@ update msg model =
                         |> Grid.rotCv
                         |> Grid.translate ( x, y + 1 )
             in
-                { model | things = Dict.union tranformedThings remainingThings }
+                ( { model | things = Dict.union tranformedThings remainingThings }, Cmd.none )
+
+
+advanceThings : { a | things : Grid Thingy } -> { a | things : Grid Thingy }
+advanceThings model =
+    let
+        ( buns, obstacles ) =
+            Dict.partition (always isBun) model.things
+
+        terrain =
+            Set.union
+                outerFrame
+                (obstacles |> Dict.keys |> Set.fromList)
+
+        buns_ =
+            step terrain buns
+
+        things_ =
+            Dict.union buns_ obstacles
+    in
+        { model | things = things_ }
+
+
+isBun : Thingy -> Bool
+isBun thing =
+    case thing of
+        Bun _ ->
+            True
+
+        _ ->
+            False
 
 
 {-| Move all buns downwards (if possible).
@@ -126,6 +142,19 @@ step terrain buns =
         )
         Grid.empty
         buns
+
+
+
+-- # SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Time.every (2 * second) Tick
+
+
+
+-- # VIEW
 
 
 view : Model -> Html Msg
