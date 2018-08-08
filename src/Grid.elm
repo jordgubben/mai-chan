@@ -1,11 +1,11 @@
-module Grid exposing (Grid, Coords, empty, fromList, put, drawBox, lineRect, get, numRows, numCols, translate, rotCv, rotCcv, toHtmlTable, toHtmlDiv)
+module Grid exposing (Grid, Coords, Size, empty, fromList, put, drawBox, lineRect, get, pickRect, numRows, numCols, translate, rotCv, rotCcv, toHtmlTable, toHtmlDiv)
 
 {-| Tile grid for (board game like) strategy games.
 
 
 # Types
 
-@docs Coords, Grid
+@docs Grid, Coords, Size
 
 
 # Creation
@@ -16,6 +16,11 @@ module Grid exposing (Grid, Coords, empty, fromList, put, drawBox, lineRect, get
 # Drawing
 
 @docs put, drawBox, lineRect
+
+
+# Retrieval
+
+@docs get, pickRect
 
 
 # Analysis
@@ -84,6 +89,10 @@ type alias Coords =
     ( Int, Int )
 
 
+{-|
+
+    The shape of a rectangle.
+-}
 type alias Size n =
     { width : n
     , height : n
@@ -202,6 +211,24 @@ put ( x, y ) cell =
 get : Coords -> Grid a -> Maybe a
 get =
     Dict.get
+
+
+{-| Get a rect of tiles expanding positive axises (up and right) of from given coords
+-}
+pickRect : Size Int -> Coords -> Grid a -> Grid a
+pickRect { width, height } ( left, bottom ) srcGrid =
+    let
+        top =
+            bottom + height - 1
+
+        right =
+            left + width - 1
+    in
+        Dict.filter
+            (\( x, y ) tile ->
+                (left <= x && x <= right) && (bottom <= y && y <= top)
+            )
+            srcGrid
 
 
 

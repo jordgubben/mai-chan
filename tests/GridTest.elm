@@ -2,7 +2,7 @@ module GridTest exposing (..)
 
 import Dict
 import Html
-import Grid exposing (Grid)
+import Grid exposing (..)
 import Expect exposing (Expectation, equal)
 import Test exposing (..)
 import Fuzz exposing (..)
@@ -124,6 +124,37 @@ transformationSuite =
                             ]
                             never
                 )
+            ]
+        ]
+
+
+
+-- # Test Retrieval
+
+
+retrievalSuite : Test
+retrievalSuite =
+    describe "Grid retrieval"
+        [ describe "Grid.pickRect"
+            [ test "Takes subset of another rect" <|
+                \() ->
+                    let
+                        -- Given a larger grid
+                        srcGrid =
+                            Grid.drawBox () (Size 10 10)
+                                |> Dict.map (\coords _ -> toString coords)
+
+                        -- When picking
+                        pickedGrid =
+                            Grid.pickRect (Size 2 2) ( 3, 4 ) srcGrid
+
+                        -- Then extracts selected subset
+                        expectedGrid =
+                            Grid.drawBox () (Size 2 2)
+                                |> Grid.translate ( 3, 4 )
+                                |> Dict.map (\coords _ -> toString coords)
+                    in
+                        equal expectedGrid pickedGrid
             ]
         ]
 
