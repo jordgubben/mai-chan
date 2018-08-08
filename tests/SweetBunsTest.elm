@@ -2,7 +2,7 @@ module SweetBunsTest exposing (..)
 
 import Set
 import Grid
-import SweetBuns
+import SweetBuns exposing (Thingy(..))
 import Test exposing (..)
 import Expect exposing (Expectation, equal)
 
@@ -15,7 +15,7 @@ bunStepSuit =
                 let
                     -- Given a single bun (free of obstacles)
                     initialState =
-                        Grid.fromList [ ( ( 2, 1 ), "@" ) ]
+                        Grid.fromList [ ( ( 2, 1 ), bun ) ]
 
                     -- When progressing movement
                     movedState =
@@ -23,7 +23,7 @@ bunStepSuit =
 
                     -- Then it moves down
                     expectedState =
-                        (Grid.fromList [ ( ( 2, 0 ), "@" ) ])
+                        (Grid.fromList [ ( ( 2, 0 ), bun ) ])
                 in
                     equal movedState expectedState
             )
@@ -32,7 +32,7 @@ bunStepSuit =
                 let
                     -- Given a single bun surrounded by terrain
                     initialState =
-                        Grid.fromList [ ( ( 2, 1 ), "@" ) ]
+                        Grid.fromList [ ( ( 2, 1 ), bun ) ]
 
                     terrain =
                         Set.fromList [ ( 1, 1 ), ( 2, 0 ), ( 3, 1 ) ]
@@ -46,7 +46,7 @@ bunStepSuit =
                 let
                     -- Given two buns stacked on to of each other
                     initialState =
-                        Grid.fromList [ ( ( 2, 1 ), "@" ), ( ( 2, 2 ), "@" ) ]
+                        Grid.fromList [ ( ( 2, 1 ), bun ), ( ( 2, 2 ), bun ) ]
 
                     -- And surrounded by terrain
                     terrain =
@@ -61,7 +61,7 @@ bunStepSuit =
                 let
                     -- Given a bun blocked from moving down or to the left
                     initialState =
-                        Grid.fromList [ ( ( 2, 1 ), "@" ) ]
+                        Grid.fromList [ ( ( 2, 1 ), bun ) ]
 
                     terrain =
                         Set.fromList [ ( 1, 1 ), ( 2, 0 ) ]
@@ -72,7 +72,7 @@ bunStepSuit =
 
                     -- Then is moves to the right
                     expectedState =
-                        Grid.fromList [ ( ( 3, 1 ), "@" ) ]
+                        Grid.fromList [ ( ( 3, 1 ), bun ) ]
                 in
                     equal movedState expectedState
             )
@@ -81,7 +81,7 @@ bunStepSuit =
                 let
                     -- Given a bun bocked from moving down and to the right
                     initialState =
-                        Grid.fromList [ ( ( 2, 1 ), "@" ) ]
+                        Grid.fromList [ ( ( 2, 1 ), bun ) ]
 
                     terrain =
                         Set.fromList [ ( 3, 1 ), ( 2, 0 ) ]
@@ -92,7 +92,7 @@ bunStepSuit =
 
                     -- Then it moves to the left
                     expectedState =
-                        Grid.fromList [ ( ( 1, 1 ), "@" ) ]
+                        Grid.fromList [ ( ( 1, 1 ), bun ) ]
                 in
                     equal movedState expectedState
             )
@@ -102,9 +102,9 @@ bunStepSuit =
                     -- Given two buns destined to end up tn the same place
                     initialState =
                         Grid.fromList
-                            [ ( ( 1, 2 ), "@1" )
-                            , ( ( 1, 1 ), "@2" )
-                            , ( ( 2, 1 ), "@3" )
+                            [ ( ( 1, 2 ), bunNr 1 )
+                            , ( ( 1, 1 ), bunNr 2 )
+                            , ( ( 2, 1 ), bunNr 3 )
                             ]
 
                     terrain =
@@ -118,9 +118,9 @@ bunStepSuit =
                     -- (Exact placement is not relevant)
                     expectedState =
                         Grid.fromList
-                            [ ( ( 2, 2 ), "@1" )
-                            , ( ( 0, 1 ), "@2" )
-                            , ( ( 2, 1 ), "@3" )
+                            [ ( ( 2, 2 ), bunNr 1 )
+                            , ( ( 0, 1 ), bunNr 2 )
+                            , ( ( 2, 1 ), bunNr 3 )
                             ]
                 in
                     equal movedState expectedState
@@ -132,8 +132,18 @@ bunStepSuit =
 -- # HELPERS
 
 
+bun : Thingy
+bun =
+    Bun "@"
+
+
+bunNr : Int -> Thingy
+bunNr nr =
+    Bun ("@" ++ toString nr)
+
+
 {-| Verrify that buns do not move
 -}
-expectNoMovemenemt : Set.Set Grid.Coords -> Grid.Grid SweetBuns.Bun -> Expectation
+expectNoMovemenemt : Set.Set Grid.Coords -> Grid.Grid SweetBuns.Thingy -> Expectation
 expectNoMovemenemt terrain buns =
     SweetBuns.step terrain buns |> equal buns

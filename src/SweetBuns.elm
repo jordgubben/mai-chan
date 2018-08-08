@@ -13,19 +13,15 @@ main =
     Html.beginnerProgram { model = initialModel, update = update, view = view }
 
 
-type alias Bun =
-    String
-
-
 type alias FullTile =
-    { content : Maybe Bun
+    { content : Maybe Thingy
     , back : String
     }
 
 
 type alias Model =
     { selectedTile : Coords
-    , buns : Grid Bun
+    , things : Grid Thingy
     }
 
 
@@ -35,10 +31,15 @@ type Msg
     | Rotate Coords
 
 
+type Thingy
+    = Bun String
+    | Obstacle
+
+
 initialModel : Model
 initialModel =
     { selectedTile = ( 0, 0 )
-    , buns = initialBuns
+    , things = Dict.union initialBuns initialObstacles
     }
 
 
@@ -49,29 +50,53 @@ update msg model =
             { model | selectedTile = coords }
 
         StepBuns ->
-            { model | buns = step terrain model.buns }
+            let
+                ( buns, obstacles ) =
+                    Dict.partition
+                        (\_ t ->
+                            case t of
+                                Bun _ ->
+                                    True
+
+                                _ ->
+                                    False
+                        )
+                        model.things
+
+                terrain =
+                    Set.union
+                        outerFrame
+                        (obstacles |> Dict.keys |> Set.fromList)
+
+                buns_ =
+                    step terrain buns
+
+                things_ =
+                    Dict.union buns_ obstacles
+            in
+                { model | things = things_ }
 
         Rotate ( x, y ) ->
             let
-                pickedBuns =
-                    Grid.pickRect (Size 2 2) ( x, y ) model.buns
+                pickedThings =
+                    Grid.pickRect (Size 2 2) ( x, y ) model.things
 
-                remainingBuns =
-                    Dict.keys pickedBuns
-                        |> List.foldl Dict.remove model.buns
+                remainingThings =
+                    Dict.keys pickedThings
+                        |> List.foldl Dict.remove model.things
 
-                tranformedBuns =
-                    pickedBuns
+                tranformedThings =
+                    pickedThings
                         |> Grid.translate ( -x, -y )
                         |> Grid.rotCv
                         |> Grid.translate ( x, y + 1 )
             in
-                { model | buns = Dict.union tranformedBuns remainingBuns }
+                { model | things = Dict.union tranformedThings remainingThings }
 
 
 {-| Move all buns downwards (if possible).
 -}
-step : Set Coords -> Grid Bun -> Grid Bun
+step : Set Coords -> Grid v -> Grid v
 step terrain buns =
     Dict.foldl
         (\( x, y ) b g ->
@@ -123,7 +148,7 @@ view model =
                 -- Render terrain
                 |> Dict.map
                     (\( x, y ) tile ->
-                        if Set.member ( x, y ) terrain then
+                        if Set.member ( x, y ) outerFrame then
                             { tile | back = "black" }
                         else
                             tile
@@ -132,7 +157,7 @@ view model =
                 |> Dict.map
                     (\coords tile ->
                         { tile
-                            | content = (Dict.get coords model.buns)
+                            | content = (Dict.get coords model.things)
                         }
                     )
     in
@@ -157,11 +182,32 @@ renderTile coords tile =
         , onMouseEnter (SelectColumn coords)
         , onClick (Rotate coords)
         ]
-        [ Html.text (Maybe.withDefault "" tile.content)
+        [ tile.content |> Maybe.map renderThingy |> Maybe.withDefault (text "")
         , Html.span
             [ class "debug", style [ ( "font-size", "25%" ) ] ]
             [ Html.text (toString coords) ]
         ]
+
+
+{-| Render some ting insde tile
+-}
+renderThingy : Thingy -> Html msg
+renderThingy thingy =
+    case thingy of
+        Bun str ->
+            text str
+
+        Obstacle ->
+            Html.div
+                [ style
+                    [ ( "width", "26px" )
+                    , ( "height", "26px" )
+                    , ( "margin", "2px 2px" )
+                    , ( "background-color", "black" )
+                    , ( "border", "1px dotted darkgray" )
+                    ]
+                ]
+                [ text "X" ]
 
 
 tileSide : Int
@@ -169,7 +215,7 @@ tileSide =
     32
 
 
-initialBuns : Grid Bun
+initialBuns : Grid Thingy
 initialBuns =
     Grid.fromList
         [ ( ( 0, 0 ), "🍪" )
@@ -180,17 +226,21 @@ initialBuns =
         , ( ( 4, -1 ), "🍩" )
         , ( ( 5, 0 ), "🍪" )
         ]
+        |> Dict.map (\_ str -> Bun str)
 
 
-terrain : Set Coords
-terrain =
-    Set.union
-        (Grid.lineRect () { width = 8, height = 10 }
-            |> Grid.translate ( -1, -8 )
-            |> Dict.keys
-            |> Set.fromList
-        )
-        (Set.fromList [ ( 1, -3 ), ( 4, -3 ), ( 3, -8 ), ( 4, -7 ), ( 5, -6 ) ])
+outerFrame : Set Coords
+outerFrame =
+    (Grid.lineRect () { width = 8, height = 10 }
+        |> Grid.translate ( -1, -8 )
+        |> Dict.keys
+        |> Set.fromList
+    )
+
+
+initialObstacles : Grid Thingy
+initialObstacles =
+    [ ( 1, -3 ), ( 4, -3 ), ( 3, -8 ), ( 4, -7 ), ( 5, -6 ) ] |> List.map (\c -> ( c, Obstacle )) |> Grid.fromList
 
 
 back : Grid FullTile
