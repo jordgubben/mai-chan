@@ -32,6 +32,7 @@ type alias Model =
 type Msg
     = SelectColumn Coords
     | StepBuns
+    | Rotate Coords
 
 
 initialModel : Model
@@ -49,6 +50,23 @@ update msg model =
 
         StepBuns ->
             { model | buns = step terrain model.buns }
+
+        Rotate ( x, y ) ->
+            let
+                pickedBuns =
+                    Grid.pickRect (Size 2 2) ( x, y ) model.buns
+
+                remainingBuns =
+                    Dict.keys pickedBuns
+                        |> List.foldl Dict.remove model.buns
+
+                tranformedBuns =
+                    pickedBuns
+                        |> Grid.translate ( -x, -y )
+                        |> Grid.rotCv
+                        |> Grid.translate ( x, y + 1 )
+            in
+                { model | buns = Dict.union tranformedBuns remainingBuns }
 
 
 {-| Move all buns downwards (if possible).
@@ -97,8 +115,8 @@ view model =
                 -- Render highlighed column
                 |> Dict.map
                     (\( x, y ) tile ->
-                        if x == selX then
-                            { tile | back = "pink" }
+                        if (x == selX || x == selX + 1) && (y == selY || y == selY + 1) then
+                            { tile | back = "lightgreen" }
                         else
                             tile
                     )
@@ -137,6 +155,7 @@ renderTile coords tile =
             , ( "border", "1px solid darkgray" )
             ]
         , onMouseEnter (SelectColumn coords)
+        , onClick (Rotate coords)
         ]
         [ Html.text (Maybe.withDefault "" tile.content)
         , Html.span
