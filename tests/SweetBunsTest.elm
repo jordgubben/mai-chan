@@ -10,7 +10,7 @@ import Expect exposing (Expectation, equal)
 spawnSuite : Test
 spawnSuite =
     describe "Spawning pattern"
-        [ test "Buns spawn spawn tiles" <|
+        [ test "Buns spawn from spawn tiles" <|
             \() ->
                 let
                     -- Given a kitchen with one spawn poin
@@ -33,6 +33,40 @@ spawnSuite =
                             ]
                 in
                     equal spawnedThings expectedThings
+        ]
+
+
+collectSuite : Test
+collectSuite =
+    describe "Collecting buns"
+        [ test "Buns are collected at spawn tiles" <|
+            \() ->
+                let
+                    -- Given a level with one collector
+                    initialKitchen =
+                        Grid.fromList
+                            [ ( ( 0, 0 ), PlainTile )
+                            , ( ( 0, 1 ), BunCollector )
+                            ]
+
+                    -- And a bun on every tile
+                    initialThings =
+                        Grid.fromList
+                            [ ( ( 0, 0 ), bun )
+                            , ( ( 0, 1 ), bun )
+                            ]
+
+                    -- When collecting
+                    remainingThings =
+                        SweetBuns.collectThings initialKitchen initialThings
+
+                    -- THe bun on the collector tile is removed
+                    expectedThings =
+                        Grid.fromList
+                            [ ( ( 0, 0 ), bun )
+                            ]
+                in
+                    equal remainingThings expectedThings
         ]
 
 

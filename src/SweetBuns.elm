@@ -43,6 +43,7 @@ type Thingy
 type FloorTile
     = PlainTile
     | BunSpawner
+    | BunCollector
     | WallTile
 
 
@@ -117,6 +118,7 @@ advanceThings model =
             obstacles
                 |> Dict.union (spawnThings (Bun "🍬") kitchenLevel)
                 |> Dict.union buns_
+                |> collectThings kitchenLevel
     in
         { model | things = things_ }
 
@@ -147,6 +149,28 @@ isBunSpawner : FloorTile -> Bool
 isBunSpawner floorTile =
     case floorTile of
         BunSpawner ->
+            True
+
+        _ ->
+            False
+
+
+collectThings : Grid FloorTile -> Grid Thingy -> Grid Thingy
+collectThings level things =
+    let
+        collectorsPoints =
+            level |> Dict.filter (\_ tile -> isBunCollector tile) |> Dict.keys |> Set.fromList
+
+        remainingThings =
+            things |> Dict.filter (\coords _ -> not <| Set.member coords collectorsPoints)
+    in
+        remainingThings
+
+
+isBunCollector : FloorTile -> Bool
+isBunCollector floorTile =
+    case floorTile of
+        BunCollector ->
             True
 
         _ ->
@@ -265,7 +289,10 @@ getTileColor tile =
                 "lightgray"
 
             BunSpawner ->
-                "lightbrown"
+                "antiquewhite"
+
+            BunCollector ->
+                "lawngreen"
 
             WallTile ->
                 "darkgray"
@@ -320,6 +347,7 @@ kitchenLevel : Grid FloorTile
 kitchenLevel =
     kitchenFloor
         |> Dict.union kitchenSpawners
+        |> Dict.union kitchenCollectors
         |> Dict.union kitchenWalls
 
 
@@ -327,6 +355,12 @@ kitchenSpawners : Grid FloorTile
 kitchenSpawners =
     Grid.drawBox BunSpawner { width = 6, height = 1 }
         |> Grid.translate ( 0, 0 )
+
+
+kitchenCollectors : Grid FloorTile
+kitchenCollectors =
+    Grid.drawBox BunCollector { width = 6, height = 1 }
+        |> Grid.translate ( 0, -9 )
 
 
 kitchenFloor : Grid FloorTile
