@@ -43,7 +43,7 @@ type Thingy
 type FloorTile
     = PlainTile
     | BunSpawner
-    | Blocking
+    | WallTile
 
 
 initialModel : Model
@@ -95,7 +95,19 @@ advanceThings model =
 
         terrain =
             Set.union
-                outerFrame
+                (kitchenLevel
+                    |> Dict.filter
+                        (\_ tile ->
+                            case tile of
+                                WallTile ->
+                                    True
+
+                                _ ->
+                                    False
+                        )
+                    |> Dict.keys
+                    |> Set.fromList
+                )
                 (obstacles |> Dict.keys |> Set.fromList)
 
         buns_ =
@@ -207,14 +219,6 @@ view model =
                         else
                             tile
                     )
-                -- Render terrain
-                |> Dict.map
-                    (\( x, y ) tile ->
-                        if Set.member ( x, y ) outerFrame then
-                            { tile | floor = Blocking }
-                        else
-                            tile
-                    )
                 -- Render buns
                 |> Dict.map
                     (\coords tile ->
@@ -263,8 +267,8 @@ getTileColor tile =
             BunSpawner ->
                 "lightbrown"
 
-            Blocking ->
-                "black"
+            WallTile ->
+                "darkgray"
 
 
 {-| Render some ting insde tile
@@ -307,15 +311,6 @@ initialBuns =
         |> Dict.map (\_ str -> Bun str)
 
 
-outerFrame : Set Coords
-outerFrame =
-    (Grid.lineRect () { width = 8, height = 10 }
-        |> Grid.translate ( -1, -8 )
-        |> Dict.keys
-        |> Set.fromList
-    )
-
-
 initialObstacles : Grid Thingy
 initialObstacles =
     [ ( 1, -3 ), ( 4, -3 ), ( 3, -8 ), ( 4, -7 ), ( 5, -6 ) ] |> List.map (\c -> ( c, Obstacle )) |> Grid.fromList
@@ -323,9 +318,9 @@ initialObstacles =
 
 kitchenLevel : Grid FloorTile
 kitchenLevel =
-    Dict.union
-        kitchenSpawners
-        kitchenFloor
+    kitchenFloor
+        |> Dict.union kitchenSpawners
+        |> Dict.union kitchenWalls
 
 
 kitchenSpawners : Grid FloorTile
@@ -337,4 +332,10 @@ kitchenSpawners =
 kitchenFloor : Grid FloorTile
 kitchenFloor =
     Grid.drawBox PlainTile { width = 10, height = 12 }
+        |> Grid.translate ( -2, -10 )
+
+
+kitchenWalls : Grid FloorTile
+kitchenWalls =
+    Grid.lineRect WallTile { width = 10, height = 12 }
         |> Grid.translate ( -2, -10 )
