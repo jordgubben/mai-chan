@@ -2,9 +2,38 @@ module SweetBunsTest exposing (..)
 
 import Set
 import Grid
-import SweetBuns exposing (Thingy(..))
+import SweetBuns exposing (Thingy(..), Floor(..))
 import Test exposing (..)
 import Expect exposing (Expectation, equal)
+
+
+spawnSuite : Test
+spawnSuite =
+    describe "Spawning pattern"
+        [ test "Buns spawn spawn tiles" <|
+            \() ->
+                let
+                    -- Given a kitchen with one spawn poin
+                    initialKitchen =
+                        Grid.fromList
+                            [ ( ( 0, 0 ), plainTile )
+                            , ( ( 0, 1 ), { plainTile | floor = BunSpawner } )
+                            ]
+
+                    -- When spawning
+                    spawnedThings : Grid.Grid Thingy
+                    spawnedThings =
+                        SweetBuns.spawnBuns "@" initialKitchen
+
+                    -- Bun appears on spawn tile
+                    expectedThings : Grid.Grid Thingy
+                    expectedThings =
+                        Grid.fromList
+                            [ ( ( 0, 1 ), bun )
+                            ]
+                in
+                    equal spawnedThings expectedThings
+        ]
 
 
 bunStepSuit : Test
@@ -140,6 +169,11 @@ bun =
 bunNr : Int -> Thingy
 bunNr nr =
     Bun ("@" ++ toString nr)
+
+
+plainTile : SweetBuns.FullTile
+plainTile =
+    SweetBuns.FullTile Nothing False Plain
 
 
 {-| Verrify that buns do not move

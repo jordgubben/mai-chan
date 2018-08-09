@@ -42,6 +42,7 @@ type Thingy
 
 type Floor
     = Plain
+    | BunSpawner
     | Blocking
 
 
@@ -101,7 +102,9 @@ advanceThings model =
             step terrain buns
 
         things_ =
-            Dict.union buns_ obstacles
+            obstacles
+                |> Dict.union (spawnBuns "🍬" kitchenLevel)
+                |> Dict.union buns_
     in
         { model | things = things_ }
 
@@ -110,6 +113,28 @@ isBun : Thingy -> Bool
 isBun thing =
     case thing of
         Bun _ ->
+            True
+
+        _ ->
+            False
+
+
+spawnBuns : String -> Grid FullTile -> Grid Thingy
+spawnBuns bunStr level =
+    let
+        spawnPoints : List Coords
+        spawnPoints =
+            level
+                |> Dict.filter (\_ tile -> isBunSpawner tile.floor)
+                |> Dict.keys
+    in
+        spawnPoints |> List.map (\point -> ( point, Bun bunStr )) |> Grid.fromList
+
+
+isBunSpawner : Floor -> Bool
+isBunSpawner floorTile =
+    case floorTile of
+        BunSpawner ->
             True
 
         _ ->
@@ -233,6 +258,9 @@ getTileColor tile =
             Plain ->
                 "lightgray"
 
+            BunSpawner ->
+                "lightbrown"
+
             Blocking ->
                 "black"
 
@@ -293,5 +321,18 @@ initialObstacles =
 
 kitchenLevel : Grid FullTile
 kitchenLevel =
+    Dict.union
+        kitchenSpawners
+        kitchenFloor
+
+
+kitchenSpawners : Grid FullTile
+kitchenSpawners =
+    Grid.drawBox { content = Nothing, floor = BunSpawner, highlight = False } { width = 6, height = 1 }
+        |> Grid.translate ( 0, 0 )
+
+
+kitchenFloor : Grid FullTile
+kitchenFloor =
     Grid.drawBox { content = Nothing, floor = Plain, highlight = False } { width = 10, height = 12 }
         |> Grid.translate ( -2, -10 )
