@@ -1,16 +1,19 @@
 module SweetBunsTest exposing (..)
 
+import Random exposing (Seed)
 import Set
+import Dict
 import Grid
 import SweetBuns exposing (Thingy(..), FloorTile(..))
 import Test exposing (..)
+import Fuzz exposing (..)
 import Expect exposing (Expectation, equal)
 
 
 spawnSuite : Test
 spawnSuite =
     describe "Spawning pattern"
-        [ test "Buns spawn from spawn tiles" <|
+        [ test "Buns can spawn from all  spawn tiles" <|
             \() ->
                 let
                     -- Given a kitchen with one spawn poin
@@ -23,7 +26,7 @@ spawnSuite =
                     -- When spawning
                     spawnedThings : Grid.Grid Thingy
                     spawnedThings =
-                        SweetBuns.spawnThings bun initialKitchen
+                        SweetBuns.spawnThingEverywhere bun initialKitchen
 
                     -- Bun appears on spawn tile
                     expectedThings : Grid.Grid Thingy
@@ -32,7 +35,37 @@ spawnSuite =
                             [ ( ( 0, 1 ), bun )
                             ]
                 in
-                    equal spawnedThings expectedThings
+                    equal spawnedThings
+                        expectedThings
+        , fuzz
+            int
+            "Buns can spawn from a random spawner"
+          <|
+            \s ->
+                let
+                    seed =
+                        Random.initialSeed s
+
+                    -- Given a kitchen with several spawn points
+                    initialKitchen =
+                        Grid.fromList
+                            [ ( ( 0, 0 ), PlainTile )
+                            , ( ( 0, 1 ), BunSpawner )
+                            , ( ( 0, 2 ), BunSpawner )
+                            , ( ( 0, 3 ), BunSpawner )
+                            ]
+
+                    -- When spawning
+                    spawnedThings =
+                        SweetBuns.spawnSingelThingRnd bun seed initialKitchen
+                in
+                    spawnedThings
+                        |> Expect.all
+                            [ Dict.keys
+                                >> List.filter (\c -> (Grid.get c initialKitchen) == Just BunSpawner)
+                                >> List.length
+                                >> equal 1
+                            ]
         ]
 
 

@@ -1,5 +1,6 @@
 module SweetBuns exposing (..)
 
+import Random exposing (Seed)
 import Set exposing (Set)
 import Dict
 import Time exposing (Time, second)
@@ -25,6 +26,7 @@ type alias FullTile =
 type alias Model =
     { selectedTile : Coords
     , things : Grid Thingy
+    , turnCount : Int
     }
 
 
@@ -51,6 +53,7 @@ initialModel : Model
 initialModel =
     { selectedTile = ( 0, 0 )
     , things = Dict.union initialBuns initialObstacles
+    , turnCount = 0
     }
 
 
@@ -88,9 +91,14 @@ update msg model =
                 ( { model | things = Dict.union tranformedThings remainingThings }, Cmd.none )
 
 
-advanceThings : { a | things : Grid Thingy } -> { a | things : Grid Thingy }
+advanceThings : { a | things : Grid Thingy, turnCount : Int } -> { a | things : Grid Thingy, turnCount : Int }
 advanceThings model =
     let
+        -- Seed random on turn cound
+        -- (Very high predictability)
+        seed =
+            Random.initialSeed model.turnCount
+
         activeThings =
             collectThings kitchenLevel model.things
 
@@ -119,10 +127,10 @@ advanceThings model =
 
         things_ =
             obstacles
-                |> Dict.union (spawnThings (Bun "🍬") kitchenLevel)
+                |> Dict.union (spawnSingelThingRnd (Bun "🍬") seed kitchenLevel)
                 |> Dict.union buns_
     in
-        { model | things = things_ }
+        { model | things = things_, turnCount = model.turnCount + 1 }
 
 
 isBun : Thingy -> Bool
@@ -135,8 +143,8 @@ isBun thing =
             False
 
 
-spawnThings : Thingy -> Grid FloorTile -> Grid Thingy
-spawnThings thing level =
+spawnThingEverywhere : Thingy -> Grid FloorTile -> Grid Thingy
+spawnThingEverywhere thing level =
     let
         spawnPoints : List Coords
         spawnPoints =
@@ -145,6 +153,27 @@ spawnThings thing level =
                 |> Dict.keys
     in
         spawnPoints |> List.map (\point -> ( point, thing )) |> Grid.fromList
+
+
+spawnSingelThingRnd : Thingy -> Seed -> Grid FloorTile -> Grid Thingy
+spawnSingelThingRnd thing seed level =
+    let
+        spawnPoints : List Coords
+        spawnPoints =
+            level
+                |> Dict.filter (\_ tile -> isBunSpawner tile)
+                |> Dict.keys
+
+        ( pointsToDrop, _ ) =
+            (Random.step (Random.int 0 (List.length spawnPoints - 1)) seed)
+
+        singelPoint =
+            spawnPoints
+                |> List.drop pointsToDrop
+                |> List.head
+                |> Maybe.withDefault ( 0, 0 )
+    in
+        Grid.fromList [ ( singelPoint, thing ) ]
 
 
 isBunSpawner : FloorTile -> Bool
@@ -258,7 +287,8 @@ view model =
             , Html.p []
                 [ (model.selectedTile |> toString |> Html.text)
                 ]
-            , Html.button [ onClick StepBuns ] [ text "Step" ]
+            , Html.button [ onClick StepBuns ] [ text "Advance" ]
+            , Html.span [] [ ("Turn count: " ++ (toString model.turnCount)) |> text ]
             ]
 
 
@@ -355,7 +385,7 @@ kitchenLevel =
 
 kitchenSpawners : Grid FloorTile
 kitchenSpawners =
-    Grid.drawBox BunSpawner { width = 2, height = 1 }
+    Grid.drawBox BunSpawner { width = 5, height = 1 }
         |> Grid.translate ( -1, 0 )
 
 
