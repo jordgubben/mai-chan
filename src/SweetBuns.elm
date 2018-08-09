@@ -91,8 +91,11 @@ update msg model =
 advanceThings : { a | things : Grid Thingy } -> { a | things : Grid Thingy }
 advanceThings model =
     let
+        activeThings =
+            collectThings kitchenLevel model.things
+
         ( buns, obstacles ) =
-            Dict.partition (always isBun) model.things
+            Dict.partition (always isBun) activeThings
 
         terrain =
             Set.union
@@ -118,7 +121,6 @@ advanceThings model =
             obstacles
                 |> Dict.union (spawnThings (Bun "🍬") kitchenLevel)
                 |> Dict.union buns_
-                |> collectThings kitchenLevel
     in
         { model | things = things_ }
 
@@ -353,14 +355,14 @@ kitchenLevel =
 
 kitchenSpawners : Grid FloorTile
 kitchenSpawners =
-    Grid.drawBox BunSpawner { width = 6, height = 1 }
-        |> Grid.translate ( 0, 0 )
+    Grid.drawBox BunSpawner { width = 2, height = 1 }
+        |> Grid.translate ( -1, 0 )
 
 
 kitchenCollectors : Grid FloorTile
 kitchenCollectors =
-    Grid.drawBox BunCollector { width = 6, height = 1 }
-        |> Grid.translate ( 0, -9 )
+    Grid.drawBox BunCollector { width = 2, height = 1 }
+        |> Grid.translate ( 5, -9 )
 
 
 kitchenFloor : Grid FloorTile
