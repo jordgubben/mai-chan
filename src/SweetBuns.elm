@@ -18,7 +18,7 @@ main =
 type alias FullTile =
     { content : Maybe Thingy
     , highlight : Bool
-    , floor : Floor
+    , floor : FloorTile
     }
 
 
@@ -40,8 +40,8 @@ type Thingy
     | Obstacle
 
 
-type Floor
-    = Plain
+type FloorTile
+    = PlainTile
     | BunSpawner
     | Blocking
 
@@ -103,7 +103,7 @@ advanceThings model =
 
         things_ =
             obstacles
-                |> Dict.union (spawnBuns "🍬" kitchenLevel)
+                |> Dict.union (spawnThings (Bun "🍬") kitchenLevel)
                 |> Dict.union buns_
     in
         { model | things = things_ }
@@ -119,19 +119,19 @@ isBun thing =
             False
 
 
-spawnBuns : String -> Grid FullTile -> Grid Thingy
-spawnBuns bunStr level =
+spawnThings : Thingy -> Grid FloorTile -> Grid Thingy
+spawnThings thing level =
     let
         spawnPoints : List Coords
         spawnPoints =
             level
-                |> Dict.filter (\_ tile -> isBunSpawner tile.floor)
+                |> Dict.filter (\_ tile -> isBunSpawner tile)
                 |> Dict.keys
     in
-        spawnPoints |> List.map (\point -> ( point, Bun bunStr )) |> Grid.fromList
+        spawnPoints |> List.map (\point -> ( point, thing )) |> Grid.fromList
 
 
-isBunSpawner : Floor -> Bool
+isBunSpawner : FloorTile -> Bool
 isBunSpawner floorTile =
     case floorTile of
         BunSpawner ->
@@ -197,6 +197,8 @@ view model =
         finalGrid : Grid FullTile
         finalGrid =
             kitchenLevel
+                -- Convert to full tiles
+                |> Dict.map (\_ floorTile -> FullTile Nothing False floorTile)
                 -- Render highlighed column
                 |> Dict.map
                     (\( x, y ) tile ->
@@ -255,7 +257,7 @@ getTileColor tile =
         "yellow"
     else
         case tile.floor of
-            Plain ->
+            PlainTile ->
                 "lightgray"
 
             BunSpawner ->
@@ -319,20 +321,20 @@ initialObstacles =
     [ ( 1, -3 ), ( 4, -3 ), ( 3, -8 ), ( 4, -7 ), ( 5, -6 ) ] |> List.map (\c -> ( c, Obstacle )) |> Grid.fromList
 
 
-kitchenLevel : Grid FullTile
+kitchenLevel : Grid FloorTile
 kitchenLevel =
     Dict.union
         kitchenSpawners
         kitchenFloor
 
 
-kitchenSpawners : Grid FullTile
+kitchenSpawners : Grid FloorTile
 kitchenSpawners =
-    Grid.drawBox { content = Nothing, floor = BunSpawner, highlight = False } { width = 6, height = 1 }
+    Grid.drawBox BunSpawner { width = 6, height = 1 }
         |> Grid.translate ( 0, 0 )
 
 
-kitchenFloor : Grid FullTile
+kitchenFloor : Grid FloorTile
 kitchenFloor =
-    Grid.drawBox { content = Nothing, floor = Plain, highlight = False } { width = 10, height = 12 }
+    Grid.drawBox PlainTile { width = 10, height = 12 }
         |> Grid.translate ( -2, -10 )
