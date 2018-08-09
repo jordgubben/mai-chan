@@ -102,41 +102,43 @@ advanceThings model =
         activeThings =
             collectThings kitchenLevel model.things
 
-        ( buns, obstacles ) =
-            Dict.partition (always isBun) activeThings
+        ( movers, obstacleThings ) =
+            Dict.partition (always isMover) activeThings
 
-        terrain =
+        obstacleTiles =
             Set.union
                 (kitchenLevel
-                    |> Dict.filter
-                        (\_ tile ->
-                            case tile of
-                                WallTile ->
-                                    True
-
-                                _ ->
-                                    False
-                        )
+                    |> Dict.filter (always isObstacleTile)
                     |> Dict.keys
                     |> Set.fromList
                 )
-                (obstacles |> Dict.keys |> Set.fromList)
+                (obstacleThings |> Dict.keys |> Set.fromList)
 
-        buns_ =
-            step terrain buns
+        movers_ =
+            moveAll obstacleTiles movers
 
         things_ =
-            obstacles
+            obstacleThings
                 |> Dict.union (spawnSingelThingRnd (Bun "🍬") seed kitchenLevel)
-                |> Dict.union buns_
+                |> Dict.union movers_
     in
         { model | things = things_, turnCount = model.turnCount + 1 }
 
 
-isBun : Thingy -> Bool
-isBun thing =
+isMover : Thingy -> Bool
+isMover thing =
     case thing of
         Bun _ ->
+            True
+
+        _ ->
+            False
+
+
+isObstacleTile : FloorTile -> Bool
+isObstacleTile tile =
+    case tile of
+        WallTile ->
             True
 
         _ ->
@@ -210,15 +212,15 @@ isBunCollector floorTile =
 
 {-| Move all buns downwards (if possible).
 -}
-step : Set Coords -> Grid v -> Grid v
-step terrain buns =
+moveAll : Set Coords -> Grid v -> Grid v
+moveAll obstacles movers =
     Dict.foldl
         (\( x, y ) b g ->
             let
-                -- Can not moved to a tile occupied by a bun or terrain
+                -- Can not moved to a tile occupied by another mover or an obstacle
                 -- (Both old and new possitons taken account for)
                 canMove nc =
-                    not (Set.member nc terrain || Dict.member nc g || Dict.member nc buns)
+                    not (Set.member nc obstacles || Dict.member nc g || Dict.member nc movers)
 
                 right =
                     ( x + 1, y )
@@ -239,7 +241,7 @@ step terrain buns =
                     Grid.put ( x, y ) b g
         )
         Grid.empty
-        buns
+        movers
 
 
 

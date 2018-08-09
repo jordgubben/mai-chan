@@ -103,8 +103,8 @@ collectSuite =
         ]
 
 
-bunStepSuit : Test
-bunStepSuit =
+movementSuite : Test
+movementSuite =
     describe "Bun movement pattern"
         [ test "Move down" <|
             (\_ ->
@@ -115,7 +115,7 @@ bunStepSuit =
 
                     -- When progressing movement
                     movedState =
-                        SweetBuns.step Set.empty initialState
+                        SweetBuns.moveAll Set.empty initialState
 
                     -- Then it moves down
                     expectedState =
@@ -164,7 +164,7 @@ bunStepSuit =
 
                     -- When progressing movement
                     movedState =
-                        SweetBuns.step terrain initialState
+                        SweetBuns.moveAll terrain initialState
 
                     -- Then is moves to the right
                     expectedState =
@@ -184,7 +184,7 @@ bunStepSuit =
 
                     -- When progressing movement
                     movedState =
-                        SweetBuns.step terrain initialState
+                        SweetBuns.moveAll terrain initialState
 
                     -- Then it moves to the left
                     expectedState =
@@ -208,7 +208,7 @@ bunStepSuit =
 
                     -- When progressing movement
                     movedState =
-                        SweetBuns.step terrain initialState
+                        SweetBuns.moveAll terrain initialState
 
                     -- Then all buns still are there
                     -- (Exact placement is not relevant)
@@ -242,4 +242,4 @@ bunNr nr =
 -}
 expectNoMovemenemt : Set.Set Grid.Coords -> Grid.Grid SweetBuns.Thingy -> Expectation
 expectNoMovemenemt terrain buns =
-    SweetBuns.step terrain buns |> equal buns
+    SweetBuns.moveAll terrain buns |> equal buns
