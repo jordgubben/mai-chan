@@ -17,7 +17,8 @@ main =
 
 type alias FullTile =
     { content : Maybe Thingy
-    , back : String
+    , highlight : Bool
+    , floor : Floor
     }
 
 
@@ -37,6 +38,11 @@ type Msg
 type Thingy
     = Bun String
     | Obstacle
+
+
+type Floor
+    = Plain
+    | Blocking
 
 
 initialModel : Model
@@ -165,12 +171,12 @@ view model =
 
         finalGrid : Grid FullTile
         finalGrid =
-            back
+            kitchenLevel
                 -- Render highlighed column
                 |> Dict.map
                     (\( x, y ) tile ->
                         if (x == selX || x == selX + 1) && (y == selY || y == selY + 1) then
-                            { tile | back = "lightgreen" }
+                            { tile | highlight = True }
                         else
                             tile
                     )
@@ -178,7 +184,7 @@ view model =
                 |> Dict.map
                     (\( x, y ) tile ->
                         if Set.member ( x, y ) outerFrame then
-                            { tile | back = "black" }
+                            { tile | floor = Blocking }
                         else
                             tile
                     )
@@ -205,7 +211,7 @@ renderTile coords tile =
         [ style
             [ ( "width", toString (tileSide) ++ "px" )
             , ( "height", toString (tileSide) ++ "px" )
-            , ( "background-color", tile.back )
+            , ( "background-color", getTileColor tile )
             , ( "border", "1px solid darkgray" )
             ]
         , onMouseEnter (SelectColumn coords)
@@ -216,6 +222,19 @@ renderTile coords tile =
             [ class "debug", style [ ( "font-size", "25%" ) ] ]
             [ Html.text (toString coords) ]
         ]
+
+
+getTileColor : FullTile -> String
+getTileColor tile =
+    if tile.highlight then
+        "yellow"
+    else
+        case tile.floor of
+            Plain ->
+                "lightgray"
+
+            Blocking ->
+                "black"
 
 
 {-| Render some ting insde tile
@@ -272,7 +291,7 @@ initialObstacles =
     [ ( 1, -3 ), ( 4, -3 ), ( 3, -8 ), ( 4, -7 ), ( 5, -6 ) ] |> List.map (\c -> ( c, Obstacle )) |> Grid.fromList
 
 
-back : Grid FullTile
-back =
-    Grid.drawBox { content = Nothing, back = "lightgray" } { width = 10, height = 12 }
+kitchenLevel : Grid FullTile
+kitchenLevel =
+    Grid.drawBox { content = Nothing, floor = Plain, highlight = False } { width = 10, height = 12 }
         |> Grid.translate ( -2, -10 )
