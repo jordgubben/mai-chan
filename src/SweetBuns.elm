@@ -4,6 +4,7 @@ import Random exposing (Seed)
 import Set exposing (Set)
 import Dict
 import Time exposing (Time, second)
+import Task
 import Html exposing (Html, text)
 import Html.Attributes as Att exposing (class, style)
 import Html.Events as Ev exposing (onMouseEnter, onMouseLeave, onClick)
@@ -13,7 +14,11 @@ import Grid exposing (..)
 main : Program Never Model Msg
 main =
     Html.program
-        { init = ( initialModel, Cmd.none ), update = update, view = view, subscriptions = subscriptions }
+        { init = ( initialModel, Task.perform InitSeed Time.now )
+        , update = update
+        , view = view
+        , subscriptions = subscriptions
+        }
 
 
 type alias FullTile =
@@ -27,14 +32,16 @@ type alias Model =
     { selectedTile : Coords
     , things : Grid Thingy
     , turnCount : Int
+    , seed : Seed
     }
 
 
 type Msg
     = SelectColumn Coords
-    | StepBuns
+    | AdvancementClick
+    | AdvancementTick Time
     | Rotate Coords
-    | Tick Time
+    | InitSeed Time
 
 
 type Thingy
@@ -56,6 +63,7 @@ initialModel =
     { selectedTile = ( 0, 0 )
     , things = Dict.union initialBuns initialObstacles
     , turnCount = 0
+    , seed = Random.initialSeed 0
     }
 
 
@@ -66,13 +74,18 @@ initialModel =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        InitSeed time ->
+            ( { model | seed = time |> Time.inMilliseconds |> round |> Random.initialSeed }
+            , Cmd.none
+            )
+
         SelectColumn coords ->
             ( { model | selectedTile = coords }, Cmd.none )
 
-        Tick _ ->
+        AdvancementTick _ ->
             ( advanceThings model, Cmd.none )
 
-        StepBuns ->
+        AdvancementClick ->
             ( advanceThings model, Cmd.none )
 
         Rotate ( x, y ) ->
@@ -90,17 +103,14 @@ update msg model =
                         |> Grid.rotCv
                         |> Grid.translate ( x, y + 1 )
             in
-                ( { model | things = Dict.union tranformedThings remainingThings }, Cmd.none )
+                ( { model | things = Dict.union tranformedThings remainingThings }
+                , Cmd.none
+                )
 
 
-advanceThings : { a | things : Grid Thingy, turnCount : Int } -> { a | things : Grid Thingy, turnCount : Int }
+advanceThings : Model -> Model
 advanceThings model =
     let
-        -- Seed random on turn cound
-        -- (Very high predictability)
-        seed =
-            (Random.initialSeed model.turnCount)
-
         activeThings =
             collectThings kitchenLevel model.things
 
@@ -116,15 +126,18 @@ advanceThings model =
                 )
                 (obstacleThings |> Dict.keys |> Set.fromList)
 
+        ( spawnedThings, seed_ ) =
+            spawnSingelThingRnd model.seed kitchenLevel
+
         movers_ =
             moveAll obstacleTiles movers
 
         things_ =
             obstacleThings
-                |> Dict.union (spawnSingelThingRnd seed kitchenLevel)
+                |> Dict.union spawnedThings
                 |> Dict.union movers_
     in
-        { model | things = things_, turnCount = model.turnCount + 1 }
+        { model | things = things_, turnCount = model.turnCount + 1, seed = seed_ }
 
 
 isMover : Thingy -> Bool
@@ -152,18 +165,19 @@ spawnThingEverywhere level =
     findSpawnPoints level |> Grid.fromList
 
 
-spawnSingelThingRnd : Seed -> Grid FloorTile -> Grid Thingy
+spawnSingelThingRnd : Seed -> Grid FloorTile -> ( Grid Thingy, Seed )
 spawnSingelThingRnd seed level =
     let
-        ( singlePoint, _ ) =
+        ( singlePoint, seed_ ) =
             pickRandom seed (findSpawnPoints level)
     in
-        (case singlePoint of
+        ( case singlePoint of
             Just ( coords, thing ) ->
                 Grid.fromList [ ( coords, thing ) ]
 
             Nothing ->
                 Grid.empty
+        , seed_
         )
 
 
@@ -286,7 +300,7 @@ mixIngredients a b =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Time.every (2 * second) Tick
+    Time.every (2 * second) AdvancementTick
 
 
 
@@ -322,11 +336,12 @@ view model =
     in
         Html.div []
             [ Grid.toHtmlDiv ( tileSide, tileSide ) renderTile finalGrid
-            , Html.p []
-                [ (model.selectedTile |> toString |> Html.text)
+            , Html.div [ class "debug" ]
+                [ Html.button [ onClick AdvancementClick ] [ text "Advance" ]
+                , Html.p [] [ ("Turn count: " ++ (toString model.turnCount)) |> text ]
+                , Html.p [] [ ("Random seed: " ++ (toString model.seed)) |> text ]
+                , Html.p [] [ ("Selected tile: " ++ (toString model.selectedTile)) |> text ]
                 ]
-            , Html.button [ onClick StepBuns ] [ text "Advance" ]
-            , Html.span [] [ ("Turn count: " ++ (toString model.turnCount)) |> text ]
             ]
 
 

@@ -53,7 +53,7 @@ spawnSuite =
                             ]
 
                     -- When spawning
-                    spawnedThings =
+                    ( spawnedThings, _ ) =
                         SweetBuns.spawnSingelThingRnd seed initialKitchen
                 in
                     spawnedThings
@@ -80,7 +80,7 @@ spawnSuite =
                             ]
 
                     -- When spawning
-                    spawnedThings =
+                    ( spawnedThings, _ ) =
                         SweetBuns.spawnSingelThingRnd seed initialKitchen
                 in
                     -- Then spawns the selected Sparners type of thing
