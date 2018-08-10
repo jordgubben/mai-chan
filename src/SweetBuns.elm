@@ -212,11 +212,18 @@ pickRandom seed list =
 collectThings : Grid FloorTile -> Grid Thingy -> Grid Thingy
 collectThings level things =
     let
-        collectorsPoints =
+        collectionPoints =
             level |> Dict.filter (\_ tile -> isBunCollector tile) |> Dict.keys |> Set.fromList
 
-        remainingThings =
-            things |> Dict.filter (\coords _ -> not <| Set.member coords collectorsPoints)
+        -- Collect thing if it is a _bun_ on a collection point
+        ( collectedThings, remainingThings ) =
+            things
+                |> Dict.partition
+                    (\coords thing ->
+                        (Set.member coords collectionPoints)
+                            && thing
+                            == Bun
+                    )
     in
         remainingThings
 

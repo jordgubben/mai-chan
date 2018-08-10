@@ -137,6 +137,37 @@ collectSuite =
                             ]
                 in
                     equal remainingThings expectedThings
+        , test "Only ready Buns are collected (not ingredients" <|
+            \() ->
+                let
+                    -- Given a level with one collector
+                    initialKitchen =
+                        Grid.fromList
+                            [ ( ( 0, 1 ), BunCollector )
+                            , ( ( 0, 2 ), BunCollector )
+                            , ( ( 0, 3 ), BunCollector )
+                            ]
+
+                    -- And a something on every tile
+                    initialThings =
+                        Grid.fromList
+                            [ ( ( 0, 1 ), Flour )
+                            , ( ( 0, 2 ), Water )
+                            , ( ( 0, 3 ), Bun )
+                            ]
+
+                    -- When collecting
+                    remainingThings =
+                        SweetBuns.collectThings initialKitchen initialThings
+
+                    -- Only the bun is collected
+                    expectedThings =
+                        Grid.fromList
+                            [ ( ( 0, 1 ), Flour )
+                            , ( ( 0, 2 ), Water )
+                            ]
+                in
+                    equal remainingThings expectedThings
         ]
 
 
