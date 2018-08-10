@@ -13,31 +13,7 @@ import Expect exposing (Expectation, equal, fail)
 spawnSuite : Test
 spawnSuite =
     describe "Spawning pattern"
-        [ test "Buns can spawn from all  spawn tiles" <|
-            \() ->
-                let
-                    -- Given a kitchen with one spawn poin
-                    initialKitchen =
-                        Grid.fromList
-                            [ ( ( 0, 0 ), PlainTile )
-                            , ( ( 0, 1 ), (Spawner bun) )
-                            ]
-
-                    -- When spawning
-                    spawnedThings : Grid.Grid Thingy
-                    spawnedThings =
-                        SweetBuns.spawnThingEverywhere initialKitchen
-
-                    -- Bun appears on spawn tile
-                    expectedThings : Grid.Grid Thingy
-                    expectedThings =
-                        Grid.fromList
-                            [ ( ( 0, 1 ), bun )
-                            ]
-                in
-                    equal spawnedThings
-                        expectedThings
-        , fuzz int "Buns can spawn from a random spawner" <|
+        [ fuzz int "Buns can spawn from a random spawner" <|
             \s ->
                 let
                     seed =
@@ -54,7 +30,7 @@ spawnSuite =
 
                     -- When spawning
                     ( spawnedThings, _ ) =
-                        SweetBuns.spawnSingelThingRnd seed initialKitchen
+                        SweetBuns.spawnSingelThingRnd seed initialKitchen Set.empty
                 in
                     spawnedThings
                         |> Dict.keys
@@ -81,7 +57,7 @@ spawnSuite =
 
                     -- When spawning
                     ( spawnedThings, _ ) =
-                        SweetBuns.spawnSingelThingRnd seed initialKitchen
+                        SweetBuns.spawnSingelThingRnd seed initialKitchen Set.empty
                 in
                     -- Then spawns the selected Sparners type of thing
                     spawnedThings
@@ -103,6 +79,22 @@ spawnSuite =
                                     )
                             )
                         |> Maybe.withDefault (fail "Nothing spawned")
+        , test "Only spawn on unoccupied spawners" <|
+            \() ->
+                let
+                    -- Given a kitchen where all floor tiles are occupied
+                    floor =
+                        Grid.fromList [ ( ( 0, 0 ), Spawner Water ) ]
+
+                    obstacles =
+                        Set.singleton ( 0, 0 )
+
+                    -- When spawning
+                    ( spawnedThings, _ ) =
+                        SweetBuns.spawnSingelThingRnd (Random.initialSeed 0) floor obstacles
+                in
+                    -- Nothing is spawned
+                    spawnedThings |> equal Grid.empty
         ]
 
 

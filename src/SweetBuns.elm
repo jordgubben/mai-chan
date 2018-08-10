@@ -127,7 +127,7 @@ advanceThings model =
                 (obstacleThings |> Dict.keys |> Set.fromList)
 
         ( spawnedThings, seed_ ) =
-            spawnSingelThingRnd model.seed kitchenLevel
+            spawnSingelThingRnd model.seed kitchenLevel (model.things |> Dict.keys |> Set.fromList)
 
         movers_ =
             moveAll obstacleTiles movers
@@ -160,16 +160,15 @@ isObstacleTile tile =
             False
 
 
-spawnThingEverywhere : Grid FloorTile -> Grid Thingy
-spawnThingEverywhere level =
-    findSpawnPoints level |> Grid.fromList
-
-
-spawnSingelThingRnd : Seed -> Grid FloorTile -> ( Grid Thingy, Seed )
-spawnSingelThingRnd seed level =
+spawnSingelThingRnd : Seed -> Grid FloorTile -> Set Coords -> ( Grid Thingy, Seed )
+spawnSingelThingRnd seed level spawnObstacles =
     let
+        -- Pick a random unoccupied spawners coordinates
         ( singlePoint, seed_ ) =
-            pickRandom seed (findSpawnPoints level)
+            pickRandom seed
+                (findSpawnPoints level
+                    |> List.filter (Tuple.first >> (flip Set.member) spawnObstacles >> not)
+                )
     in
         ( case singlePoint of
             Just ( coords, thing ) ->
