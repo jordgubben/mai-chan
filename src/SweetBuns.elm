@@ -45,7 +45,7 @@ type Msg
 
 
 type Thingy
-    = Bun String
+    = Bun
     | Flour
     | Water
     | Obstacle
@@ -285,10 +285,10 @@ mixIngredients : Thingy -> Thingy -> Maybe Thingy
 mixIngredients a b =
     case ( a, b ) of
         ( Water, Flour ) ->
-            Just (Bun "🍞")
+            Just Bun
 
         ( Flour, Water ) ->
-            Just (Bun "🍞")
+            Just Bun
 
         _ ->
             Nothing
@@ -388,8 +388,8 @@ getTileColor tile =
 renderThingy : Thingy -> Html msg
 renderThingy thingy =
     case thingy of
-        Bun str ->
-            text str
+        Bun ->
+            text "🍞"
 
         Flour ->
             text "🌾"
@@ -422,9 +422,6 @@ initialBuns =
         , ( ( 1, 0 ), Water )
         , ( ( 2, 0 ), Flour )
         , ( ( 3, 0 ), Flour )
-        , ( ( 4, 0 ), Bun "🍪" )
-        , ( ( 4, -1 ), Bun "🍩" )
-        , ( ( 5, 0 ), Bun "🍪" )
         ]
 
 

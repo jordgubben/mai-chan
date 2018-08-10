@@ -276,10 +276,10 @@ mixingSuite =
     describe "Mixing ingredients"
         [ test "Mixing Flour with Water produces a Bun" <|
             \() ->
-                SweetBuns.mixIngredients Flour Water |> equal (Just (Bun "🍞"))
+                SweetBuns.mixIngredients Flour Water |> equal (Just Bun)
         , test "Mixing Water with Flour produces a Bun" <|
             \() ->
-                SweetBuns.mixIngredients Water Flour |> equal (Just (Bun "🍞"))
+                SweetBuns.mixIngredients Water Flour |> equal (Just Bun)
         ]
 
 
@@ -289,7 +289,7 @@ mixingSuite =
 
 bun : Thingy
 bun =
-    Bun "🍞"
+    Bun
 
 
 {-| Verrify that buns do not move
