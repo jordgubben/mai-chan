@@ -39,6 +39,8 @@ type Msg
 
 type Thingy
     = Bun String
+    | Flour
+    | Water
     | Obstacle
 
 
@@ -128,11 +130,11 @@ advanceThings model =
 isMover : Thingy -> Bool
 isMover thing =
     case thing of
-        Bun _ ->
-            True
+        Obstacle ->
+            False
 
         _ ->
-            False
+            True
 
 
 isObstacleTile : FloorTile -> Bool
@@ -212,14 +214,14 @@ isBunCollector floorTile =
 
 {-| Move all buns (if possible).
 -}
-moveAll : Set Coords -> Grid v -> Grid v
+moveAll : Set Coords -> Grid Thingy -> Grid Thingy
 moveAll obstacles movers =
     List.foldl (moveSingle obstacles) movers (Dict.keys movers)
 
 
 {-| Move a single
 -}
-moveSingle : Set Coords -> Coords -> Grid a -> Grid a
+moveSingle : Set Coords -> Coords -> Grid Thingy -> Grid Thingy
 moveSingle obstacles ( x, y ) movers =
     case Grid.get ( x, y ) movers of
         Nothing ->
@@ -227,31 +229,50 @@ moveSingle obstacles ( x, y ) movers =
 
         Just activeMover ->
             let
-                -- Can not moved to a tile occupied by another mover or an obstacle
-                -- (Both old and new possitons taken account for)
+                -- Can only move to a tile if it empty or if the mover is mixable with the current occupant
                 canMoveTo nc =
-                    not (Set.member nc obstacles || Dict.member nc movers)
+                    if Set.member nc obstacles then
+                        False
+                    else
+                        case (Dict.get nc movers) of
+                            Just occupant ->
+                                (mixIngredients activeMover occupant /= Nothing)
+
+                            Nothing ->
+                                True
 
                 doMoveTo nc =
                     movers
                         |> Dict.remove ( x, y )
-                        |> Dict.insert nc activeMover
+                        |> Dict.insert nc
+                            (case (Dict.get nc movers) of
+                                Just occupant ->
+                                    (mixIngredients activeMover occupant |> Maybe.withDefault activeMover)
 
-                right =
-                    ( x + 1, y )
+                                Nothing ->
+                                    activeMover
+                            )
 
-                left =
-                    ( x - 1, y )
-
-                down =
-                    ( x, y - 1 )
-
+                -- Can move Downm right or left
                 viableMovementOptions =
-                    List.filter canMoveTo [ down, right, left ]
+                    List.filter canMoveTo [ ( x, y - 1 ), ( x + 1, y ), ( x - 1, y ) ]
             in
                 List.head viableMovementOptions
                     |> Maybe.map doMoveTo
                     |> Maybe.withDefault movers
+
+
+mixIngredients : Thingy -> Thingy -> Maybe Thingy
+mixIngredients a b =
+    case ( a, b ) of
+        ( Water, Flour ) ->
+            Just (Bun "🍞")
+
+        ( Flour, Water ) ->
+            Just (Bun "🍞")
+
+        _ ->
+            Nothing
 
 
 
@@ -350,6 +371,12 @@ renderThingy thingy =
         Bun str ->
             text str
 
+        Flour ->
+            text "🌾"
+
+        Water ->
+            text "💧"
+
         Obstacle ->
             Html.div
                 [ style
@@ -371,15 +398,14 @@ tileSide =
 initialBuns : Grid Thingy
 initialBuns =
     Grid.fromList
-        [ ( ( 0, 0 ), "🍪" )
-        , ( ( 1, 0 ), "🍪" )
-        , ( ( 2, 0 ), "🍭" )
-        , ( ( 3, 0 ), "🍪" )
-        , ( ( 4, 0 ), "🍪" )
-        , ( ( 4, -1 ), "🍩" )
-        , ( ( 5, 0 ), "🍪" )
+        [ ( ( 0, 0 ), Water )
+        , ( ( 1, 0 ), Water )
+        , ( ( 2, 0 ), Flour )
+        , ( ( 3, 0 ), Flour )
+        , ( ( 4, 0 ), Bun "🍪" )
+        , ( ( 4, -1 ), Bun "🍩" )
+        , ( ( 5, 0 ), Bun "🍪" )
         ]
-        |> Dict.map (\_ str -> Bun str)
 
 
 initialObstacles : Grid Thingy

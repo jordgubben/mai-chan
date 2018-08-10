@@ -215,6 +215,34 @@ movementSuite =
                 in
                     equal (Dict.size movedState) (Dict.size initialState)
             )
+        , test "Mixable ingredients can be moved onto each other, combining into a new Thing" <|
+            \() ->
+                let
+                    -- Given Water that is on top of Flour
+                    initialState =
+                        Grid.fromList [ ( ( 0, 1 ), Water ), ( ( 0, 0 ), Flour ) ]
+
+                    -- When the Water moves (down)
+                    movedState =
+                        SweetBuns.moveSingle Set.empty ( 0, 1 ) initialState
+
+                    -- Then a Bun is created
+                    expectedState =
+                        Grid.fromList [ ( ( 0, 0 ), bun ) ]
+                in
+                    equal movedState expectedState
+        ]
+
+
+mixingSuite : Test
+mixingSuite =
+    describe "Mixing ingredients"
+        [ test "Mixing Flour with Water produces a Bun" <|
+            \() ->
+                SweetBuns.mixIngredients Flour Water |> equal (Just (Bun "🍞"))
+        , test "Mixing Water with Flour produces a Bun" <|
+            \() ->
+                SweetBuns.mixIngredients Water Flour |> equal (Just (Bun "🍞"))
         ]
 
 
@@ -224,12 +252,7 @@ movementSuite =
 
 bun : Thingy
 bun =
-    Bun "@"
-
-
-bunNr : Int -> Thingy
-bunNr nr =
-    Bun ("@" ++ toString nr)
+    Bun "🍞"
 
 
 {-| Verrify that buns do not move
