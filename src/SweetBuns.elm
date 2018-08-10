@@ -46,7 +46,7 @@ type Thingy
 
 type FloorTile
     = PlainTile
-    | BunSpawner
+    | Spawner Thingy
     | BunCollector
     | WallTile
 
@@ -99,7 +99,7 @@ advanceThings model =
         -- Seed random on turn cound
         -- (Very high predictability)
         seed =
-            Random.initialSeed model.turnCount
+            (Random.initialSeed model.turnCount)
 
         activeThings =
             collectThings kitchenLevel model.things
@@ -121,7 +121,7 @@ advanceThings model =
 
         things_ =
             obstacleThings
-                |> Dict.union (spawnSingelThingRnd (Bun "🍬") seed kitchenLevel)
+                |> Dict.union (spawnSingelThingRnd seed kitchenLevel)
                 |> Dict.union movers_
     in
         { model | things = things_, turnCount = model.turnCount + 1 }
@@ -147,47 +147,52 @@ isObstacleTile tile =
             False
 
 
-spawnThingEverywhere : Thingy -> Grid FloorTile -> Grid Thingy
-spawnThingEverywhere thing level =
+spawnThingEverywhere : Grid FloorTile -> Grid Thingy
+spawnThingEverywhere level =
+    findSpawnPoints level |> Grid.fromList
+
+
+spawnSingelThingRnd : Seed -> Grid FloorTile -> Grid Thingy
+spawnSingelThingRnd seed level =
     let
-        spawnPoints : List Coords
-        spawnPoints =
-            level
-                |> Dict.filter (\_ tile -> isBunSpawner tile)
-                |> Dict.keys
+        ( singlePoint, _ ) =
+            pickRandom seed (findSpawnPoints level)
     in
-        spawnPoints |> List.map (\point -> ( point, thing )) |> Grid.fromList
+        (case singlePoint of
+            Just ( coords, thing ) ->
+                Grid.fromList [ ( coords, thing ) ]
+
+            Nothing ->
+                Grid.empty
+        )
 
 
-spawnSingelThingRnd : Thingy -> Seed -> Grid FloorTile -> Grid Thingy
-spawnSingelThingRnd thing seed level =
+findSpawnPoints : Grid FloorTile -> List ( Coords, Thingy )
+findSpawnPoints level =
+    level
+        |> Dict.toList
+        |> List.filterMap
+            (\( coords, tile ) ->
+                case tile of
+                    Spawner thing ->
+                        Just ( coords, thing )
+
+                    _ ->
+                        Nothing
+            )
+
+
+pickRandom : Seed -> List a -> ( Maybe a, Seed )
+pickRandom seed list =
     let
-        spawnPoints : List Coords
-        spawnPoints =
-            level
-                |> Dict.filter (\_ tile -> isBunSpawner tile)
-                |> Dict.keys
-
-        ( pointsToDrop, _ ) =
-            (Random.step (Random.int 0 (List.length spawnPoints - 1)) seed)
-
-        singelPoint =
-            spawnPoints
-                |> List.drop pointsToDrop
-                |> List.head
-                |> Maybe.withDefault ( 0, 0 )
+        ( pointsToDrop, seed_ ) =
+            (Random.step (Random.int 0 (List.length list - 1)) seed)
     in
-        Grid.fromList [ ( singelPoint, thing ) ]
-
-
-isBunSpawner : FloorTile -> Bool
-isBunSpawner floorTile =
-    case floorTile of
-        BunSpawner ->
-            True
-
-        _ ->
-            False
+        ( list
+            |> List.drop pointsToDrop
+            |> List.head
+        , seed_
+        )
 
 
 collectThings : Grid FloorTile -> Grid Thingy -> Grid Thingy
@@ -353,7 +358,7 @@ getTileColor tile =
             PlainTile ->
                 "lightgray"
 
-            BunSpawner ->
+            Spawner _ ->
                 "antiquewhite"
 
             BunCollector ->
@@ -416,15 +421,22 @@ initialObstacles =
 kitchenLevel : Grid FloorTile
 kitchenLevel =
     kitchenFloor
-        |> Dict.union kitchenSpawners
+        |> Dict.union waterSpawners
+        |> Dict.union flourSpawners
         |> Dict.union kitchenCollectors
         |> Dict.union kitchenWalls
 
 
-kitchenSpawners : Grid FloorTile
-kitchenSpawners =
-    Grid.drawBox BunSpawner { width = 5, height = 1 }
+waterSpawners : Grid FloorTile
+waterSpawners =
+    Grid.drawBox (Spawner Water) { width = 3, height = 1 }
         |> Grid.translate ( -1, 0 )
+
+
+flourSpawners : Grid FloorTile
+flourSpawners =
+    Grid.drawBox (Spawner Flour) { width = 3, height = 1 }
+        |> Grid.translate ( 4, 0 )
 
 
 kitchenCollectors : Grid FloorTile

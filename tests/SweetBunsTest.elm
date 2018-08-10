@@ -7,7 +7,7 @@ import Grid
 import SweetBuns exposing (Thingy(..), FloorTile(..))
 import Test exposing (..)
 import Fuzz exposing (..)
-import Expect exposing (Expectation, equal)
+import Expect exposing (Expectation, equal, fail)
 
 
 spawnSuite : Test
@@ -20,13 +20,13 @@ spawnSuite =
                     initialKitchen =
                         Grid.fromList
                             [ ( ( 0, 0 ), PlainTile )
-                            , ( ( 0, 1 ), BunSpawner )
+                            , ( ( 0, 1 ), (Spawner bun) )
                             ]
 
                     -- When spawning
                     spawnedThings : Grid.Grid Thingy
                     spawnedThings =
-                        SweetBuns.spawnThingEverywhere bun initialKitchen
+                        SweetBuns.spawnThingEverywhere initialKitchen
 
                     -- Bun appears on spawn tile
                     expectedThings : Grid.Grid Thingy
@@ -37,10 +37,7 @@ spawnSuite =
                 in
                     equal spawnedThings
                         expectedThings
-        , fuzz
-            int
-            "Buns can spawn from a random spawner"
-          <|
+        , fuzz int "Buns can spawn from a random spawner" <|
             \s ->
                 let
                     seed =
@@ -50,22 +47,62 @@ spawnSuite =
                     initialKitchen =
                         Grid.fromList
                             [ ( ( 0, 0 ), PlainTile )
-                            , ( ( 0, 1 ), BunSpawner )
-                            , ( ( 0, 2 ), BunSpawner )
-                            , ( ( 0, 3 ), BunSpawner )
+                            , ( ( 0, 1 ), (Spawner bun) )
+                            , ( ( 0, 2 ), (Spawner bun) )
+                            , ( ( 0, 3 ), (Spawner bun) )
                             ]
 
                     -- When spawning
                     spawnedThings =
-                        SweetBuns.spawnSingelThingRnd bun seed initialKitchen
+                        SweetBuns.spawnSingelThingRnd seed initialKitchen
                 in
                     spawnedThings
-                        |> Expect.all
-                            [ Dict.keys
-                                >> List.filter (\c -> (Grid.get c initialKitchen) == Just BunSpawner)
-                                >> List.length
-                                >> equal 1
+                        |> Dict.keys
+                        |> List.filter
+                            (\c ->
+                                (Grid.get c initialKitchen) == Just (Spawner bun)
+                            )
+                        |> List.length
+                        |> equal 1
+        , fuzz int "Buns can their defined thing" <|
+            \s ->
+                let
+                    seed =
+                        Random.initialSeed s
+
+                    -- Given a kitchen with several spawn points spawning different things
+                    initialKitchen =
+                        Grid.fromList
+                            [ ( ( 0, 0 ), PlainTile )
+                            , ( ( 0, 1 ), (Spawner Water) )
+                            , ( ( 0, 2 ), (Spawner Flour) )
+                            , ( ( 0, 3 ), (Spawner bun) )
                             ]
+
+                    -- When spawning
+                    spawnedThings =
+                        SweetBuns.spawnSingelThingRnd seed initialKitchen
+                in
+                    -- Then spawns the selected Sparners type of thing
+                    spawnedThings
+                        |> Dict.toList
+                        |> List.head
+                        |> Maybe.map
+                            (\( coords, thing ) ->
+                                equal (Just thing)
+                                    (Grid.get coords initialKitchen
+                                        |> Maybe.withDefault PlainTile
+                                        |> (\tile ->
+                                                case tile of
+                                                    Spawner thing ->
+                                                        Just thing
+
+                                                    _ ->
+                                                        Nothing
+                                           )
+                                    )
+                            )
+                        |> Maybe.withDefault (fail "Nothing spawned")
         ]
 
 
