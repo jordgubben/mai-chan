@@ -198,9 +198,9 @@ movementSuite =
                     -- Given two buns destined to end up tn the same place
                     initialState =
                         Grid.fromList
-                            [ ( ( 1, 2 ), bunNr 1 )
-                            , ( ( 1, 1 ), bunNr 2 )
-                            , ( ( 2, 1 ), bunNr 3 )
+                            [ ( ( 1, 2 ), bun )
+                            , ( ( 1, 1 ), bun )
+                            , ( ( 2, 1 ), bun )
                             ]
 
                     terrain =
@@ -212,14 +212,8 @@ movementSuite =
 
                     -- Then all buns still are there
                     -- (Exact placement is not relevant)
-                    expectedState =
-                        Grid.fromList
-                            [ ( ( 2, 2 ), bunNr 1 )
-                            , ( ( 0, 1 ), bunNr 2 )
-                            , ( ( 2, 1 ), bunNr 3 )
-                            ]
                 in
-                    equal movedState expectedState
+                    equal (Dict.size movedState) (Dict.size initialState)
             )
         ]
 

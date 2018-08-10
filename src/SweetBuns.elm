@@ -210,17 +210,32 @@ isBunCollector floorTile =
             False
 
 
-{-| Move all buns downwards (if possible).
+{-| Move all buns (if possible).
 -}
 moveAll : Set Coords -> Grid v -> Grid v
 moveAll obstacles movers =
-    Dict.foldl
-        (\( x, y ) b g ->
+    List.foldl (moveSingle obstacles) movers (Dict.keys movers)
+
+
+{-| Move a single
+-}
+moveSingle : Set Coords -> Coords -> Grid a -> Grid a
+moveSingle obstacles ( x, y ) movers =
+    case Grid.get ( x, y ) movers of
+        Nothing ->
+            movers
+
+        Just activeMover ->
             let
                 -- Can not moved to a tile occupied by another mover or an obstacle
                 -- (Both old and new possitons taken account for)
-                canMove nc =
-                    not (Set.member nc obstacles || Dict.member nc g || Dict.member nc movers)
+                canMoveTo nc =
+                    not (Set.member nc obstacles || Dict.member nc movers)
+
+                doMoveTo nc =
+                    movers
+                        |> Dict.remove ( x, y )
+                        |> Dict.insert nc activeMover
 
                 right =
                     ( x + 1, y )
@@ -230,18 +245,13 @@ moveAll obstacles movers =
 
                 down =
                     ( x, y - 1 )
+
+                viableMovementOptions =
+                    List.filter canMoveTo [ down, right, left ]
             in
-                if canMove down then
-                    Grid.put down b g
-                else if canMove right then
-                    Grid.put right b g
-                else if canMove left then
-                    Grid.put left b g
-                else
-                    Grid.put ( x, y ) b g
-        )
-        Grid.empty
-        movers
+                List.head viableMovementOptions
+                    |> Maybe.map doMoveTo
+                    |> Maybe.withDefault movers
 
 
 
