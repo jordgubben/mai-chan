@@ -306,6 +306,27 @@ mixingSuite =
         ]
 
 
+gameProgressSuite : Test
+gameProgressSuite =
+    describe "Game progress"
+        [ test "Game over if all spawn tiles are covered" <|
+            \() ->
+                let
+                    -- Given a single spawn tile
+                    floor =
+                        Grid.fromList [ ( ( 0, 0 ), Spawner Water ) ]
+
+                    -- And it is covered
+                    things =
+                        Grid.fromList [ ( ( 0, 0 ), Water ) ]
+                in
+                    -- When checking if game over
+                    SweetBuns.isGameOver floor things
+                        -- Then it is game over
+                        |> Expect.true "Supposed to be 'Game over'"
+        ]
+
+
 
 -- # HELPERS
 

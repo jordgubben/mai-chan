@@ -108,6 +108,27 @@ update msg model =
                 )
 
 
+isGameOver : Grid FloorTile -> Grid Thingy -> Bool
+isGameOver floor things =
+    let
+        spawnPoints : Set Coords
+        spawnPoints =
+            findSpawnPoints floor
+                |> List.map Tuple.first
+                |> Set.fromList
+
+        occupants : Set Coords
+        occupants =
+            things
+                |> Dict.keys
+                |> Set.fromList
+    in
+        Set.diff
+            spawnPoints
+            occupants
+            |> Set.isEmpty
+
+
 advanceThings : Model -> Model
 advanceThings model =
     let
@@ -306,7 +327,10 @@ mixIngredients a b =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Time.every (2 * second) AdvancementTick
+    if not <| isGameOver kitchenLevel model.things then
+        Time.every (2 * second) AdvancementTick
+    else
+        Sub.none
 
 
 
@@ -346,7 +370,8 @@ view model =
                 [ Html.button [ onClick AdvancementClick ] [ text "Advance" ]
                 , Html.p [] [ ("Turn count: " ++ (toString model.turnCount)) |> text ]
                 , Html.p [] [ ("Random seed: " ++ (toString model.seed)) |> text ]
-                , Html.p [] [ ("Selected tile: " ++ (toString model.selectedTile)) |> text ]
+                , Html.p [] [ "Selected tile: " ++ (model.selectedTile |> toString) |> text ]
+                , Html.p [] [ "Game over? " ++ ((isGameOver kitchenLevel model.things) |> toString) |> text ]
                 ]
             ]
 
