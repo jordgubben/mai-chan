@@ -22,13 +22,6 @@ main =
         }
 
 
-type alias FullTile =
-    { content : Maybe Thingy
-    , highlight : Bool
-    , floor : FloorTile
-    }
-
-
 type alias Model =
     { selectedTile : Coords
     , things : Grid Thingy
@@ -59,6 +52,15 @@ type FloorTile
     | Spawner Thingy
     | BunCollector
     | WallTile
+
+
+{-| Complete tile used produced when rendering
+-}
+type alias RenderableTile =
+    { content : Maybe Thingy
+    , highlight : Bool
+    , floor : FloorTile
+    }
 
 
 initialModel : Model
@@ -142,31 +144,8 @@ isGameOver floor things =
             |> Set.isEmpty
 
 
-moveThings : Model -> Model
-moveThings model =
-    let
-        ( movers, obstacleThings ) =
-            Dict.partition (always isMover) model.things
-
-        obstacleTiles =
-            Set.union
-                (kitchenLevel
-                    |> Dict.filter (always isObstacleTile)
-                    |> Dict.keys
-                    |> Set.fromList
-                )
-                (obstacleThings |> Dict.keys |> Set.fromList)
-
-        movers_ =
-            moveAllMovers obstacleTiles movers
-
-        things_ =
-            obstacleThings
-                |> Dict.union movers_
-    in
-        { model | things = things_, turnCount = model.turnCount + 1 }
-
-
+{-| Spawn ingredients at spawn points
+-}
 spawnThings : Model -> Model
 spawnThings model =
     let
@@ -177,26 +156,6 @@ spawnThings model =
             Dict.union spawnedThings model.things
     in
         { model | things = things_, seed = seed_ }
-
-
-isMover : Thingy -> Bool
-isMover thing =
-    case thing of
-        Obstacle ->
-            False
-
-        _ ->
-            True
-
-
-isObstacleTile : FloorTile -> Bool
-isObstacleTile tile =
-    case tile of
-        WallTile ->
-            True
-
-        _ ->
-            False
 
 
 spawnSingelThingRnd : Seed -> Grid FloorTile -> Set Coords -> ( Grid Thingy, Seed )
@@ -247,29 +206,47 @@ pickRandom seed list =
         )
 
 
-collectThings : Grid FloorTile -> Grid Thingy -> Grid Thingy
-collectThings level things =
+{-| Auto-move things around, poretially causing mixing of ingredients
+-}
+moveThings : Model -> Model
+moveThings model =
     let
-        collectionPoints =
-            level |> Dict.filter (\_ tile -> isBunCollector tile) |> Dict.keys |> Set.fromList
+        ( movers, obstacleThings ) =
+            Dict.partition (always isMover) model.things
 
-        -- Collect thing if it is a _bun_ on a collection point
-        ( collectedThings, remainingThings ) =
-            things
-                |> Dict.partition
-                    (\coords thing ->
-                        (Set.member coords collectionPoints)
-                            && thing
-                            == Bun
-                    )
+        obstacleTiles =
+            Set.union
+                (kitchenLevel
+                    |> Dict.filter (always isObstacleTile)
+                    |> Dict.keys
+                    |> Set.fromList
+                )
+                (obstacleThings |> Dict.keys |> Set.fromList)
+
+        movers_ =
+            moveAllMovers obstacleTiles movers
+
+        things_ =
+            obstacleThings
+                |> Dict.union movers_
     in
-        remainingThings
+        { model | things = things_, turnCount = model.turnCount + 1 }
 
 
-isBunCollector : FloorTile -> Bool
-isBunCollector floorTile =
-    case floorTile of
-        BunCollector ->
+isMover : Thingy -> Bool
+isMover thing =
+    case thing of
+        Obstacle ->
+            False
+
+        _ ->
+            True
+
+
+isObstacleTile : FloorTile -> Bool
+isObstacleTile tile =
+    case tile of
+        WallTile ->
             True
 
         _ ->
@@ -283,7 +260,7 @@ moveAllMovers obstacles movers =
     List.foldl (moveSingleMover obstacles) movers (Dict.keys movers)
 
 
-{-| Move a single
+{-| Move a single thing
 -}
 moveSingleMover : Set Coords -> Coords -> Grid Thingy -> Grid Thingy
 moveSingleMover obstacles ( x, y ) movers =
@@ -339,6 +316,35 @@ mixIngredients a b =
             Nothing
 
 
+collectThings : Grid FloorTile -> Grid Thingy -> Grid Thingy
+collectThings level things =
+    let
+        collectionPoints =
+            level |> Dict.filter (\_ tile -> isBunCollector tile) |> Dict.keys |> Set.fromList
+
+        -- Collect thing if it is a _bun_ on a collection point
+        ( collectedThings, remainingThings ) =
+            things
+                |> Dict.partition
+                    (\coords thing ->
+                        (Set.member coords collectionPoints)
+                            && thing
+                            == Bun
+                    )
+    in
+        remainingThings
+
+
+isBunCollector : FloorTile -> Bool
+isBunCollector floorTile =
+    case floorTile of
+        BunCollector ->
+            True
+
+        _ ->
+            False
+
+
 
 -- # SUBSCRIPTIONS
 
@@ -366,11 +372,11 @@ view model =
         ( selX, selY ) =
             model.selectedTile
 
-        finalGrid : Grid FullTile
+        finalGrid : Grid RenderableTile
         finalGrid =
             kitchenLevel
                 -- Convert to full tiles
-                |> Dict.map (\_ floorTile -> FullTile Nothing False floorTile)
+                |> Dict.map (\_ floorTile -> RenderableTile Nothing False floorTile)
                 -- Render highlighed column
                 |> Dict.map
                     (\( x, y ) tile ->
@@ -401,7 +407,7 @@ view model =
             ]
 
 
-renderTile : Coords -> FullTile -> Html Msg
+renderTile : Coords -> RenderableTile -> Html Msg
 renderTile coords tile =
     Html.div
         [ style
@@ -420,7 +426,7 @@ renderTile coords tile =
         ]
 
 
-getTileColor : FullTile -> String
+getTileColor : RenderableTile -> String
 getTileColor tile =
     if tile.highlight then
         "yellow"
