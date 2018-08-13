@@ -61,7 +61,7 @@ type FloorTile
 initialModel : Model
 initialModel =
     { selectedTile = ( 0, 0 )
-    , things = Dict.union initialBuns initialObstacles
+    , things = initialThings
     , turnCount = 0
     , seed = Random.initialSeed 0
     }
@@ -420,45 +420,50 @@ renderThingy : Thingy -> Html msg
 renderThingy thingy =
     case thingy of
         Bun ->
-            text "🍞"
+            Html.span [ style [ ( "font-size", "200%" ) ] ] [ text "🍞" ]
 
         Flour ->
-            text "🌾"
+            Html.span [ style [ ( "font-size", "200%" ) ] ] [ text "🌾" ]
 
         Water ->
-            text "💧"
+            Html.span [ style [ ( "font-size", "200%" ) ] ] [ text "💧" ]
 
         Obstacle ->
             Html.div
                 [ style
-                    [ ( "width", "26px" )
-                    , ( "height", "26px" )
-                    , ( "margin", "2px 2px" )
+                    [ ( "width", "50px" )
+                    , ( "height", "50px" )
+                    , ( "margin", "4px 4px" )
                     , ( "background-color", "black" )
-                    , ( "border", "1px dotted darkgray" )
+                    , ( "border", "2px dotted darkgray" )
                     ]
                 ]
-                [ text "X" ]
+                []
+
+
+
+-- LEVEL
 
 
 tileSide : Int
 tileSide =
-    32
+    64
 
 
-initialBuns : Grid Thingy
-initialBuns =
-    Grid.fromList
-        [ ( ( 0, 0 ), Water )
-        , ( ( 1, 0 ), Water )
-        , ( ( 2, 0 ), Flour )
-        , ( ( 3, 0 ), Flour )
-        ]
+initialThings : Grid Thingy
+initialThings =
+    initialObstacles
 
 
 initialObstacles : Grid Thingy
 initialObstacles =
-    [ ( 1, -3 ), ( 4, -3 ), ( 3, -8 ), ( 4, -7 ), ( 5, -6 ) ] |> List.map (\c -> ( c, Obstacle )) |> Grid.fromList
+    [ ( 2, -2 )
+    , ( 2, -3 )
+    , ( 3, -2 )
+    , ( 3, -3 )
+    ]
+        |> List.map (\c -> ( c, Obstacle ))
+        |> Grid.fromList
 
 
 kitchenLevel : Grid FloorTile
@@ -472,29 +477,29 @@ kitchenLevel =
 
 waterSpawners : Grid FloorTile
 waterSpawners =
-    Grid.drawBox (Spawner Water) { width = 3, height = 1 }
-        |> Grid.translate ( -1, 0 )
+    Grid.drawBox (Spawner Water) { width = 2, height = 1 }
+        |> Grid.translate ( 0, 0 )
 
 
 flourSpawners : Grid FloorTile
 flourSpawners =
-    Grid.drawBox (Spawner Flour) { width = 3, height = 1 }
+    Grid.drawBox (Spawner Flour) { width = 2, height = 1 }
         |> Grid.translate ( 4, 0 )
 
 
 kitchenCollectors : Grid FloorTile
 kitchenCollectors =
     Grid.drawBox BunCollector { width = 2, height = 1 }
-        |> Grid.translate ( 5, -9 )
+        |> Grid.translate ( 2, -5 )
 
 
 kitchenFloor : Grid FloorTile
 kitchenFloor =
-    Grid.drawBox PlainTile { width = 10, height = 12 }
-        |> Grid.translate ( -2, -10 )
+    Grid.drawBox PlainTile { width = 6, height = 6 }
+        |> Grid.translate ( 0, -5 )
 
 
 kitchenWalls : Grid FloorTile
 kitchenWalls =
-    Grid.lineRect WallTile { width = 10, height = 12 }
-        |> Grid.translate ( -2, -10 )
+    Grid.lineRect WallTile { width = 8, height = 8 }
+        |> Grid.translate ( -1, -6 )
