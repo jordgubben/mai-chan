@@ -175,7 +175,7 @@ movementSuite =
 
                     -- When progressing movement
                     movedState =
-                        SweetBuns.moveAll Set.empty initialState
+                        SweetBuns.moveAllMovers Set.empty initialState
 
                     -- Then it moves down
                     expectedState =
@@ -224,7 +224,7 @@ movementSuite =
 
                     -- When progressing movement
                     movedState =
-                        SweetBuns.moveAll terrain initialState
+                        SweetBuns.moveAllMovers terrain initialState
 
                     -- Then is moves to the right
                     expectedState =
@@ -244,7 +244,7 @@ movementSuite =
 
                     -- When progressing movement
                     movedState =
-                        SweetBuns.moveAll terrain initialState
+                        SweetBuns.moveAllMovers terrain initialState
 
                     -- Then it moves to the left
                     expectedState =
@@ -268,7 +268,7 @@ movementSuite =
 
                     -- When progressing movement
                     movedState =
-                        SweetBuns.moveAll terrain initialState
+                        SweetBuns.moveAllMovers terrain initialState
 
                     -- Then all buns still are there
                     -- (Exact placement is not relevant)
@@ -284,7 +284,7 @@ movementSuite =
 
                     -- When the Water moves (down)
                     movedState =
-                        SweetBuns.moveSingle Set.empty ( 0, 1 ) initialState
+                        SweetBuns.moveSingleMover Set.empty ( 0, 1 ) initialState
 
                     -- Then a Bun is created
                     expectedState =
@@ -340,4 +340,4 @@ bun =
 -}
 expectNoMovemenemt : Set.Set Grid.Coords -> Grid.Grid SweetBuns.Thingy -> Expectation
 expectNoMovemenemt terrain buns =
-    SweetBuns.moveAll terrain buns |> equal buns
+    SweetBuns.moveAllMovers terrain buns |> equal buns

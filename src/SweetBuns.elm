@@ -4,6 +4,7 @@ import Random exposing (Seed)
 import Set exposing (Set)
 import Dict
 import Time exposing (Time, second)
+import Delay
 import Task
 import Html exposing (Html, text)
 import Html.Attributes as Att exposing (class, style)
@@ -38,8 +39,10 @@ type alias Model =
 
 type Msg
     = SelectColumn Coords
-    | AdvancementClick
-    | AdvancementTick Time
+    | TurnTick Time
+    | Move
+    | Spawn
+    | Collect
     | Rotate Coords
     | InitSeed Time
 
@@ -82,11 +85,21 @@ update msg model =
         SelectColumn coords ->
             ( { model | selectedTile = coords }, Cmd.none )
 
-        AdvancementTick _ ->
-            ( advanceThings model, Cmd.none )
+        TurnTick _ ->
+            ( model, Delay.after 0 second Spawn )
 
-        AdvancementClick ->
-            ( advanceThings model, Cmd.none )
+        Spawn ->
+            ( spawnThings model, Delay.after 1 second Move )
+
+        Move ->
+            ( moveThings model, Delay.after 1 second Collect )
+
+        Collect ->
+            ( { model
+                | things = collectThings kitchenLevel model.things
+              }
+            , Cmd.none
+            )
 
         Rotate ( x, y ) ->
             let
@@ -129,14 +142,11 @@ isGameOver floor things =
             |> Set.isEmpty
 
 
-advanceThings : Model -> Model
-advanceThings model =
+moveThings : Model -> Model
+moveThings model =
     let
-        activeThings =
-            collectThings kitchenLevel model.things
-
         ( movers, obstacleThings ) =
-            Dict.partition (always isMover) activeThings
+            Dict.partition (always isMover) model.things
 
         obstacleTiles =
             Set.union
@@ -147,18 +157,26 @@ advanceThings model =
                 )
                 (obstacleThings |> Dict.keys |> Set.fromList)
 
-        ( spawnedThings, seed_ ) =
-            spawnSingelThingRnd model.seed kitchenLevel (model.things |> Dict.keys |> Set.fromList)
-
         movers_ =
-            moveAll obstacleTiles movers
+            moveAllMovers obstacleTiles movers
 
         things_ =
             obstacleThings
-                |> Dict.union spawnedThings
                 |> Dict.union movers_
     in
-        { model | things = things_, turnCount = model.turnCount + 1, seed = seed_ }
+        { model | things = things_, turnCount = model.turnCount + 1 }
+
+
+spawnThings : Model -> Model
+spawnThings model =
+    let
+        ( spawnedThings, seed_ ) =
+            spawnSingelThingRnd model.seed kitchenLevel (model.things |> Dict.keys |> Set.fromList)
+
+        things_ =
+            Dict.union spawnedThings model.things
+    in
+        { model | things = things_, seed = seed_ }
 
 
 isMover : Thingy -> Bool
@@ -260,15 +278,15 @@ isBunCollector floorTile =
 
 {-| Move all buns (if possible).
 -}
-moveAll : Set Coords -> Grid Thingy -> Grid Thingy
-moveAll obstacles movers =
-    List.foldl (moveSingle obstacles) movers (Dict.keys movers)
+moveAllMovers : Set Coords -> Grid Thingy -> Grid Thingy
+moveAllMovers obstacles movers =
+    List.foldl (moveSingleMover obstacles) movers (Dict.keys movers)
 
 
 {-| Move a single
 -}
-moveSingle : Set Coords -> Coords -> Grid Thingy -> Grid Thingy
-moveSingle obstacles ( x, y ) movers =
+moveSingleMover : Set Coords -> Coords -> Grid Thingy -> Grid Thingy
+moveSingleMover obstacles ( x, y ) movers =
     case Grid.get ( x, y ) movers of
         Nothing ->
             movers
@@ -328,9 +346,14 @@ mixIngredients a b =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     if not <| isGameOver kitchenLevel model.things then
-        Time.every (2 * second) AdvancementTick
+        Time.every turnDuration TurnTick
     else
         Sub.none
+
+
+turnDuration : Time
+turnDuration =
+    (3 * second)
 
 
 
@@ -367,7 +390,9 @@ view model =
         Html.div []
             [ Grid.toHtmlDiv ( tileSide, tileSide ) renderTile finalGrid
             , Html.div [ class "debug" ]
-                [ Html.button [ onClick AdvancementClick ] [ text "Advance" ]
+                [ Html.button [ onClick Spawn ] [ text "Spawn!" ]
+                , Html.button [ onClick Move ] [ text "Move!" ]
+                , Html.button [ onClick Collect ] [ text "Collect" ]
                 , Html.p [] [ ("Turn count: " ++ (toString model.turnCount)) |> text ]
                 , Html.p [] [ ("Random seed: " ++ (toString model.seed)) |> text ]
                 , Html.p [] [ "Selected tile: " ++ (model.selectedTile |> toString) |> text ]
