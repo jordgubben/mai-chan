@@ -88,13 +88,17 @@ update msg model =
             ( { model | selectedTile = coords }, Cmd.none )
 
         TurnTick _ ->
-            ( model, Delay.after 0 second Spawn )
+            ( { model | turnCount = model.turnCount + 1 }, Delay.after 0 second Spawn )
 
         Spawn ->
             ( spawnThings model, Delay.after 1 second Move )
 
         Move ->
-            ( moveThings model, Delay.after 1 second Collect )
+            ( { model
+                | things = moveThings model.things
+              }
+            , Delay.after 1 second Collect
+            )
 
         Collect ->
             ( { model
@@ -208,11 +212,11 @@ pickRandom seed list =
 
 {-| Auto-move things around, poretially causing mixing of ingredients
 -}
-moveThings : Model -> Model
-moveThings model =
+moveThings : Grid Thingy -> Grid Thingy
+moveThings things =
     let
         ( movers, obstacleThings ) =
-            Dict.partition (always isMover) model.things
+            Dict.partition (always isMover) things
 
         obstacleTiles =
             Set.union
@@ -225,12 +229,9 @@ moveThings model =
 
         movers_ =
             moveAllMovers obstacleTiles movers
-
-        things_ =
-            obstacleThings
-                |> Dict.union movers_
     in
-        { model | things = things_, turnCount = model.turnCount + 1 }
+        obstacleThings
+            |> Dict.union movers_
 
 
 isMover : Thingy -> Bool
