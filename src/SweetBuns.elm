@@ -34,7 +34,7 @@ type alias Model =
 type Msg
     = SelectTile Coords
     | TurnTick Time
-    | Move
+    | Fall
     | Spawn
     | Collect
     | InitSeed Time
@@ -113,11 +113,11 @@ update msg model =
             ( { model | turnCount = model.turnCount + 1 }, Delay.after 0 second Spawn )
 
         Spawn ->
-            ( spawnThings model, Delay.after 1 second Move )
+            ( spawnThings model, Delay.after 1 second Fall )
 
-        Move ->
+        Fall ->
             ( { model
-                | things = moveThings model.things
+                | things = applyGravity kitchenLevel model.things
               }
             , Delay.after 1 second Collect
             )
@@ -200,6 +200,8 @@ findSpawnPoints level =
             )
 
 
+{-| Pick a random element from a list
+-}
 pickRandom : Seed -> List a -> ( Maybe a, Seed )
 pickRandom seed list =
     let
@@ -218,22 +220,7 @@ pickRandom seed list =
 attemptMove : Set Coords -> Coords -> Coords -> Grid Thingy -> Grid Thingy
 attemptMove terrain from to things =
     if isValidMove from to && not (Set.member to terrain) then
-        case ( Grid.get from things, Grid.get to things ) of
-            ( Just thing, Nothing ) ->
-                things
-                    |> Dict.remove from
-                    |> Dict.insert to thing
-
-            ( Just someThing, Just otherThing ) ->
-                mixIngredients someThing otherThing
-                    |> Maybe.map
-                        (\newThing ->
-                            things |> Dict.remove from |> Dict.insert to newThing
-                        )
-                    |> Maybe.withDefault things
-
-            ( Nothing, _ ) ->
-                things
+        move from to things
     else
         things
 
@@ -255,32 +242,42 @@ isValidMove from to =
         (-1 <= dx && dx <= 1) && (-1 <= dy && dy <= 1)
 
 
-{-| Auto-move things around, poretially causing mixing of ingredients
+{-| Let things fall down where possible, poretially causing mixing of ingredients.
 -}
-moveThings : Grid Thingy -> Grid Thingy
-moveThings things =
+applyGravity : Grid FloorTile -> Grid Thingy -> Grid Thingy
+applyGravity level things =
     let
-        ( movers, obstacleThings ) =
-            Dict.partition (always isMover) things
+        ( fallers, obstacleThings ) =
+            Dict.partition (always isFaller) things
 
-        obstacleTiles =
+        obstacles : Set Coords
+        obstacles =
             Set.union
-                (kitchenLevel
+                (level
                     |> Dict.filter (always isObstacleTile)
                     |> Dict.keys
                     |> Set.fromList
                 )
                 (obstacleThings |> Dict.keys |> Set.fromList)
 
-        movers_ =
-            moveAllMovers obstacleTiles movers
+        fallers_ =
+            List.foldl
+                (\( x, y ) m ->
+                    if not (Set.member ( x, y - 1 ) obstacles) then
+                        move ( x, y ) ( x, y - 1 ) m
+                    else
+                        m
+                )
+                fallers
+                (Dict.keys fallers)
     in
-        obstacleThings
-            |> Dict.union movers_
+        Dict.union
+            fallers_
+            obstacleThings
 
 
-isMover : Thingy -> Bool
-isMover thing =
+isFaller : Thingy -> Bool
+isFaller thing =
     case thing of
         Obstacle ->
             False
@@ -299,38 +296,33 @@ isObstacleTile tile =
             False
 
 
-{-| Move all buns (if possible).
+{-| If possible, move thing from one set of coords to another.
+Will mix ingredients if possible.
+If move can not be preformed, then the original unchanged grid is returned.
 -}
-moveAllMovers : Set Coords -> Grid Thingy -> Grid Thingy
-moveAllMovers obstacles movers =
-    List.foldl (moveSingleMover obstacles) movers (Dict.keys movers)
+move : Coords -> Coords -> Grid Thingy -> Grid Thingy
+move from to things =
+    case ( Grid.get from things, Grid.get to things ) of
+        ( Nothing, _ ) ->
+            things
+
+        ( Just activeMover, Nothing ) ->
+            things
+                |> Dict.remove from
+                |> Dict.insert to activeMover
+
+        ( Just activeMover, Just occupant ) ->
+            mixIngredients activeMover occupant
+                |> Maybe.map
+                    (\newThing ->
+                        things |> Dict.remove from |> Dict.insert to newThing
+                    )
+                |> Maybe.withDefault things
 
 
-{-| Move a single thing
+{-| Combine ingredients (things) into new things.
+Returns Noting if the provided commbination is not supported.
 -}
-moveSingleMover : Set Coords -> Coords -> Grid Thingy -> Grid Thingy
-moveSingleMover obstacles ( x, y ) movers =
-    if not (Set.member ( x, y - 1 ) obstacles) then
-        case ( Grid.get ( x, y ) movers, Grid.get ( x, y - 1 ) movers ) of
-            ( Nothing, _ ) ->
-                movers
-
-            ( Just activeMover, Nothing ) ->
-                movers
-                    |> Dict.remove ( x, y )
-                    |> Dict.insert ( x, y - 1 ) activeMover
-
-            ( Just activeMover, Just occupant ) ->
-                mixIngredients activeMover occupant
-                    |> Maybe.map
-                        (\newThing ->
-                            movers |> Dict.remove ( x, y ) |> Dict.insert ( x, y - 1 ) newThing
-                        )
-                    |> Maybe.withDefault movers
-    else
-        movers
-
-
 mixIngredients : Thingy -> Thingy -> Maybe Thingy
 mixIngredients a b =
     case ( a, b ) of
@@ -356,6 +348,8 @@ mixIngredients a b =
             Nothing
 
 
+{-| Collect all collectable Buns on collectors.
+-}
 collectThings : Grid FloorTile -> Grid Thingy -> Grid Thingy
 collectThings level things =
     let
@@ -443,7 +437,7 @@ view model =
             [ Grid.toHtmlDiv ( tileSide, tileSide ) renderTile finalGrid
             , Html.div [ class "debug" ]
                 [ Html.button [ onClick Spawn ] [ text "Spawn!" ]
-                , Html.button [ onClick Move ] [ text "Move!" ]
+                , Html.button [ onClick Fall ] [ text "Fall!" ]
                 , Html.button [ onClick Collect ] [ text "Collect" ]
                 , Html.p [] [ "Move count: " ++ (model.moveCount |> toString) |> text ]
                 , Html.p [] [ ("Turn count: " ++ (toString model.turnCount)) |> text ]

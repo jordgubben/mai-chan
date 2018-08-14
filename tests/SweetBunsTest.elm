@@ -163,9 +163,9 @@ collectSuite =
         ]
 
 
-autoMovementSuite : Test
-autoMovementSuite =
-    describe "Automatic Bun movement pattern"
+fallingSuite : Test
+fallingSuite =
+    describe "Falling things fall downward"
         [ test "Move down" <|
             (\_ ->
                 let
@@ -175,7 +175,7 @@ autoMovementSuite =
 
                     -- When progressing movement
                     movedState =
-                        SweetBuns.moveAllMovers Set.empty initialState
+                        SweetBuns.applyGravity Grid.empty initialState
 
                     -- Then it moves down
                     expectedState =
@@ -253,11 +253,13 @@ autoMovementSuite =
                             ]
 
                     terrain =
-                        Set.fromList [ ( 0, 0 ), ( 1, 0 ), ( 2, 0 ), ( 3, 1 ) ]
+                        [ ( 0, 0 ), ( 1, 0 ), ( 2, 0 ), ( 3, 1 ) ]
+                            |> List.map (\coords -> ( coords, WallTile ))
+                            |> Grid.fromList
 
                     -- When progressing movement
                     movedState =
-                        SweetBuns.moveAllMovers terrain initialState
+                        SweetBuns.applyGravity terrain initialState
 
                     -- Then all buns still are there
                     -- (Exact placement is not relevant)
@@ -268,16 +270,21 @@ autoMovementSuite =
             \() ->
                 let
                     -- Given Water that is on top of Flour
+                    -- And Flour in turn sitting on top of an obstacle (that does not fall)
                     initialState =
-                        Grid.fromList [ ( ( 0, 1 ), water ), ( ( 0, 0 ), flour ) ]
+                        Grid.fromList
+                            [ ( ( 0, 1 ), water )
+                            , ( ( 0, 0 ), flour )
+                            , ( ( 0, -1 ), Obstacle )
+                            ]
 
                     -- When the Water moves (down)
                     movedState =
-                        SweetBuns.moveSingleMover Set.empty ( 0, 1 ) initialState
+                        SweetBuns.applyGravity Grid.empty initialState
 
                     -- Then a Bun is created
                     expectedState =
-                        Grid.fromList [ ( ( 0, 0 ), bun ) ]
+                        Grid.fromList [ ( ( 0, 0 ), bun ), ( ( 0, -1 ), Obstacle ) ]
                 in
                     equal movedState expectedState
         ]
@@ -459,4 +466,9 @@ bun =
 -}
 expectNoMovemenemt : Set.Set Grid.Coords -> Grid.Grid SweetBuns.Thingy -> Expectation
 expectNoMovemenemt terrain buns =
-    SweetBuns.moveAllMovers terrain buns |> equal buns
+    let
+        floor : Grid.Grid FloorTile
+        floor =
+            terrain |> Set.toList |> List.map (\coords -> ( coords, WallTile )) |> Grid.fromList
+    in
+        SweetBuns.applyGravity floor buns |> equal buns
