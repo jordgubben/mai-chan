@@ -41,9 +41,10 @@ type Msg
 
 
 type Thingy
-    = Bun
-    | Flour
-    | Water
+    = Bun { sweet : Bool }
+    | Flour { sweet : Bool }
+    | Water { sweet : Bool }
+    | Shuggar
     | Obstacle
 
 
@@ -349,11 +350,23 @@ moveSingleMover obstacles ( x, y ) movers =
 mixIngredients : Thingy -> Thingy -> Maybe Thingy
 mixIngredients a b =
     case ( a, b ) of
-        ( Water, Flour ) ->
-            Just Bun
+        ( Water taste1, Flour taste2 ) ->
+            Just (Bun { sweet = taste1.sweet || taste2.sweet })
 
-        ( Flour, Water ) ->
-            Just Bun
+        ( Flour taste1, Water taste2 ) ->
+            Just (Bun { sweet = taste1.sweet || taste2.sweet })
+
+        ( Water _, Shuggar ) ->
+            Just (Water { sweet = True })
+
+        ( Shuggar, Water _ ) ->
+            Just (Water { sweet = True })
+
+        ( Flour _, Shuggar ) ->
+            Just (Flour { sweet = True })
+
+        ( Shuggar, Flour _ ) ->
+            Just (Flour { sweet = True })
 
         _ ->
             Nothing
@@ -371,8 +384,7 @@ collectThings level things =
                 |> Dict.partition
                     (\coords thing ->
                         (Set.member coords collectionPoints)
-                            && thing
-                            == Bun
+                            && isCollectableBun thing
                     )
     in
         remainingThings
@@ -382,6 +394,16 @@ isBunCollector : FloorTile -> Bool
 isBunCollector floorTile =
     case floorTile of
         BunCollector ->
+            True
+
+        _ ->
+            False
+
+
+isCollectableBun : Thingy -> Bool
+isCollectableBun thing =
+    case thing of
+        Bun _ ->
             True
 
         _ ->
@@ -490,14 +512,26 @@ getTileColor tile =
 renderThingy : Thingy -> Html msg
 renderThingy thingy =
     case thingy of
-        Bun ->
-            Html.span [ style [ ( "font-size", "200%" ) ] ] [ text "🍞" ]
+        Bun { sweet } ->
+            if (sweet) then
+                renderFoodStuff '🍪' "Sweet Bun"
+            else
+                renderFoodStuff '🍞' " Bun"
 
-        Flour ->
-            Html.span [ style [ ( "font-size", "200%" ) ] ] [ text "🌾" ]
+        Flour { sweet } ->
+            if sweet then
+                renderFoodStuff '🌾' "Sweet Flour"
+            else
+                renderFoodStuff '🌾' "Flour"
 
-        Water ->
-            Html.span [ style [ ( "font-size", "200%" ) ] ] [ text "💧" ]
+        Water { sweet } ->
+            if (sweet) then
+                renderFoodStuff '💧' " Sweet Water"
+            else
+                renderFoodStuff '💧' " Water"
+
+        Shuggar ->
+            renderFoodStuff '🍯' " Shuggar"
 
         Obstacle ->
             Html.div
@@ -510,6 +544,14 @@ renderThingy thingy =
                     ]
                 ]
                 []
+
+
+renderFoodStuff : Char -> String -> Html msg
+renderFoodStuff icon str =
+    Html.div []
+        [ Html.span [ style [ ( "font-size", "150%" ) ] ] [ icon |> String.fromChar |> text ]
+        , Html.span [ style [ ( "font-size", "50%" ) ] ] [ str |> text ]
+        ]
 
 
 
@@ -541,6 +583,7 @@ kitchenLevel : Grid FloorTile
 kitchenLevel =
     kitchenFloor
         |> Dict.union waterSpawners
+        |> Dict.union shuggarSpawners
         |> Dict.union flourSpawners
         |> Dict.union kitchenCollectors
         |> Dict.union kitchenWalls
@@ -548,14 +591,25 @@ kitchenLevel =
 
 waterSpawners : Grid FloorTile
 waterSpawners =
-    Grid.drawBox (Spawner Water) { width = 2, height = 1 }
+    Grid.drawBox (Spawner (Water neutralTaste)) { width = 2, height = 1 }
         |> Grid.translate ( 0, 0 )
+
+
+shuggarSpawners : Grid FloorTile
+shuggarSpawners =
+    Grid.drawBox (Spawner Shuggar) { width = 2, height = 1 }
+        |> Grid.translate ( 2, 0 )
 
 
 flourSpawners : Grid FloorTile
 flourSpawners =
-    Grid.drawBox (Spawner Flour) { width = 2, height = 1 }
+    Grid.drawBox (Spawner (Flour neutralTaste)) { width = 2, height = 1 }
         |> Grid.translate ( 4, 0 )
+
+
+neutralTaste : { sweet : Bool }
+neutralTaste =
+    { sweet = False }
 
 
 kitchenCollectors : Grid FloorTile

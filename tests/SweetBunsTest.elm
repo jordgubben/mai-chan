@@ -50,8 +50,8 @@ spawnSuite =
                     initialKitchen =
                         Grid.fromList
                             [ ( ( 0, 0 ), PlainTile )
-                            , ( ( 0, 1 ), (Spawner Water) )
-                            , ( ( 0, 2 ), (Spawner Flour) )
+                            , ( ( 0, 1 ), (Spawner water) )
+                            , ( ( 0, 2 ), (Spawner flour) )
                             , ( ( 0, 3 ), (Spawner bun) )
                             ]
 
@@ -84,7 +84,7 @@ spawnSuite =
                 let
                     -- Given a kitchen where all floor tiles are occupied
                     floor =
-                        Grid.fromList [ ( ( 0, 0 ), Spawner Water ) ]
+                        Grid.fromList [ ( ( 0, 0 ), Spawner water ) ]
 
                     obstacles =
                         Set.singleton ( 0, 0 )
@@ -143,9 +143,9 @@ collectSuite =
                     -- And a something on every tile
                     initialThings =
                         Grid.fromList
-                            [ ( ( 0, 1 ), Flour )
-                            , ( ( 0, 2 ), Water )
-                            , ( ( 0, 3 ), Bun )
+                            [ ( ( 0, 1 ), flour )
+                            , ( ( 0, 2 ), water )
+                            , ( ( 0, 3 ), bun )
                             ]
 
                     -- When collecting
@@ -155,8 +155,8 @@ collectSuite =
                     -- Only the bun is collected
                     expectedThings =
                         Grid.fromList
-                            [ ( ( 0, 1 ), Flour )
-                            , ( ( 0, 2 ), Water )
+                            [ ( ( 0, 1 ), flour )
+                            , ( ( 0, 2 ), water )
                             ]
                 in
                     equal remainingThings expectedThings
@@ -280,7 +280,7 @@ autoMovementSuite =
                 let
                     -- Given Water that is on top of Flour
                     initialState =
-                        Grid.fromList [ ( ( 0, 1 ), Water ), ( ( 0, 0 ), Flour ) ]
+                        Grid.fromList [ ( ( 0, 1 ), water ), ( ( 0, 0 ), flour ) ]
 
                     -- When the Water moves (down)
                     movedState =
@@ -302,7 +302,7 @@ consciousMovementSuite =
                 let
                     -- Given a bun with no neighbours
                     initialThings =
-                        Grid.fromList [ ( ( 10, 20 ), Bun ) ]
+                        Grid.fromList [ ( ( 10, 20 ), bun ) ]
 
                     -- When moving
                     movedThings =
@@ -310,7 +310,7 @@ consciousMovementSuite =
 
                     -- Then it is moved
                     expectedThings =
-                        Grid.fromList [ ( ( 10, 21 ), Bun ) ]
+                        Grid.fromList [ ( ( 10, 21 ), bun ) ]
                 in
                     movedThings |> equal expectedThings
         , test "Can not move to an occupied tile" <|
@@ -318,7 +318,7 @@ consciousMovementSuite =
                 let
                     -- Given a bun with a neighbour
                     initialThings =
-                        Grid.fromList [ ( ( 14, 10 ), Bun ), ( ( 15, 10 ), Bun ) ]
+                        Grid.fromList [ ( ( 14, 10 ), bun ), ( ( 15, 10 ), bun ) ]
 
                     -- When moving on onto neighbour
                     movedThings =
@@ -331,7 +331,7 @@ consciousMovementSuite =
                 let
                     -- Given a single bun
                     initialThings =
-                        Grid.fromList [ ( ( 0, 0 ), Bun ) ]
+                        Grid.fromList [ ( ( 0, 0 ), bun ) ]
 
                     -- And some terrain
                     terrain =
@@ -348,7 +348,7 @@ consciousMovementSuite =
                 let
                     -- Given a bun with a neighbour
                     initialThings =
-                        Grid.fromList [ ( ( 14, 10 ), Water ), ( ( 15, 10 ), Flour ) ]
+                        Grid.fromList [ ( ( 14, 10 ), water ), ( ( 15, 10 ), flour ) ]
 
                     -- When moving on onto neighbour
                     movedThings =
@@ -356,7 +356,7 @@ consciousMovementSuite =
 
                     -- Then it is not moved
                     expectedThings =
-                        Grid.fromList [ ( ( 15, 10 ), Bun ) ]
+                        Grid.fromList [ ( ( 15, 10 ), bun ) ]
                 in
                     movedThings |> equal expectedThings
         , test "Can not move to an non-adjacent tile" <|
@@ -364,7 +364,7 @@ consciousMovementSuite =
                 let
                     -- Given a bun
                     initialThings =
-                        Grid.fromList [ ( ( 10, 10 ), Bun ) ]
+                        Grid.fromList [ ( ( 10, 10 ), bun ) ]
 
                     -- When moving to a non-adjacent tile
                     movedThings =
@@ -378,12 +378,51 @@ consciousMovementSuite =
 mixingSuite : Test
 mixingSuite =
     describe "Mixing ingredients"
-        [ test "Mixing Flour with Water produces a Bun" <|
+        [ testMix "Mixing Flour with Water produces a Bun"
+            ( flour, water )
+            (Just bun)
+        , testMix "Mixing Water with Shuggar produces a *Sweet* Water"
+            ( water, Shuggar )
+            (Just <| Water { sweet = True })
+        , testMix "Mixing Water with Flour produces a *Sweet* Flour"
+            ( flour, Shuggar )
+            (Just <| Flour { sweet = True })
+        , testMix "Mixing *sweet* Water with (neutral) Flour produces a *sweet* Bun"
+            ( Water { sweet = True }, Flour { sweet = False } )
+            (Just <| Bun { sweet = True })
+        , testMix "Mixing *sweet* Flour with (neutral) Water produces a *sweet* Bun"
+            ( Water { sweet = False }, Flour { sweet = True } )
+            (Just <| Bun { sweet = True })
+        ]
+
+
+{-| Test that mixing of both A+B and B+A yield the same expected result
+-}
+testMix : String -> ( Thingy, Thingy ) -> Maybe Thingy -> Test
+testMix message ( ingredient1, ingredient2 ) expectedResult =
+    describe message
+        [ test
+            ("Mixing "
+                ++ (ingredient1 |> toString)
+                ++ " with "
+                ++ (ingredient2 |> toString)
+                ++ " produces "
+                ++ (expectedResult |> toString)
+            )
+          <|
             \() ->
-                SweetBuns.mixIngredients Flour Water |> equal (Just Bun)
-        , test "Mixing Water with Flour produces a Bun" <|
+                SweetBuns.mixIngredients ingredient1 ingredient2 |> equal (expectedResult)
+        , test
+            ("Mixing "
+                ++ (ingredient2 |> toString)
+                ++ " with "
+                ++ (ingredient1 |> toString)
+                ++ " produces "
+                ++ (expectedResult |> toString)
+            )
+          <|
             \() ->
-                SweetBuns.mixIngredients Water Flour |> equal (Just Bun)
+                SweetBuns.mixIngredients ingredient2 ingredient1 |> equal (expectedResult)
         ]
 
 
@@ -395,11 +434,11 @@ gameProgressSuite =
                 let
                     -- Given a single spawn tile
                     floor =
-                        Grid.fromList [ ( ( 0, 0 ), Spawner Water ) ]
+                        Grid.fromList [ ( ( 0, 0 ), Spawner water ) ]
 
                     -- And it is covered
                     things =
-                        Grid.fromList [ ( ( 0, 0 ), Water ) ]
+                        Grid.fromList [ ( ( 0, 0 ), water ) ]
                 in
                     -- When checking if game over
                     SweetBuns.isGameOver floor things
@@ -412,9 +451,19 @@ gameProgressSuite =
 -- # HELPERS
 
 
+water : Thingy
+water =
+    Water { sweet = False }
+
+
+flour : Thingy
+flour =
+    Flour { sweet = False }
+
+
 bun : Thingy
 bun =
-    Bun
+    Bun { sweet = False }
 
 
 {-| Verrify that buns do not move
