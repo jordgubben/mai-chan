@@ -23,20 +23,20 @@ main =
 
 
 type alias Model =
-    { selectedTile : Coords
+    { selectedTile : Maybe Coords
     , things : Grid Thingy
     , turnCount : Int
+    , moveCount : Int
     , seed : Seed
     }
 
 
 type Msg
-    = SelectColumn Coords
+    = SelectTile Coords
     | TurnTick Time
     | Move
     | Spawn
     | Collect
-    | Rotate Coords
     | InitSeed Time
 
 
@@ -65,9 +65,10 @@ type alias RenderableTile =
 
 initialModel : Model
 initialModel =
-    { selectedTile = ( 0, 0 )
+    { selectedTile = Nothing
     , things = initialThings
     , turnCount = 0
+    , moveCount = 0
     , seed = Random.initialSeed 0
     }
 
@@ -84,8 +85,28 @@ update msg model =
             , Cmd.none
             )
 
-        SelectColumn coords ->
-            ( { model | selectedTile = coords }, Cmd.none )
+        SelectTile coords ->
+            case model.selectedTile of
+                Just moverCoords ->
+                    ( { model
+                        | things =
+                            attemptMove
+                                (kitchenLevel
+                                    |> Dict.filter (always isObstacleTile)
+                                    |> Dict.keys
+                                    |> Set.fromList
+                                )
+                                moverCoords
+                                coords
+                                model.things
+                        , selectedTile = Nothing
+                        , moveCount = model.moveCount + 1
+                      }
+                    , Cmd.none
+                    )
+
+                Nothing ->
+                    ( { model | selectedTile = Just coords }, Cmd.none )
 
         TurnTick _ ->
             ( { model | turnCount = model.turnCount + 1 }, Delay.after 0 second Spawn )
@@ -106,25 +127,6 @@ update msg model =
               }
             , Cmd.none
             )
-
-        Rotate ( x, y ) ->
-            let
-                pickedThings =
-                    Grid.pickRect (Size 2 2) ( x, y ) model.things
-
-                remainingThings =
-                    Dict.keys pickedThings
-                        |> List.foldl Dict.remove model.things
-
-                tranformedThings =
-                    pickedThings
-                        |> Grid.translate ( -x, -y )
-                        |> Grid.rotCv
-                        |> Grid.translate ( x, y + 1 )
-            in
-                ( { model | things = Dict.union tranformedThings remainingThings }
-                , Cmd.none
-                )
 
 
 isGameOver : Grid FloorTile -> Grid Thingy -> Bool
@@ -208,6 +210,46 @@ pickRandom seed list =
             |> List.head
         , seed_
         )
+
+
+attemptMove : Set Coords -> Coords -> Coords -> Grid Thingy -> Grid Thingy
+attemptMove terrain from to things =
+    if isValidMove from to && not (Set.member to terrain) then
+        case ( Grid.get from things, Grid.get to things ) of
+            ( Just thing, Nothing ) ->
+                things
+                    |> Dict.remove from
+                    |> Dict.insert to thing
+
+            ( Just someThing, Just otherThing ) ->
+                mixIngredients someThing otherThing
+                    |> Maybe.map
+                        (\newThing ->
+                            things |> Dict.remove from |> Dict.insert to newThing
+                        )
+                    |> Maybe.withDefault things
+
+            ( Nothing, _ ) ->
+                things
+    else
+        things
+
+
+{-| Determine if a move from one place to another is valid, irrespective of environment.
+-}
+isValidMove : Coords -> Coords -> Bool
+isValidMove from to =
+    let
+        ( fromX, fromY ) =
+            from
+
+        ( toX, toY ) =
+            to
+
+        ( dx, dy ) =
+            ( toX - fromX, toY - fromY )
+    in
+        (-1 <= dx && dx <= 1) && (-1 <= dy && dy <= 1)
 
 
 {-| Auto-move things around, poretially causing mixing of ingredients
@@ -370,9 +412,6 @@ turnDuration =
 view : Model -> Html Msg
 view model =
     let
-        ( selX, selY ) =
-            model.selectedTile
-
         finalGrid : Grid RenderableTile
         finalGrid =
             kitchenLevel
@@ -380,8 +419,8 @@ view model =
                 |> Dict.map (\_ floorTile -> RenderableTile Nothing False floorTile)
                 -- Render highlighed column
                 |> Dict.map
-                    (\( x, y ) tile ->
-                        if (x == selX || x == selX + 1) && (y == selY || y == selY + 1) then
+                    (\coords tile ->
+                        if (Just coords == model.selectedTile) then
                             { tile | highlight = True }
                         else
                             tile
@@ -400,6 +439,7 @@ view model =
                 [ Html.button [ onClick Spawn ] [ text "Spawn!" ]
                 , Html.button [ onClick Move ] [ text "Move!" ]
                 , Html.button [ onClick Collect ] [ text "Collect" ]
+                , Html.p [] [ "Move count: " ++ (model.moveCount |> toString) |> text ]
                 , Html.p [] [ ("Turn count: " ++ (toString model.turnCount)) |> text ]
                 , Html.p [] [ ("Random seed: " ++ (toString model.seed)) |> text ]
                 , Html.p [] [ "Selected tile: " ++ (model.selectedTile |> toString) |> text ]
@@ -417,8 +457,7 @@ renderTile coords tile =
             , ( "background-color", getTileColor tile )
             , ( "border", "1px solid darkgray" )
             ]
-        , onMouseEnter (SelectColumn coords)
-        , onClick (Rotate coords)
+        , onClick (SelectTile coords)
         ]
         [ tile.content |> Maybe.map renderThingy |> Maybe.withDefault (text "")
         , Html.span
@@ -430,7 +469,7 @@ renderTile coords tile =
 getTileColor : RenderableTile -> String
 getTileColor tile =
     if tile.highlight then
-        "yellow"
+        "aqua"
     else
         case tile.floor of
             PlainTile ->

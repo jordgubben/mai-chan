@@ -163,9 +163,9 @@ collectSuite =
         ]
 
 
-movementSuite : Test
-movementSuite =
-    describe "Bun movement pattern"
+autoMovementSuite : Test
+autoMovementSuite =
+    describe "Automatic Bun movement pattern"
         [ test "Move down" <|
             (\_ ->
                 let
@@ -291,6 +291,87 @@ movementSuite =
                         Grid.fromList [ ( ( 0, 0 ), bun ) ]
                 in
                     equal movedState expectedState
+        ]
+
+
+consciousMovementSuite : Test
+consciousMovementSuite =
+    describe "Conscious movement initiated by the player"
+        [ test "Can move to an empty adjacens tile" <|
+            \() ->
+                let
+                    -- Given a bun with no neighbours
+                    initialThings =
+                        Grid.fromList [ ( ( 10, 20 ), Bun ) ]
+
+                    -- When moving
+                    movedThings =
+                        SweetBuns.attemptMove Set.empty ( 10, 20 ) ( 10, 21 ) initialThings
+
+                    -- Then it is moved
+                    expectedThings =
+                        Grid.fromList [ ( ( 10, 21 ), Bun ) ]
+                in
+                    movedThings |> equal expectedThings
+        , test "Can not move to an occupied tile" <|
+            \() ->
+                let
+                    -- Given a bun with a neighbour
+                    initialThings =
+                        Grid.fromList [ ( ( 14, 10 ), Bun ), ( ( 15, 10 ), Bun ) ]
+
+                    -- When moving on onto neighbour
+                    movedThings =
+                        SweetBuns.attemptMove Set.empty ( 14, 10 ) ( 15, 10 ) initialThings
+                in
+                    -- Then it is not moved
+                    movedThings |> equal initialThings
+        , test "Can not move to an terrain tile" <|
+            \() ->
+                let
+                    -- Given a single bun
+                    initialThings =
+                        Grid.fromList [ ( ( 0, 0 ), Bun ) ]
+
+                    -- And some terrain
+                    terrain =
+                        Set.fromList [ ( 0, -1 ) ]
+
+                    -- When moving on onto terrain
+                    movedThings =
+                        SweetBuns.attemptMove terrain ( 0, 0 ) ( 0, -1 ) initialThings
+                in
+                    -- Then it is not moved
+                    movedThings |> equal initialThings
+        , test "Can move to an occupied tile if ingredients are mixable" <|
+            \() ->
+                let
+                    -- Given a bun with a neighbour
+                    initialThings =
+                        Grid.fromList [ ( ( 14, 10 ), Water ), ( ( 15, 10 ), Flour ) ]
+
+                    -- When moving on onto neighbour
+                    movedThings =
+                        SweetBuns.attemptMove Set.empty ( 14, 10 ) ( 15, 10 ) initialThings
+
+                    -- Then it is not moved
+                    expectedThings =
+                        Grid.fromList [ ( ( 15, 10 ), Bun ) ]
+                in
+                    movedThings |> equal expectedThings
+        , test "Can not move to an non-adjacent tile" <|
+            \() ->
+                let
+                    -- Given a bun
+                    initialThings =
+                        Grid.fromList [ ( ( 10, 10 ), Bun ) ]
+
+                    -- When moving to a non-adjacent tile
+                    movedThings =
+                        SweetBuns.attemptMove Set.empty ( 10, 10 ) ( 10, 100 ) initialThings
+                in
+                    -- Then it is not moved
+                    movedThings |> equal initialThings
         ]
 
 
