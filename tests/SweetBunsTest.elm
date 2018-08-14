@@ -212,7 +212,7 @@ autoMovementSuite =
                     -- Then they stay in the same place
                     expectNoMovemenemt terrain initialState
             )
-        , test "Moves right if only option" <|
+        , test "Stays still, even though moving to the right is possible" <|
             (\_ ->
                 let
                     -- Given a bun blocked from moving down or to the left
@@ -223,16 +223,11 @@ autoMovementSuite =
                         Set.fromList [ ( 1, 1 ), ( 2, 0 ) ]
 
                     -- When progressing movement
-                    movedState =
-                        SweetBuns.moveAllMovers terrain initialState
-
-                    -- Then is moves to the right
-                    expectedState =
-                        Grid.fromList [ ( ( 3, 1 ), bun ) ]
+                    -- Then is stays in place
                 in
-                    equal movedState expectedState
+                    expectNoMovemenemt terrain initialState
             )
-        , test "Moves left if only option" <|
+        , test "Stays still, even though moving to the left is possible" <|
             (\_ ->
                 let
                     -- Given a bun bocked from moving down and to the right
@@ -241,16 +236,10 @@ autoMovementSuite =
 
                     terrain =
                         Set.fromList [ ( 3, 1 ), ( 2, 0 ) ]
-
-                    -- When progressing movement
-                    movedState =
-                        SweetBuns.moveAllMovers terrain initialState
-
-                    -- Then it moves to the left
-                    expectedState =
-                        Grid.fromList [ ( ( 1, 1 ), bun ) ]
                 in
-                    equal movedState expectedState
+                    -- When progressing movement
+                    -- Then it stays is place
+                    expectNoMovemenemt terrain initialState
             )
         , test "Do not overwrite each other" <|
             (\_ ->

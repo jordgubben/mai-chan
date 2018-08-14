@@ -213,6 +213,8 @@ pickRandom seed list =
         )
 
 
+{-| Handle players attempt to move something
+-}
 attemptMove : Set Coords -> Coords -> Coords -> Grid Thingy -> Grid Thingy
 attemptMove terrain from to things =
     if isValidMove from to && not (Set.member to terrain) then
@@ -308,43 +310,25 @@ moveAllMovers obstacles movers =
 -}
 moveSingleMover : Set Coords -> Coords -> Grid Thingy -> Grid Thingy
 moveSingleMover obstacles ( x, y ) movers =
-    case Grid.get ( x, y ) movers of
-        Nothing ->
-            movers
+    if not (Set.member ( x, y - 1 ) obstacles) then
+        case ( Grid.get ( x, y ) movers, Grid.get ( x, y - 1 ) movers ) of
+            ( Nothing, _ ) ->
+                movers
 
-        Just activeMover ->
-            let
-                -- Can only move to a tile if it empty or if the mover is mixable with the current occupant
-                canMoveTo nc =
-                    if Set.member nc obstacles then
-                        False
-                    else
-                        case (Dict.get nc movers) of
-                            Just occupant ->
-                                (mixIngredients activeMover occupant /= Nothing)
+            ( Just activeMover, Nothing ) ->
+                movers
+                    |> Dict.remove ( x, y )
+                    |> Dict.insert ( x, y - 1 ) activeMover
 
-                            Nothing ->
-                                True
-
-                doMoveTo nc =
-                    movers
-                        |> Dict.remove ( x, y )
-                        |> Dict.insert nc
-                            (case (Dict.get nc movers) of
-                                Just occupant ->
-                                    (mixIngredients activeMover occupant |> Maybe.withDefault activeMover)
-
-                                Nothing ->
-                                    activeMover
-                            )
-
-                -- Can move Downm right or left
-                viableMovementOptions =
-                    List.filter canMoveTo [ ( x, y - 1 ), ( x + 1, y ), ( x - 1, y ) ]
-            in
-                List.head viableMovementOptions
-                    |> Maybe.map doMoveTo
+            ( Just activeMover, Just occupant ) ->
+                mixIngredients activeMover occupant
+                    |> Maybe.map
+                        (\newThing ->
+                            movers |> Dict.remove ( x, y ) |> Dict.insert ( x, y - 1 ) newThing
+                        )
                     |> Maybe.withDefault movers
+    else
+        movers
 
 
 mixIngredients : Thingy -> Thingy -> Maybe Thingy
