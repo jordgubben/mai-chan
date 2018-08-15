@@ -15,7 +15,7 @@ import Grid exposing (..)
 main : Program Never Model Msg
 main =
     Html.program
-        { init = ( initialModel, Task.perform InitSeed Time.now )
+        { init = ( initialModel, Task.perform IntiGame Time.now )
         , update = update
         , view = view
         , subscriptions = subscriptions
@@ -37,7 +37,7 @@ type Msg
     | Fall
     | Spawn
     | Collect
-    | InitSeed Time
+    | IntiGame Time
 
 
 type Thingy
@@ -81,10 +81,8 @@ initialModel =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        InitSeed time ->
-            ( { model | seed = time |> Time.inMilliseconds |> round |> Random.initialSeed }
-            , Cmd.none
-            )
+        IntiGame time ->
+            ( initGame time model, Cmd.none )
 
         SelectTile coords ->
             case model.selectedTile of
@@ -128,6 +126,32 @@ update msg model =
               }
             , Cmd.none
             )
+
+
+{-| Start game with a half full board.
+-}
+initGame : Time -> Model -> Model
+initGame time model =
+    let
+        seed =
+            time |> Time.inMilliseconds |> round |> Random.initialSeed
+
+        ( seed_, newThings ) =
+            Grid.drawBox () (Size 6 3)
+                |> Grid.translate ( 0, -5 )
+                |> Dict.foldl
+                    (\coords _ ( seed, things ) ->
+                        let
+                            ( newThing, seed_ ) =
+                                pickRandom seed [ Water neutralTaste, Flour neutralTaste, Shuggar ]
+                        in
+                            ( seed_
+                            , Grid.put coords (newThing |> Maybe.withDefault Obstacle) things
+                            )
+                    )
+                    ( seed, Grid.empty )
+    in
+        { model | seed = seed, things = Dict.union model.things newThings }
 
 
 isGameOver : Grid FloorTile -> Grid Thingy -> Bool
