@@ -55,7 +55,7 @@ type Thingy
     = Bun { sweet : Bool }
     | Flour { sweet : Bool }
     | Water { sweet : Bool }
-    | Shuggar
+    | Sugar
     | Obstacle
 
 
@@ -118,7 +118,7 @@ initGame time model =
             { boardSize | height = boardSize.height - 1 }
 
         filler =
-            [ Water neutralTaste, Flour neutralTaste, Shuggar ]
+            [ Water neutralTaste, Flour neutralTaste, Sugar ]
 
         ( seed_, newThings ) =
             Grid.drawBox () filledRegion
@@ -380,16 +380,16 @@ mixIngredients a b =
         ( Flour taste1, Water taste2 ) ->
             Just (Bun { sweet = taste1.sweet || taste2.sweet })
 
-        ( Water taste, Shuggar ) ->
+        ( Water taste, Sugar ) ->
             mightSweetenWater taste
 
-        ( Shuggar, Water taste ) ->
+        ( Sugar, Water taste ) ->
             mightSweetenWater taste
 
-        ( Flour taste, Shuggar ) ->
+        ( Flour taste, Sugar ) ->
             mightSweetenFlour taste
 
-        ( Shuggar, Flour taste ) ->
+        ( Sugar, Flour taste ) ->
             mightSweetenFlour taste
 
         _ ->
@@ -590,8 +590,8 @@ renderThingy thingy =
             else
                 renderFoodStuff '💧' " Water"
 
-        Shuggar ->
-            renderFoodStuff '🍯' " Shuggar"
+        Sugar ->
+            renderFoodStuff '🍯' " Sugar"
 
         Obstacle ->
             Html.div
@@ -657,7 +657,7 @@ waterSpawners =
 
 shuggarSpawners : Grid FloorTile
 shuggarSpawners =
-    Grid.drawBox (Spawner Shuggar) { width = 2, height = 1 }
+    Grid.drawBox (Spawner Sugar) { width = 2, height = 1 }
         |> Grid.translate ( 2, 0 )
 
 

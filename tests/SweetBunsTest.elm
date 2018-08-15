@@ -411,17 +411,17 @@ mixingSuite =
         [ testMix "Mixing Flour with Water produces a Bun"
             ( flour, water )
             (Just bun)
-        , testMix "Mixing Water with Shuggar produces a *Sweet* Water"
-            ( water, Shuggar )
+        , testMix "Mixing Water with Sugar produces a *Sweet* Water"
+            ( water, Sugar )
             (Just <| Water { sweet = True })
-        , testMix "Already *sweet* Water and  Shuggar do not mix"
-            ( Water { sweet = True }, Shuggar )
+        , testMix "Already *sweet* Water and  Sugar do not mix"
+            ( Water { sweet = True }, Sugar )
             (Nothing)
-        , testMix "Already *sweet* Flour and Shuggar do not mix"
-            ( Flour { sweet = True }, Shuggar )
+        , testMix "Already *sweet* Flour and Sugar do not mix"
+            ( Flour { sweet = True }, Sugar )
             (Nothing)
         , testMix "Mixing Water with Flour produces a *Sweet* Flour"
-            ( flour, Shuggar )
+            ( flour, Sugar )
             (Just <| Flour { sweet = True })
         , testMix "Mixing *sweet* Water with (neutral) Flour produces a *sweet* Bun"
             ( Water { sweet = True }, Flour { sweet = False } )
