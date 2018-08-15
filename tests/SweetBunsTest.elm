@@ -183,6 +183,40 @@ fallingSuite =
                 in
                     equal movedState expectedState
             )
+        , test "Is stable if nothing is going to fall"
+            (\_ ->
+                let
+                    -- Given a single grounded bun
+                    initialState =
+                        Grid.fromList [ ( ( 0, 1 ), bun ) ]
+
+                    terrain =
+                        Grid.drawBox WallTile (Grid.Size 1 1)
+
+                    -- When checking if stable
+                    stability =
+                        SweetBuns.isStable terrain initialState
+                in
+                    -- Then is stable
+                    Expect.true "Should be stable" stability
+            )
+        , test "Is unstable if something is going to fall"
+            (\_ ->
+                let
+                    -- Given a single slightly elevated  bun
+                    initialState =
+                        Grid.fromList [ ( ( 0, 2 ), bun ) ]
+
+                    terrain =
+                        Grid.drawBox WallTile (Grid.Size 1 1)
+
+                    -- When checking if stable
+                    stability =
+                        SweetBuns.isStable terrain initialState
+                in
+                    -- Then is not stable
+                    Expect.false "Should not be stable" stability
+            )
         , test "Obstacles prevent downward movement" <|
             (\_ ->
                 let

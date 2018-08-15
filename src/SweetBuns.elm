@@ -22,18 +22,29 @@ main =
         }
 
 
+{-| Complete game model
+-}
 type alias Model =
     { selectedTile : Maybe Coords
     , things : Grid Thingy
-    , turnCount : Int
     , moveCount : Int
     , seed : Seed
     }
 
 
+initialModel : Model
+initialModel =
+    { selectedTile = Nothing
+    , things = initialThings
+    , moveCount = 0
+    , seed = Random.initialSeed 0
+    }
+
+
+{-| Overall game messages
+-}
 type Msg
     = SelectTile Coords
-    | TurnTick Time
     | Fall
     | Spawn
     | Collect
@@ -61,16 +72,6 @@ type alias RenderableTile =
     { content : Maybe Thingy
     , highlight : Bool
     , floor : FloorTile
-    }
-
-
-initialModel : Model
-initialModel =
-    { selectedTile = Nothing
-    , things = initialThings
-    , turnCount = 0
-    , moveCount = 0
-    , seed = Random.initialSeed 0
     }
 
 
@@ -107,11 +108,8 @@ update msg model =
                 Nothing ->
                     ( { model | selectedTile = Just coords }, Cmd.none )
 
-        TurnTick _ ->
-            ( { model | turnCount = model.turnCount + 1 }, Delay.after 0 second Spawn )
-
         Spawn ->
-            ( spawnThings model, Delay.after 1 second Fall )
+            ( spawnThings model, Delay.after 1 second Collect )
 
         Fall ->
             ( { model
@@ -264,6 +262,11 @@ isValidMove from to =
             ( toX - fromX, toY - fromY )
     in
         (-1 <= dx && dx <= 1) && (-1 <= dy && dy <= 1)
+
+
+isStable : Grid FloorTile -> Grid Thingy -> Bool
+isStable floor things =
+    things == applyGravity floor things
 
 
 {-| Let things fall down where possible, poretially causing mixing of ingredients.
@@ -432,17 +435,36 @@ isCollectableBun thing =
 -- # SUBSCRIPTIONS
 
 
+{-| Keep updating regularly while game is running.
+
+    - Spawn new things now and then
+    - Lett things fall ASAP
+
+-}
 subscriptions : Model -> Sub Msg
 subscriptions model =
     if not <| isGameOver kitchenLevel model.things then
-        Time.every turnDuration TurnTick
+        Sub.batch
+            ([ Time.every spawnInterval (\_ -> Spawn) ]
+                -- Only Have things fall there is something thst could fall (save messages)
+                ++ (if not <| isStable kitchenLevel model.things then
+                        [ Time.every fallInterval (\_ -> Fall) ]
+                    else
+                        []
+                   )
+            )
     else
         Sub.none
 
 
-turnDuration : Time
-turnDuration =
+spawnInterval : Time
+spawnInterval =
     (3 * second)
+
+
+fallInterval : Time
+fallInterval =
+    (0.1 * second)
 
 
 
@@ -480,8 +502,7 @@ view model =
                 , Html.button [ onClick Fall ] [ text "Fall!" ]
                 , Html.button [ onClick Collect ] [ text "Collect" ]
                 , Html.p [] [ "Move count: " ++ (model.moveCount |> toString) |> text ]
-                , Html.p [] [ ("Turn count: " ++ (toString model.turnCount)) |> text ]
-                , Html.p [] [ ("Random seed: " ++ (toString model.seed)) |> text ]
+                , Html.p [] [ "Random seed: " ++ (toString model.seed) |> text ]
                 , Html.p [] [ "Selected tile: " ++ (model.selectedTile |> toString) |> text ]
                 , Html.p [] [ "Game over? " ++ ((isGameOver kitchenLevel model.things) |> toString) |> text ]
                 ]
