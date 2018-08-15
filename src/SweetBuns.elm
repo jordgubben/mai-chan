@@ -7,7 +7,7 @@ import Time exposing (Time, second)
 import Delay
 import Task
 import Html exposing (Html, text)
-import Html.Attributes as Att exposing (class, style)
+import Html.Attributes as Att exposing (id, class, style)
 import Html.Events as Ev exposing (onMouseEnter, onMouseLeave, onClick)
 import Grid exposing (..)
 
@@ -497,7 +497,9 @@ view model =
     let
         finalGrid : Grid RenderableTile
         finalGrid =
-            kitchenLevel
+            Grid.drawBox (PlainTile) boardSize
+                |> Grid.translate ( 0, 1 - boardSize.height )
+                |> Dict.intersect kitchenLevel
                 -- Convert to full tiles
                 |> Dict.map (\_ floorTile -> RenderableTile Nothing False floorTile)
                 -- Render highlighed column
@@ -516,9 +518,35 @@ view model =
                         }
                     )
     in
-        Html.div []
-            [ Grid.toHtmlDiv ( tileSide, tileSide ) renderTile finalGrid
-            , Html.div [ class "debug" ]
+        Html.div
+            [ id "game-container"
+            , style
+                [ ( "position", "relative" )
+                , ( "width", (10 * tileSide |> toString) ++ "px" )
+                , ( "height", (8 * tileSide |> toString) ++ "px" )
+                , ( "border", "10px solid black" )
+                ]
+            ]
+            [ Html.div
+                [ id "board-container"
+                , style
+                    [ ( "position", "absolute" )
+                    , ( "top", (1 * tileSide |> toString) ++ "px" )
+                    , ( "left", "0" )
+                    ]
+                ]
+                [ Grid.toHtmlDiv ( tileSide, tileSide ) renderTile finalGrid
+                ]
+            , Html.div
+                [ class "debug"
+                , style
+                    [ ( "position", "absolute" )
+                    , ( "right", "0" )
+                    , ( "width", (4 * tileSide |> toString) ++ "px" )
+                    , ( "height", (8 * tileSide |> toString) ++ "px" )
+                    , ( "background-color", "lightgray" )
+                    ]
+                ]
                 [ Html.button [ onClick Spawn ] [ text "Spawn!" ]
                 , Html.button [ onClick Fall ] [ text "Fall!" ]
                 , Html.button [ onClick Collect ] [ text "Collect" ]
