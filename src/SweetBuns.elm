@@ -49,6 +49,7 @@ type Msg
     | Spawn
     | Collect
     | IntiGame Time
+    | RestartGame
 
 
 type Thingy
@@ -85,8 +86,14 @@ update msg model =
         IntiGame time ->
             ( initGame time model, Cmd.none )
 
+        RestartGame ->
+            ( restartGame model, Cmd.none )
+
         SelectTile coords ->
-            selectTile coords model
+            if not <| isGameOver kitchenLevel model.things then
+                selectTile coords model
+            else
+                ( model, Cmd.none )
 
         Spawn ->
             ( spawnThings model, Cmd.none )
@@ -114,28 +121,45 @@ initGame time model =
         seed =
             time |> Time.inMilliseconds |> round |> Random.initialSeed
 
+        ( newThings, seed_ ) =
+            fillBoard seed
+    in
+        { model | seed = seed_, things = Dict.union model.things newThings }
+
+
+restartGame : Model -> Model
+restartGame model =
+    let
+        ( newThings, seed_ ) =
+            fillBoard model.seed
+    in
+        { model | seed = seed_, things = Dict.union initialThings newThings }
+
+
+{-| Fill board to the brim with various things
+-}
+fillBoard : Seed -> ( Grid Thingy, Seed )
+fillBoard seed =
+    let
         filledRegion =
             { boardSize | height = boardSize.height - 1 }
 
         filler =
             [ Water neutralTaste, Flour neutralTaste, Sugar ]
-
-        ( seed_, newThings ) =
-            Grid.drawBox () filledRegion
-                |> Grid.translate ( 0, 0 - filledRegion.height )
-                |> Dict.foldl
-                    (\coords _ ( seed, things ) ->
-                        let
-                            ( newThing, seed_ ) =
-                                pickRandom seed filler
-                        in
-                            ( seed_
-                            , Grid.put coords (newThing |> Maybe.withDefault Obstacle) things
-                            )
-                    )
-                    ( seed, Grid.empty )
     in
-        { model | seed = seed, things = Dict.union model.things newThings }
+        Grid.drawBox () filledRegion
+            |> Grid.translate ( 0, 0 - filledRegion.height )
+            |> Dict.foldl
+                (\coords _ ( things, seed ) ->
+                    let
+                        ( newThing, seed_ ) =
+                            pickRandom seed filler
+                    in
+                        ( Grid.put coords (newThing |> Maybe.withDefault Obstacle) things
+                        , seed_
+                        )
+                )
+                ( Grid.empty, seed )
 
 
 {-| Handle players selection of a tile.
@@ -536,6 +560,33 @@ view model =
                     ]
                 ]
                 [ Grid.toHtmlDiv ( tileSide, tileSide ) renderTile finalGrid
+
+                -- Display board
+                , if isGameOver kitchenLevel model.things then
+                    Html.div
+                        [ id "game-over"
+                        , style
+                            [ ( "position", "absolute" )
+                            , ( "top", "0" )
+                            , ( "width", "90%" )
+                            , ( "height", "90%" )
+                            , ( "padding", "5%" )
+                            , ( "color", "darkred" )
+                            , ( "text-align", "center" )
+                            , ( "background-color", "white" )
+                            , ( "opacity", "0.75" )
+                            ]
+                        ]
+                        [ Html.h1 [ style [ ( "opacity", "1" ) ] ] [ text "Game over" ]
+                        , Html.a
+                            [ style [ ( "opacity", "1" ) ]
+                            , Att.href "#restart"
+                            , onClick RestartGame
+                            ]
+                            [ text "Try again?" ]
+                        ]
+                  else
+                    text ""
                 ]
             , Html.div
                 [ class "debug"
