@@ -134,14 +134,20 @@ initGame time model =
         seed =
             time |> Time.inMilliseconds |> round |> Random.initialSeed
 
+        filledRegion =
+            { boardSize | height = boardSize.height - 1 }
+
+        filler =
+            [ Water neutralTaste, Flour neutralTaste, Shuggar ]
+
         ( seed_, newThings ) =
-            Grid.drawBox () (Size 6 3)
-                |> Grid.translate ( 0, -5 )
+            Grid.drawBox () filledRegion
+                |> Grid.translate ( 0, 0 - filledRegion.height )
                 |> Dict.foldl
                     (\coords _ ( seed, things ) ->
                         let
                             ( newThing, seed_ ) =
-                                pickRandom seed [ Water neutralTaste, Flour neutralTaste, Shuggar ]
+                                pickRandom seed filler
                         in
                             ( seed_
                             , Grid.put coords (newThing |> Maybe.withDefault Obstacle) things
@@ -653,8 +659,8 @@ neutralTaste =
 
 kitchenCollectors : Grid FloorTile
 kitchenCollectors =
-    Grid.drawBox BunCollector { width = 2, height = 1 }
-        |> Grid.translate ( 2, -5 )
+    Grid.drawBox BunCollector { boardSize | height = 1 }
+        |> Grid.translate ( 0, -5 )
 
 
 kitchenFloor : Grid FloorTile
@@ -667,3 +673,8 @@ kitchenWalls : Grid FloorTile
 kitchenWalls =
     Grid.lineRect WallTile { width = 8, height = 8 }
         |> Grid.translate ( -1, -6 )
+
+
+boardSize : Size Int
+boardSize =
+    Size 6 6
