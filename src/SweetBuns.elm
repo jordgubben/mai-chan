@@ -356,20 +356,36 @@ mixIngredients a b =
         ( Flour taste1, Water taste2 ) ->
             Just (Bun { sweet = taste1.sweet || taste2.sweet })
 
-        ( Water _, Shuggar ) ->
-            Just (Water { sweet = True })
+        ( Water taste, Shuggar ) ->
+            mightSweetenWater taste
 
-        ( Shuggar, Water _ ) ->
-            Just (Water { sweet = True })
+        ( Shuggar, Water taste ) ->
+            mightSweetenWater taste
 
-        ( Flour _, Shuggar ) ->
-            Just (Flour { sweet = True })
+        ( Flour taste, Shuggar ) ->
+            mightSweetenFlour taste
 
-        ( Shuggar, Flour _ ) ->
-            Just (Flour { sweet = True })
+        ( Shuggar, Flour taste ) ->
+            mightSweetenFlour taste
 
         _ ->
             Nothing
+
+
+mightSweetenWater : { a | sweet : Bool } -> Maybe Thingy
+mightSweetenWater taste =
+    if taste.sweet then
+        Nothing
+    else
+        Just (Water { sweet = True })
+
+
+mightSweetenFlour : { a | sweet : Bool } -> Maybe Thingy
+mightSweetenFlour taste =
+    if taste.sweet then
+        Nothing
+    else
+        Just (Flour { sweet = True })
 
 
 {-| Collect all collectable Buns on collectors.

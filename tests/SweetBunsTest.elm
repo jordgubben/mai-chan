@@ -380,6 +380,12 @@ mixingSuite =
         , testMix "Mixing Water with Shuggar produces a *Sweet* Water"
             ( water, Shuggar )
             (Just <| Water { sweet = True })
+        , testMix "Already *sweet* Water and  Shuggar do not mix"
+            ( Water { sweet = True }, Shuggar )
+            (Nothing)
+        , testMix "Already *sweet* Flour and Shuggar do not mix"
+            ( Flour { sweet = True }, Shuggar )
+            (Nothing)
         , testMix "Mixing Water with Flour produces a *Sweet* Flour"
             ( flour, Shuggar )
             (Just <| Flour { sweet = True })
