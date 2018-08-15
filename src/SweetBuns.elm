@@ -86,30 +86,10 @@ update msg model =
             ( initGame time model, Cmd.none )
 
         SelectTile coords ->
-            case model.selectedTile of
-                Just moverCoords ->
-                    ( { model
-                        | things =
-                            attemptMove
-                                (kitchenLevel
-                                    |> Dict.filter (always isObstacleTile)
-                                    |> Dict.keys
-                                    |> Set.fromList
-                                )
-                                moverCoords
-                                coords
-                                model.things
-                        , selectedTile = Nothing
-                        , moveCount = model.moveCount + 1
-                      }
-                    , Cmd.none
-                    )
-
-                Nothing ->
-                    ( { model | selectedTile = Just coords }, Cmd.none )
+            selectTile coords model
 
         Spawn ->
-            ( spawnThings model, Delay.after 1 second Collect )
+            ( spawnThings model, Cmd.none )
 
         Fall ->
             ( { model
@@ -156,6 +136,41 @@ initGame time model =
                     ( seed, Grid.empty )
     in
         { model | seed = seed, things = Dict.union model.things newThings }
+
+
+{-| Handle players selection of a tile.
+If no tile has been selcted, then just select it.
+If a tile is already selected, then attempt to move.
+-}
+selectTile : Coords -> Model -> ( Model, Cmd Msg )
+selectTile coords model =
+    case model.selectedTile of
+        Just moverCoords ->
+            let
+                things_ =
+                    attemptMove
+                        (kitchenLevel
+                            |> Dict.filter (always isObstacleTile)
+                            |> Dict.keys
+                            |> Set.fromList
+                        )
+                        moverCoords
+                        coords
+                        model.things
+            in
+                ( { model
+                    | things = things_
+                    , selectedTile = Nothing
+                    , moveCount = model.moveCount + 1
+                  }
+                , if model.things /= things_ then
+                    Delay.after 0.25 second Spawn
+                  else
+                    Cmd.none
+                )
+
+        Nothing ->
+            ( { model | selectedTile = Just coords }, Cmd.none )
 
 
 isGameOver : Grid FloorTile -> Grid Thingy -> Bool
