@@ -68,7 +68,7 @@ type Flavour
 
 type FloorTile
     = PlainTile
-    | Spawner Thingy
+    | Spawner (List Thingy)
     | BunCollector
     | WallTile
 
@@ -238,16 +238,21 @@ isGameOver floor things =
 spawnThings : Model -> Model
 spawnThings model =
     let
-        ( spawnedThings, seed_ ) =
+        ( spawnedThing, seed_ ) =
             spawnSingelThingRnd model.seed kitchenLevel (model.things |> Dict.keys |> Set.fromList)
 
         things_ =
-            Dict.union spawnedThings model.things
+            spawnedThing
+                |> Maybe.map
+                    (\( coords, thing ) ->
+                        Dict.insert coords thing model.things
+                    )
+                |> Maybe.withDefault model.things
     in
         { model | things = things_, seed = seed_ }
 
 
-spawnSingelThingRnd : Seed -> Grid FloorTile -> Set Coords -> ( Grid Thingy, Seed )
+spawnSingelThingRnd : Seed -> Grid FloorTile -> Set Coords -> ( Maybe ( Coords, Thingy ), Seed )
 spawnSingelThingRnd seed level spawnObstacles =
     let
         -- Pick a random unoccupied spawners coordinates
@@ -258,16 +263,22 @@ spawnSingelThingRnd seed level spawnObstacles =
                 )
     in
         ( case singlePoint of
-            Just ( coords, thing ) ->
-                Grid.fromList [ ( coords, thing ) ]
+            Just ( coords, things ) ->
+                let
+                    ( rndThing, seed__ ) =
+                        pickRandom seed_ things
+                in
+                    rndThing
+                        |> Maybe.map (\t -> Just ( coords, t ))
+                        |> Maybe.withDefault Nothing
 
             Nothing ->
-                Grid.empty
+                Nothing
         , seed_
         )
 
 
-findSpawnPoints : Grid FloorTile -> List ( Coords, Thingy )
+findSpawnPoints : Grid FloorTile -> List ( Coords, List Thingy )
 findSpawnPoints level =
     level
         |> Dict.toList
@@ -767,34 +778,20 @@ initialObstacles =
 kitchenLevel : Grid FloorTile
 kitchenLevel =
     kitchenFloor
-        |> Dict.union waterSpawners
-        |> Dict.union shuggarSpawners
-        |> Dict.union flourSpawners
+        |> Dict.union kitchenSpawners
         |> Dict.union kitchenCollectors
         |> Dict.union kitchenWalls
 
 
-waterSpawners : Grid FloorTile
-waterSpawners =
-    Grid.drawBox (Spawner (Water neutralTaste)) { width = 2, height = 1 }
+kitchenSpawners : Grid FloorTile
+kitchenSpawners =
+    Grid.drawBox (Spawner spawnables) { width = 6, height = 1 }
         |> Grid.translate ( 0, 0 )
 
 
-shuggarSpawners : Grid FloorTile
-shuggarSpawners =
-    Grid.drawBox (Spawner (Flavouring Sugar)) { width = 2, height = 1 }
-        |> Grid.translate ( 2, 0 )
-
-
-flourSpawners : Grid FloorTile
-flourSpawners =
-    Grid.drawBox (Spawner (Flour neutralTaste)) { width = 2, height = 1 }
-        |> Grid.translate ( 4, 0 )
-
-
-neutralTaste : Maybe Flavour
-neutralTaste =
-    Nothing
+spawnables : List Thingy
+spawnables =
+    [ Water Nothing, Flour Nothing, Flavouring Sugar, Flavouring Chilli, Flavouring Chocolate ]
 
 
 kitchenCollectors : Grid FloorTile

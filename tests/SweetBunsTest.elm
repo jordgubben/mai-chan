@@ -23,24 +23,22 @@ spawnSuite =
                     initialKitchen =
                         Grid.fromList
                             [ ( ( 0, 0 ), PlainTile )
-                            , ( ( 0, 1 ), (Spawner bun) )
-                            , ( ( 0, 2 ), (Spawner bun) )
-                            , ( ( 0, 3 ), (Spawner bun) )
+                            , ( ( 0, 1 ), (Spawner [ bun ]) )
+                            , ( ( 0, 2 ), (Spawner [ bun ]) )
+                            , ( ( 0, 3 ), (Spawner [ bun ]) )
                             ]
 
                     -- When spawning
-                    ( spawnedThings, _ ) =
+                    ( spawnedThing, _ ) =
                         SweetBuns.spawnSingelThingRnd seed initialKitchen Set.empty
                 in
-                    spawnedThings
-                        |> Dict.keys
-                        |> List.filter
-                            (\c ->
-                                (Grid.get c initialKitchen) == Just (Spawner bun)
+                    spawnedThing
+                        |> Maybe.map
+                            (\( coords, thing ) ->
+                                (Grid.get coords initialKitchen) |> equal (Just (Spawner [ bun ]))
                             )
-                        |> List.length
-                        |> equal 1
-        , fuzz int "Buns can their defined thing" <|
+                        |> Maybe.withDefault (Expect.fail "Supposed to spawn something")
+        , fuzz int "Spawners spawn their defined thing" <|
             \s ->
                 let
                     seed =
@@ -50,51 +48,78 @@ spawnSuite =
                     initialKitchen =
                         Grid.fromList
                             [ ( ( 0, 0 ), PlainTile )
-                            , ( ( 0, 1 ), (Spawner water) )
-                            , ( ( 0, 2 ), (Spawner flour) )
-                            , ( ( 0, 3 ), (Spawner bun) )
+                            , ( ( 0, 1 ), (Spawner [ water ]) )
+                            , ( ( 0, 2 ), (Spawner [ flour ]) )
+                            , ( ( 0, 3 ), (Spawner [ bun ]) )
                             ]
 
                     -- When spawning
-                    ( spawnedThings, _ ) =
+                    spawnedThing : Maybe ( Grid.Coords, Thingy )
+                    spawnedThing =
                         SweetBuns.spawnSingelThingRnd seed initialKitchen Set.empty
+                            |> Tuple.first
                 in
                     -- Then spawns the selected Sparners type of thing
-                    spawnedThings
-                        |> Dict.toList
-                        |> List.head
+                    spawnedThing
                         |> Maybe.map
                             (\( coords, thing ) ->
-                                equal (Just thing)
-                                    (Grid.get coords initialKitchen
-                                        |> Maybe.withDefault PlainTile
-                                        |> (\tile ->
-                                                case tile of
-                                                    Spawner thing ->
-                                                        Just thing
+                                case (Grid.get coords initialKitchen) of
+                                    Just (Spawner things) ->
+                                        equal (Just thing) (things |> List.head)
 
-                                                    _ ->
-                                                        Nothing
-                                           )
-                                    )
+                                    _ ->
+                                        Expect.fail ("Expected a spawner at " ++ toString coords)
                             )
-                        |> Maybe.withDefault (fail "Nothing spawned")
+                        |> Maybe.withDefault (Expect.fail "Should spawn something")
+        , fuzz int "Spawners can spawn one of several things, but nothing else than defined" <|
+            \s ->
+                let
+                    seed =
+                        Random.initialSeed s
+
+                    -- Given a kitchen with a single spawner
+                    spawnerCoords =
+                        ( 0, 0 )
+
+                    spawnables =
+                        [ flour, water ]
+
+                    initialKitchen =
+                        Grid.fromList
+                            [ ( spawnerCoords, (Spawner spawnables) )
+                            ]
+
+                    -- When spawning
+                    spawnedThing : Maybe ( Grid.Coords, Thingy )
+                    spawnedThing =
+                        SweetBuns.spawnSingelThingRnd seed initialKitchen Set.empty
+                            |> Tuple.first
+                in
+                    -- Then spawns the selected Sparners type of thing
+                    spawnedThing
+                        |> Maybe.map
+                            (\( _, thing ) ->
+                                Expect.true
+                                    ("Should be one of " ++ (toString spawnables))
+                                    (List.member thing spawnables)
+                            )
+                        |> Maybe.withDefault (Expect.fail "Should spawn something")
         , test "Only spawn on unoccupied spawners" <|
             \() ->
                 let
                     -- Given a kitchen where all floor tiles are occupied
                     floor =
-                        Grid.fromList [ ( ( 0, 0 ), Spawner water ) ]
+                        Grid.fromList [ ( ( 0, 0 ), Spawner [ water ] ) ]
 
                     obstacles =
                         Set.singleton ( 0, 0 )
 
                     -- When spawning
-                    ( spawnedThings, _ ) =
+                    ( spawnedThing, _ ) =
                         SweetBuns.spawnSingelThingRnd (Random.initialSeed 0) floor obstacles
                 in
                     -- Nothing is spawned
-                    spawnedThings |> equal Grid.empty
+                    spawnedThing |> equal Nothing
         ]
 
 
@@ -481,7 +506,7 @@ gameProgressSuite =
                 let
                     -- Given a single spawn tile
                     floor =
-                        Grid.fromList [ ( ( 0, 0 ), Spawner water ) ]
+                        Grid.fromList [ ( ( 0, 0 ), Spawner [ water ] ) ]
 
                     -- And it is covered
                     things =
