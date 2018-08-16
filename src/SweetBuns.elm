@@ -761,18 +761,7 @@ tileSide =
 
 initialThings : Grid Thingy
 initialThings =
-    initialObstacles
-
-
-initialObstacles : Grid Thingy
-initialObstacles =
-    [ ( 2, -2 )
-    , ( 2, -3 )
-    , ( 3, -2 )
-    , ( 3, -3 )
-    ]
-        |> List.map (\c -> ( c, Obstacle ))
-        |> Grid.fromList
+    Grid.empty
 
 
 kitchenLevel : Grid FloorTile
