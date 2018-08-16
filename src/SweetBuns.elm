@@ -787,9 +787,22 @@ kitchenSpawners =
         |> Grid.translate ( 0, 0 )
 
 
+{-| Spawnable things.
+Weighted so that Flour, Water and Flavourings spawn 1/3 of the time each.
+(Thus preventing an abundance of Flavourings)
+-}
 spawnables : List Thingy
 spawnables =
-    [ Water Nothing, Flour Nothing, Flavouring Sugar, Flavouring Chilli, Flavouring Chocolate ]
+    List.concat
+        [ spawnableFlavours
+        , List.repeat (List.length spawnableFlavours) (Water Nothing)
+        , List.repeat (List.length spawnableFlavours) (Flour Nothing)
+        ]
+
+
+spawnableFlavours : List Thingy
+spawnableFlavours =
+    [ Flavouring Sugar, Flavouring Chilli, Flavouring Chocolate ]
 
 
 kitchenCollectors : Grid FloorTile
