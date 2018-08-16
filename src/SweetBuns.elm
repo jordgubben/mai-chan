@@ -53,11 +53,17 @@ type Msg
 
 
 type Thingy
-    = Bun { sweet : Bool }
-    | Flour { sweet : Bool }
-    | Water { sweet : Bool }
-    | Sugar
+    = Bun (Maybe Flavour)
+    | Flour (Maybe Flavour)
+    | Water (Maybe Flavour)
+    | Flavouring Flavour
     | Obstacle
+
+
+type Flavour
+    = Sugar
+    | Chocolate
+    | Chilli
 
 
 type FloorTile
@@ -144,8 +150,17 @@ fillBoard seed =
         filledRegion =
             { boardSize | height = boardSize.height - 1 }
 
+        --
+        -- Start with more Water and Flour than Flavouring
         filler =
-            [ Water neutralTaste, Flour neutralTaste, Sugar ]
+            [ Water Nothing
+            , Water Nothing
+            , Flour Nothing
+            , Flour Nothing
+            , Flavouring Sugar
+            , Flavouring Chilli
+            , Flavouring Chocolate
+            ]
     in
         Grid.drawBox () filledRegion
             |> Grid.translate ( 0, 0 - filledRegion.height )
@@ -398,42 +413,45 @@ Returns Noting if the provided commbination is not supported.
 mixIngredients : Thingy -> Thingy -> Maybe Thingy
 mixIngredients a b =
     case ( a, b ) of
-        ( Water taste1, Flour taste2 ) ->
-            Just (Bun { sweet = taste1.sweet || taste2.sweet })
+        ( Water waterFlavour, Flour flourFlavour ) ->
+            mixBun { water = waterFlavour, flour = flourFlavour }
 
-        ( Flour taste1, Water taste2 ) ->
-            Just (Bun { sweet = taste1.sweet || taste2.sweet })
+        ( Flour flourFlavour, Water waterFlavour ) ->
+            mixBun { water = waterFlavour, flour = flourFlavour }
 
-        ( Water taste, Sugar ) ->
-            mightSweetenWater taste
+        ( Water Nothing, Flavouring flavour ) ->
+            Just <| Water (Just flavour)
 
-        ( Sugar, Water taste ) ->
-            mightSweetenWater taste
+        ( Flavouring flavour, Water Nothing ) ->
+            Just <| Water (Just flavour)
 
-        ( Flour taste, Sugar ) ->
-            mightSweetenFlour taste
+        ( Flour Nothing, Flavouring flavour ) ->
+            Just <| Flour (Just flavour)
 
-        ( Sugar, Flour taste ) ->
-            mightSweetenFlour taste
+        ( Flavouring flavour, Flour Nothing ) ->
+            Just <| Flour (Just flavour)
 
         _ ->
             Nothing
 
 
-mightSweetenWater : { a | sweet : Bool } -> Maybe Thingy
-mightSweetenWater taste =
-    if taste.sweet then
-        Nothing
-    else
-        Just (Water { sweet = True })
+mixBun : { flour : Maybe Flavour, water : Maybe Flavour } -> Maybe Thingy
+mixBun { flour, water } =
+    case ( flour, water ) of
+        ( Just flavour, Nothing ) ->
+            Just <| Bun <| Just flavour
 
+        ( Nothing, Just flavour ) ->
+            Just <| Bun <| Just flavour
 
-mightSweetenFlour : { a | sweet : Bool } -> Maybe Thingy
-mightSweetenFlour taste =
-    if taste.sweet then
-        Nothing
-    else
-        Just (Flour { sweet = True })
+        ( Just flourFlavour, Just waterFlavour ) ->
+            if (flourFlavour == waterFlavour) then
+                Just <| Bun <| Just flourFlavour
+            else
+                Nothing
+
+        ( Nothing, Nothing ) ->
+            Just <| Bun Nothing
 
 
 {-| Collect all collectable Buns on collectors.
@@ -651,26 +669,26 @@ getTileColor tile =
 renderThingy : Thingy -> Html msg
 renderThingy thingy =
     case thingy of
-        Bun { sweet } ->
-            if (sweet) then
-                renderFoodStuff '🍪' "Sweet Bun"
-            else
-                renderFoodStuff '🍞' " Bun"
+        Bun (Just Sugar) ->
+            renderFoodStuff '🍪' Nothing "Sweet Bun"
 
-        Flour { sweet } ->
-            if sweet then
-                renderFoodStuff '🌾' "Sweet Flour"
-            else
-                renderFoodStuff '🌾' "Flour"
+        Bun flavour ->
+            renderFoodStuff '🍞' flavour "Bun"
 
-        Water { sweet } ->
-            if (sweet) then
-                renderFoodStuff '💧' " Sweet Water"
-            else
-                renderFoodStuff '💧' " Water"
+        Flour flavour ->
+            renderFoodStuff '🌾' flavour "Flour"
 
-        Sugar ->
-            renderFoodStuff '🍯' " Sugar"
+        Water flavour ->
+            renderFoodStuff '💧' flavour "Water"
+
+        Flavouring Sugar ->
+            renderFoodStuff '🍯' (Just Sugar) " Sugar"
+
+        Flavouring Chocolate ->
+            renderFoodStuff '🍫' (Just Chocolate) " Chocolate"
+
+        Flavouring Chilli ->
+            renderFoodStuff '🌶' (Just Chilli) "Chilli"
 
         Obstacle ->
             Html.div
@@ -685,12 +703,40 @@ renderThingy thingy =
                 []
 
 
-renderFoodStuff : Char -> String -> Html msg
-renderFoodStuff icon str =
-    Html.div []
-        [ Html.span [ style [ ( "font-size", "150%" ) ] ] [ icon |> String.fromChar |> text ]
-        , Html.span [ style [ ( "font-size", "50%" ) ] ] [ str |> text ]
-        ]
+renderFoodStuff : Char -> Maybe Flavour -> String -> Html msg
+renderFoodStuff icon flavour str =
+    let
+        primaryColor =
+            case flavour of
+                Just Sugar ->
+                    "lightblue"
+
+                Just Chilli ->
+                    "darkred"
+
+                Just Chocolate ->
+                    "brown"
+
+                Nothing ->
+                    "gray"
+    in
+        Html.div
+            [ style
+                [ ( "width", (tileSide - 4 - 10 |> toString) ++ "px" )
+                , ( "height", (tileSide - 4 - 10 |> toString) ++ "px" )
+                , ( "margin", "5px" )
+                , ( "border-radius", "5px" )
+                , ( "border-radius", "5px" )
+                , ( "border-width", "2px" )
+                , ( "border-style", "dashed" )
+                , ( "border-color", primaryColor )
+                , ( "background-color", primaryColor )
+                ]
+            ]
+            [ Html.span [ style [ ( "font-size", "150%" ) ] ] [ icon |> String.fromChar |> text ]
+            , Html.span [ style [ ( "font-size", "50%" ) ] ] [ flavour |> Maybe.map toString |> Maybe.withDefault "" |> text ]
+            , Html.span [ style [ ( "font-size", "50%" ) ] ] [ str |> text ]
+            ]
 
 
 
@@ -736,7 +782,7 @@ waterSpawners =
 
 shuggarSpawners : Grid FloorTile
 shuggarSpawners =
-    Grid.drawBox (Spawner Sugar) { width = 2, height = 1 }
+    Grid.drawBox (Spawner (Flavouring Sugar)) { width = 2, height = 1 }
         |> Grid.translate ( 2, 0 )
 
 
@@ -746,9 +792,9 @@ flourSpawners =
         |> Grid.translate ( 4, 0 )
 
 
-neutralTaste : { sweet : Bool }
+neutralTaste : Maybe Flavour
 neutralTaste =
-    { sweet = False }
+    Nothing
 
 
 kitchenCollectors : Grid FloorTile
