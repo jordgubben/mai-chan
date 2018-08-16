@@ -124,6 +124,33 @@ transformationSuite =
                             ]
                             never
                 )
+            , describe "Grid.swap"
+                [ test "Makes two cells trade content" <|
+                    \() ->
+                        let
+                            original =
+                                Grid.fromList [ ( ( 1, 0 ), "N" ), ( ( 0, -1 ), "S" ) ]
+
+                            swapped =
+                                Grid.swap ( 1, 0 ) ( 0, -1 ) original
+
+                            expected =
+                                Grid.fromList [ ( ( 1, 0 ), "S" ), ( ( 0, -1 ), "N" ) ]
+                        in
+                            swapped |> equal expected
+                , test "Restores if repeated" <|
+                    \() ->
+                        let
+                            original =
+                                Grid.fromList [ ( ( 1, 0 ), "N" ), ( ( 0, -1 ), "S" ) ]
+
+                            doubleSwapped =
+                                original
+                                    |> Grid.swap ( 1, 0 ) ( 0, -1 )
+                                    |> Grid.swap ( 1, 0 ) ( 0, -1 )
+                        in
+                            doubleSwapped |> equal original
+                ]
             ]
         ]
 
