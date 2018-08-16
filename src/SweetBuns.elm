@@ -689,8 +689,8 @@ getTileColor tile =
 renderThingy : Thingy -> Html msg
 renderThingy thingy =
     case thingy of
-        Bun (Just Sugar) ->
-            renderFoodStuff '🍪' Nothing "Sweet Bun"
+        Bun (Just Chocolate) ->
+            renderFoodStuff '🍪' (Just Chocolate) " Cookie"
 
         Bun flavour ->
             renderFoodStuff '🍞' flavour "Bun"
@@ -702,13 +702,13 @@ renderThingy thingy =
             renderFoodStuff '💧' flavour "Water"
 
         Flavouring Sugar ->
-            renderFoodStuff '🍯' (Just Sugar) " Sugar"
+            renderFoodStuff '🍯' (Just Sugar) ""
 
         Flavouring Chocolate ->
-            renderFoodStuff '🍫' (Just Chocolate) " Chocolate"
+            renderFoodStuff '🍫' (Just Chocolate) ""
 
         Flavouring Chilli ->
-            renderFoodStuff '🌶' (Just Chilli) "Chilli"
+            renderFoodStuff '🌶' (Just Chilli) ""
 
         Obstacle ->
             Html.div
@@ -726,19 +726,19 @@ renderThingy thingy =
 renderFoodStuff : Char -> Maybe Flavour -> String -> Html msg
 renderFoodStuff icon flavour str =
     let
-        primaryColor =
+        ( primaryColor, secondaryColor ) =
             case flavour of
                 Just Sugar ->
-                    "lightblue"
+                    ( "darkblue", "lightblue" )
 
                 Just Chilli ->
-                    "darkred"
+                    ( "darkred", "orange" )
 
                 Just Chocolate ->
-                    "brown"
+                    ( "black", "brown" )
 
                 Nothing ->
-                    "gray"
+                    ( "gray", "lightgray" )
     in
         Html.div
             [ style
@@ -750,12 +750,14 @@ renderFoodStuff icon flavour str =
                 , ( "border-width", "2px" )
                 , ( "border-style", "dashed" )
                 , ( "border-color", primaryColor )
-                , ( "background-color", primaryColor )
+                , ( "background-color", secondaryColor )
+                , ( "text-align", "center" )
                 ]
             ]
             [ Html.span [ style [ ( "font-size", "150%" ) ] ] [ icon |> String.fromChar |> text ]
-            , Html.span [ style [ ( "font-size", "50%" ) ] ] [ flavour |> Maybe.map toString |> Maybe.withDefault "" |> text ]
-            , Html.span [ style [ ( "font-size", "50%" ) ] ] [ str |> text ]
+            , Html.br [] []
+            , Html.span [ style [ ( "font-size", "40%" ) ] ] [ flavour |> Maybe.map toString |> Maybe.withDefault "" |> text ]
+            , Html.span [ style [ ( "font-size", "40%" ) ] ] [ str |> text ]
             ]
 
 
