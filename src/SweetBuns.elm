@@ -313,7 +313,16 @@ pickRandom seed list =
 attemptMove : Set Coords -> Coords -> Coords -> Grid Thingy -> Grid Thingy
 attemptMove terrain from to things =
     if isValidMove from to && not (Set.member to terrain) then
-        move from to things
+        let
+            things_ =
+                move from to things
+        in
+            -- If movement could not be prefomed in any other way,
+            -- Then let the things teade places
+            if things == things_ then
+                Grid.swap from to things
+            else
+                things_
     else
         things
 

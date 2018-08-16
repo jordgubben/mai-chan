@@ -414,6 +414,36 @@ consciousMovementSuite =
                         Grid.fromList [ ( ( 15, 10 ), bun ) ]
                 in
                     movedThings |> equal expectedThings
+        , test "Can move by swaping places" <|
+            \() ->
+                let
+                    -- Given a a chilli,
+                    -- with *sweet* water on top of it
+                    -- and *sweet* flour beside it
+                    initialThings =
+                        Grid.fromList
+                            [ ( ( 0, 0 ), chilli )
+                            , ( ( 0, 1 ), Water (Just Sugar) )
+                            , ( ( -1, 0 ), Flour (Just Sugar) )
+                            ]
+
+                    -- And terrain below it
+                    terrain =
+                        Set.fromList [ ( -1, -1 ), ( 0, -1 ) ]
+
+                    -- When moving flour onto chilli
+                    movedThings =
+                        SweetBuns.attemptMove terrain ( -1, 0 ) ( 0, 0 ) initialThings
+
+                    -- Then they trade places, (causing a chain reaction)
+                    expectedThings =
+                        Grid.fromList
+                            [ ( ( -1, 0 ), chilli )
+                            , ( ( 0, 1 ), Water (Just Sugar) )
+                            , ( ( 0, 0 ), Flour (Just Sugar) )
+                            ]
+                in
+                    movedThings |> equal expectedThings
         , test "Can not move to an non-adjacent tile" <|
             \() ->
                 let
