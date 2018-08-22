@@ -1,6 +1,7 @@
 module SweetBuns exposing (..)
 
 import Random exposing (Seed)
+import Array
 import Set exposing (Set)
 import Dict
 import Time exposing (Time, second)
@@ -9,6 +10,7 @@ import Task
 import Html exposing (Html, text)
 import Html.Attributes as Att exposing (id, class, style)
 import Html.Events as Ev exposing (onMouseEnter, onMouseLeave, onClick)
+import Sprite exposing (Sprite)
 import Grid exposing (..)
 
 
@@ -689,11 +691,8 @@ getTileColor tile =
 renderThingy : Thingy -> Html msg
 renderThingy thingy =
     case thingy of
-        Bun (Just Chocolate) ->
-            renderFoodStuff '🍪' (Just Chocolate) " Cookie"
-
         Bun flavour ->
-            renderFoodStuff '🍞' flavour "Bun"
+            renderBun flavour
 
         Flour flavour ->
             renderFoodStuff '🌾' flavour "Flour"
@@ -727,25 +726,13 @@ renderFoodStuff : Char -> Maybe Flavour -> String -> Html msg
 renderFoodStuff icon flavour str =
     let
         ( primaryColor, secondaryColor ) =
-            case flavour of
-                Just Sugar ->
-                    ( "darkblue", "lightblue" )
-
-                Just Chilli ->
-                    ( "darkred", "orange" )
-
-                Just Chocolate ->
-                    ( "black", "brown" )
-
-                Nothing ->
-                    ( "gray", "lightgray" )
+            pickFlavourColors flavour
     in
         Html.div
             [ style
                 [ ( "width", (tileSide - 4 - 10 |> toString) ++ "px" )
                 , ( "height", (tileSide - 4 - 10 |> toString) ++ "px" )
                 , ( "margin", "5px" )
-                , ( "border-radius", "5px" )
                 , ( "border-radius", "5px" )
                 , ( "border-width", "2px" )
                 , ( "border-style", "dashed" )
@@ -759,6 +746,127 @@ renderFoodStuff icon flavour str =
             , Html.span [ style [ ( "font-size", "40%" ) ] ] [ flavour |> Maybe.map toString |> Maybe.withDefault "" |> text ]
             , Html.span [ style [ ( "font-size", "40%" ) ] ] [ str |> text ]
             ]
+
+
+renderBun : Maybe Flavour -> Html msg
+renderBun flavour =
+    let
+        sprite =
+            case flavour of
+                Just Sugar ->
+                    sweetBunSprite
+
+                Just Chilli ->
+                    chilliBunSprite
+
+                Just Chocolate ->
+                    cocoBunSprite
+
+                Nothing ->
+                    basicBunSprite
+
+        ( primaryColor, secondaryColor ) =
+            pickFlavourColors flavour
+    in
+        Html.div
+            [ class "bun"
+            , style
+                ([ ( "position", "relative" )
+                 , ( "overflow", "hide" )
+                 , ( "text-align", "center" )
+                 ]
+                )
+            ]
+            [ Html.div
+                [ class "bun-bg"
+                , style
+                    [ ( "position", "absolute" )
+                    , ( "width", (tileSide - 7 * 2 |> toString) ++ "px" )
+                    , ( "height", (tileSide - 7 * 2 |> toString) ++ "px" )
+                    , ( "margin", "5px" )
+                    , ( "border-radius", "15px" )
+                    , ( "border-width", "2px" )
+                    , ( "border-style", "dashed" )
+                    , ( "border-color", primaryColor )
+                    , ( "background-color", secondaryColor )
+                    ]
+                ]
+                []
+            , Html.span
+                [ class "bun-sprite"
+                , style <|
+                    [ ( "position", "absolute" )
+                    , ( "top", "0px" )
+                    , ( "left", "0" )
+                    , ( "transform", "scale(0.5)" )
+                    ]
+                        ++ (Sprite.sprite sprite)
+                ]
+                []
+            , Html.span
+                [ style
+                    [ ( "position", "absolute" )
+                    , ( "width", "100%" )
+                    , ( "top", "45px" )
+                    , ( "left", "0" )
+                    , ( "font-size", "40%" )
+                    ]
+                ]
+                [ flavour |> Maybe.map toString |> Maybe.withDefault "" |> text
+                , ("Bun" |> text)
+                ]
+            ]
+
+
+pickFlavourColors : Maybe Flavour -> ( String, String )
+pickFlavourColors flavour =
+    case flavour of
+        Just Sugar ->
+            ( "darkblue", "lightblue" )
+
+        Just Chilli ->
+            ( "darkred", "orange" )
+
+        Just Chocolate ->
+            ( "black", "brown" )
+
+        Nothing ->
+            ( "gray", "lightgray" )
+
+
+
+-- SPRITES
+
+
+chilliBunSprite : Sprite {}
+chilliBunSprite =
+    { baseSprite | dope = Array.fromList ([ ( 1, 1 ) ]) }
+
+
+sweetBunSprite : Sprite {}
+sweetBunSprite =
+    { baseSprite | dope = Array.fromList ([ ( 2, 1 ) ]) }
+
+
+cocoBunSprite : Sprite {}
+cocoBunSprite =
+    { baseSprite | dope = Array.fromList ([ ( 3, 1 ) ]) }
+
+
+basicBunSprite : Sprite {}
+basicBunSprite =
+    { baseSprite | dope = Array.fromList ([ ( 0, 1 ) ]) }
+
+
+baseSprite : Sprite {}
+baseSprite =
+    { sheet = "SweetBuns--sprite-sheet.png"
+    , rows = 4
+    , columns = 4
+    , size = ( 256, 256 )
+    , frame = 0
+    , dope = Array.fromList ([ ( 0, 0 ) ])
+    }
 
 
 
