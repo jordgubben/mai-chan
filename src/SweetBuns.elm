@@ -695,10 +695,10 @@ renderThingy thingy =
             renderBun flavour
 
         Flour flavour ->
-            renderFoodStuff '🌾' flavour "Flour"
+            renderFlour flavour
 
         Water flavour ->
-            renderFoodStuff '💧' flavour "Water"
+            renderWater flavour
 
         Flavouring Sugar ->
             renderFoodStuff '🍯' (Just Sugar) ""
@@ -752,24 +752,94 @@ renderBun : Maybe Flavour -> Html msg
 renderBun flavour =
     let
         sprite =
-            case flavour of
-                Just Sugar ->
-                    sweetBunSprite
-
-                Just Chilli ->
-                    chilliBunSprite
-
-                Just Chocolate ->
-                    cocoBunSprite
-
-                Nothing ->
-                    basicBunSprite
+            getSpriteByFlavour bunSprites flavour
 
         ( primaryColor, secondaryColor ) =
             pickFlavourColors flavour
+
+        debugName =
+            (flavour |> Maybe.map toString |> Maybe.withDefault "") ++ " Bun"
+    in
+        renderBorderDecoratedSprite
+            "water"
+            { primaryColor = primaryColor
+            , secondaryColor = secondaryColor
+            , borderRadius = 15
+            , debugName = debugName
+            }
+            sprite
+
+
+renderWater : Maybe Flavour -> Html msg
+renderWater flavour =
+    let
+        sprite =
+            getSpriteByFlavour waterSprites flavour
+
+        ( primaryColor, secondaryColor ) =
+            pickFlavourColors flavour
+
+        debugName =
+            (flavour |> Maybe.map toString |> Maybe.withDefault "") ++ " Water"
+    in
+        renderBorderDecoratedSprite
+            "water"
+            { primaryColor = primaryColor
+            , secondaryColor = secondaryColor
+            , borderRadius = (tileSide - 14) // 2
+            , debugName = debugName
+            }
+            sprite
+
+
+renderFlour : Maybe Flavour -> Html msg
+renderFlour flavour =
+    let
+        sprite =
+            getSpriteByFlavour flourSprites flavour
+
+        ( primaryColor, secondaryColor ) =
+            pickFlavourColors flavour
+
+        debugName =
+            (flavour |> Maybe.map toString |> Maybe.withDefault "") ++ " Flour"
+    in
+        renderBorderDecoratedSprite
+            "bun"
+            { primaryColor = primaryColor
+            , secondaryColor = secondaryColor
+            , borderRadius = 0
+            , debugName = debugName
+            }
+            sprite
+
+
+type alias BorderDecoratedSpriteStyle a =
+    { a
+        | borderRadius : Int
+        , debugName : String
+        , primaryColor : String
+        , secondaryColor : String
+    }
+
+
+{-| Render a sprite surounded by a box border
+-}
+renderBorderDecoratedSprite : String -> BorderDecoratedSpriteStyle a -> Sprite {} -> Html msg
+renderBorderDecoratedSprite cssClass { primaryColor, secondaryColor, borderRadius, debugName } sprite =
+    let
+        margin =
+            7
+
+        borderWidth =
+            3
+
+        -- Width & Height of borde box inside (i.e. excluding border)
+        side =
+            tileSide - (margin * 2) - (borderWidth * 2)
     in
         Html.div
-            [ class "bun"
+            [ class cssClass
             , style
                 ([ ( "position", "relative" )
                  , ( "overflow", "hide" )
@@ -778,14 +848,14 @@ renderBun flavour =
                 )
             ]
             [ Html.div
-                [ class "bun-bg"
+                [ class (cssClass ++ "-bg")
                 , style
                     [ ( "position", "absolute" )
-                    , ( "width", (tileSide - 7 * 2 |> toString) ++ "px" )
-                    , ( "height", (tileSide - 7 * 2 |> toString) ++ "px" )
-                    , ( "margin", "5px" )
-                    , ( "border-radius", "15px" )
-                    , ( "border-width", "2px" )
+                    , ( "width", side ) |> px
+                    , ( "height", side ) |> px
+                    , ( "margin", margin ) |> px
+                    , ( "border-radius", borderRadius ) |> px
+                    , ( "border-width", borderWidth ) |> px
                     , ( "border-style", "dashed" )
                     , ( "border-color", primaryColor )
                     , ( "background-color", secondaryColor )
@@ -793,7 +863,7 @@ renderBun flavour =
                 ]
                 []
             , Html.span
-                [ class "bun-sprite"
+                [ class (cssClass ++ "-sprite")
                 , style <|
                     [ ( "position", "absolute" )
                     , ( "top", "0px" )
@@ -804,7 +874,8 @@ renderBun flavour =
                 ]
                 []
             , Html.span
-                [ style
+                [ class "debug"
+                , style
                     [ ( "position", "absolute" )
                     , ( "width", "100%" )
                     , ( "top", "45px" )
@@ -812,10 +883,14 @@ renderBun flavour =
                     , ( "font-size", "40%" )
                     ]
                 ]
-                [ flavour |> Maybe.map toString |> Maybe.withDefault "" |> text
-                , ("Bun" |> text)
+                [ text debugName
                 ]
             ]
+
+
+px : ( String, Int ) -> ( String, String )
+px ( name, value ) =
+    ( name, (value |> toString) ++ "px" )
 
 
 pickFlavourColors : Maybe Flavour -> ( String, String )
@@ -838,24 +913,55 @@ pickFlavourColors flavour =
 -- SPRITES
 
 
-chilliBunSprite : Sprite {}
-chilliBunSprite =
-    { baseSprite | dope = Array.fromList ([ ( 1, 1 ) ]) }
+type alias FlavouredSpriteKit =
+    { sweet : Sprite {}
+    , chilli : Sprite {}
+    , coco : Sprite {}
+    , basic : Sprite {}
+    }
 
 
-sweetBunSprite : Sprite {}
-sweetBunSprite =
-    { baseSprite | dope = Array.fromList ([ ( 2, 1 ) ]) }
+getSpriteByFlavour : FlavouredSpriteKit -> Maybe Flavour -> Sprite {}
+getSpriteByFlavour kit flavour =
+    case flavour of
+        Just Sugar ->
+            kit.sweet
+
+        Just Chilli ->
+            kit.chilli
+
+        Just Chocolate ->
+            kit.coco
+
+        Nothing ->
+            kit.basic
 
 
-cocoBunSprite : Sprite {}
-cocoBunSprite =
-    { baseSprite | dope = Array.fromList ([ ( 3, 1 ) ]) }
+bunSprites : FlavouredSpriteKit
+bunSprites =
+    { chilli = { baseSprite | dope = Array.fromList ([ ( 1, 1 ) ]) }
+    , sweet = { baseSprite | dope = Array.fromList ([ ( 2, 1 ) ]) }
+    , coco = { baseSprite | dope = Array.fromList ([ ( 3, 1 ) ]) }
+    , basic = { baseSprite | dope = Array.fromList ([ ( 0, 1 ) ]) }
+    }
 
 
-basicBunSprite : Sprite {}
-basicBunSprite =
-    { baseSprite | dope = Array.fromList ([ ( 0, 1 ) ]) }
+waterSprites : FlavouredSpriteKit
+waterSprites =
+    { chilli = { baseSprite | dope = Array.fromList ([ ( 1, 2 ) ]) }
+    , sweet = { baseSprite | dope = Array.fromList ([ ( 2, 2 ) ]) }
+    , coco = { baseSprite | dope = Array.fromList ([ ( 3, 2 ) ]) }
+    , basic = { baseSprite | dope = Array.fromList ([ ( 0, 2 ) ]) }
+    }
+
+
+flourSprites : FlavouredSpriteKit
+flourSprites =
+    { chilli = { baseSprite | dope = Array.fromList ([ ( 1, 3 ) ]) }
+    , sweet = { baseSprite | dope = Array.fromList ([ ( 2, 3 ) ]) }
+    , coco = { baseSprite | dope = Array.fromList ([ ( 3, 3 ) ]) }
+    , basic = { baseSprite | dope = Array.fromList ([ ( 0, 3 ) ]) }
+    }
 
 
 baseSprite : Sprite {}
