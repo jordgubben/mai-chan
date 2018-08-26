@@ -700,52 +700,53 @@ renderThingy thingy =
         Water flavour ->
             renderWater flavour
 
-        Flavouring Sugar ->
-            renderFoodStuff '🍯' (Just Sugar) ""
-
-        Flavouring Chocolate ->
-            renderFoodStuff '🍫' (Just Chocolate) ""
-
-        Flavouring Chilli ->
-            renderFoodStuff '🌶' (Just Chilli) ""
+        Flavouring flavour ->
+            renderFlavouring flavour
 
         Obstacle ->
-            Html.div
-                [ style
-                    [ ( "width", "50px" )
-                    , ( "height", "50px" )
-                    , ( "margin", "4px 4px" )
-                    , ( "background-color", "black" )
-                    , ( "border", "2px dotted darkgray" )
-                    ]
-                ]
-                []
+            obstacleHtml
 
 
-renderFoodStuff : Char -> Maybe Flavour -> String -> Html msg
-renderFoodStuff icon flavour str =
+renderFlavouring : Flavour -> Html msg
+renderFlavouring flavour =
     let
-        ( primaryColor, secondaryColor ) =
-            pickFlavourColors flavour
+        ( cssClass, sprite ) =
+            case flavour of
+                Sugar ->
+                    ( "sugar", sugarSprite )
+
+                Chocolate ->
+                    ( "chocolate", chocolateSprite )
+
+                Chilli ->
+                    ( "chilli", chilliSprite )
     in
-        Html.div
-            [ style
-                [ ( "width", (tileSide - 4 - 10 |> toString) ++ "px" )
-                , ( "height", (tileSide - 4 - 10 |> toString) ++ "px" )
-                , ( "margin", "5px" )
-                , ( "border-radius", "5px" )
-                , ( "border-width", "2px" )
-                , ( "border-style", "dashed" )
-                , ( "border-color", primaryColor )
-                , ( "background-color", secondaryColor )
-                , ( "text-align", "center" )
-                ]
+        renderSprite cssClass sprite
+
+
+{-| Render the most basic sprite
+-}
+renderSprite : String -> Sprite a -> Html msg
+renderSprite cssClass sprite =
+    Html.span
+        [ class <| cssClass ++ "-sprite"
+        , style <| Sprite.sprite sprite
+        ]
+        []
+
+
+obstacleHtml : Html msg
+obstacleHtml =
+    Html.div
+        [ style
+            [ ( "width", "50px" )
+            , ( "height", "50px" )
+            , ( "margin", "4px 4px" )
+            , ( "background-color", "black" )
+            , ( "border", "2px dotted darkgray" )
             ]
-            [ Html.span [ style [ ( "font-size", "150%" ) ] ] [ icon |> String.fromChar |> text ]
-            , Html.br [] []
-            , Html.span [ style [ ( "font-size", "40%" ) ] ] [ flavour |> Maybe.map toString |> Maybe.withDefault "" |> text ]
-            , Html.span [ style [ ( "font-size", "40%" ) ] ] [ str |> text ]
-            ]
+        ]
+        []
 
 
 renderBun : Maybe Flavour -> Html msg
@@ -761,7 +762,7 @@ renderBun flavour =
             (flavour |> Maybe.map toString |> Maybe.withDefault "") ++ " Bun"
     in
         renderBorderDecoratedSprite
-            "water"
+            "bun"
             { primaryColor = primaryColor
             , secondaryColor = secondaryColor
             , borderRadius = 15
@@ -805,7 +806,7 @@ renderFlour flavour =
             (flavour |> Maybe.map toString |> Maybe.withDefault "") ++ " Flour"
     in
         renderBorderDecoratedSprite
-            "bun"
+            "flour"
             { primaryColor = primaryColor
             , secondaryColor = secondaryColor
             , borderRadius = 0
@@ -863,16 +864,15 @@ renderBorderDecoratedSprite cssClass { primaryColor, secondaryColor, borderRadiu
                 ]
                 []
             , Html.span
-                [ class (cssClass ++ "-sprite")
+                [ class ("sprite-container")
                 , style <|
                     [ ( "position", "absolute" )
-                    , ( "top", "0px" )
-                    , ( "left", "0" )
+                    , ( "top", 0 ) |> px
+                    , ( "left", 0 ) |> px
                     , ( "transform", "scale(0.5)" )
                     ]
-                        ++ (Sprite.sprite sprite)
                 ]
-                []
+                [ renderSprite cssClass sprite ]
             , Html.span
                 [ class "debug"
                 , style
@@ -913,6 +913,21 @@ pickFlavourColors flavour =
 -- SPRITES
 
 
+chilliSprite : Sprite {}
+chilliSprite =
+    staticSprite ( 1, 0 )
+
+
+sugarSprite : Sprite {}
+sugarSprite =
+    staticSprite ( 2, 0 )
+
+
+chocolateSprite : Sprite {}
+chocolateSprite =
+    staticSprite ( 3, 0 )
+
+
 type alias FlavouredSpriteKit =
     { sweet : Sprite {}
     , chilli : Sprite {}
@@ -939,29 +954,34 @@ getSpriteByFlavour kit flavour =
 
 bunSprites : FlavouredSpriteKit
 bunSprites =
-    { chilli = { baseSprite | dope = Array.fromList ([ ( 1, 1 ) ]) }
-    , sweet = { baseSprite | dope = Array.fromList ([ ( 2, 1 ) ]) }
-    , coco = { baseSprite | dope = Array.fromList ([ ( 3, 1 ) ]) }
-    , basic = { baseSprite | dope = Array.fromList ([ ( 0, 1 ) ]) }
+    { chilli = staticSprite ( 1, 1 )
+    , sweet = staticSprite ( 2, 1 )
+    , coco = staticSprite ( 3, 1 )
+    , basic = staticSprite ( 0, 1 )
     }
 
 
 waterSprites : FlavouredSpriteKit
 waterSprites =
-    { chilli = { baseSprite | dope = Array.fromList ([ ( 1, 2 ) ]) }
-    , sweet = { baseSprite | dope = Array.fromList ([ ( 2, 2 ) ]) }
-    , coco = { baseSprite | dope = Array.fromList ([ ( 3, 2 ) ]) }
-    , basic = { baseSprite | dope = Array.fromList ([ ( 0, 2 ) ]) }
+    { chilli = staticSprite ( 1, 2 )
+    , sweet = staticSprite ( 2, 2 )
+    , coco = staticSprite ( 3, 2 )
+    , basic = staticSprite ( 0, 2 )
     }
 
 
 flourSprites : FlavouredSpriteKit
 flourSprites =
-    { chilli = { baseSprite | dope = Array.fromList ([ ( 1, 3 ) ]) }
-    , sweet = { baseSprite | dope = Array.fromList ([ ( 2, 3 ) ]) }
-    , coco = { baseSprite | dope = Array.fromList ([ ( 3, 3 ) ]) }
-    , basic = { baseSprite | dope = Array.fromList ([ ( 0, 3 ) ]) }
+    { chilli = staticSprite ( 1, 3 )
+    , sweet = staticSprite ( 2, 3 )
+    , coco = staticSprite ( 3, 3 )
+    , basic = staticSprite ( 0, 3 )
     }
+
+
+staticSprite : ( Int, Int ) -> Sprite {}
+staticSprite pos =
+    { baseSprite | dope = Array.fromList ([ pos ]) }
 
 
 baseSprite : Sprite {}
