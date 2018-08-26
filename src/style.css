@@ -1,0 +1,15 @@
+body {
+	background-color: #e98097; /* Cartridge pink */
+
+}
+
+.debug {
+	display: none;
+}
+
+div#game {
+	width: 660px; /* 640 + 10*2 */
+	margin: auto;
+
+	background-color: white;
+}
