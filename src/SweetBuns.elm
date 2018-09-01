@@ -475,8 +475,46 @@ fallInterval =
 -- # VIEW
 
 
+{-| View the entire game, including UI and debug.
+-}
 view : Model -> Html Msg
 view model =
+    Html.div
+        [ id "game-container"
+        , style
+            [ ( "position", "relative" )
+            , ( "width", (10 * tileSide |> toString) ++ "px" )
+            , ( "height", (8 * tileSide |> toString) ++ "px" )
+            , ( "border", "10px solid black" )
+            ]
+        ]
+        [ viewBoardContainer model
+        , viewDebug model
+        ]
+
+
+viewBoardContainer : Model -> Html Msg
+viewBoardContainer model =
+    Html.div
+        [ id "board-container"
+        , style
+            [ ( "position", "absolute" )
+            , ( "top", (1 * tileSide |> toString) ++ "px" )
+            , ( "left", "0" )
+            ]
+        ]
+        [ viewBoard model
+        , if isGameOver kitchenLevel model.things then
+            viewGameOver
+          else
+            text ""
+        ]
+
+
+{-| View the content of the game board
+-}
+viewBoard : Model -> Html Msg
+viewBoard model =
     let
         finalGrid : Grid RenderableTile
         finalGrid =
@@ -501,71 +539,62 @@ view model =
                         }
                     )
     in
-        Html.div
-            [ id "game-container"
-            , style
-                [ ( "position", "relative" )
-                , ( "width", (10 * tileSide |> toString) ++ "px" )
-                , ( "height", (8 * tileSide |> toString) ++ "px" )
-                , ( "border", "10px solid black" )
-                ]
-            ]
-            [ Html.div
-                [ id "board-container"
-                , style
-                    [ ( "position", "absolute" )
-                    , ( "top", (1 * tileSide |> toString) ++ "px" )
-                    , ( "left", "0" )
-                    ]
-                ]
-                [ Grid.toHtmlDiv ( tileSide, tileSide ) renderTile finalGrid
+        Grid.toHtmlDiv ( tileSide, tileSide ) renderTile finalGrid
 
-                -- Display board
-                , if isGameOver kitchenLevel model.things then
-                    Html.div
-                        [ id "game-over"
-                        , style
-                            [ ( "position", "absolute" )
-                            , ( "top", "0" )
-                            , ( "width", "90%" )
-                            , ( "height", "90%" )
-                            , ( "padding", "5%" )
-                            , ( "color", "darkred" )
-                            , ( "text-align", "center" )
-                            , ( "background-color", "white" )
-                            , ( "opacity", "0.75" )
-                            ]
-                        ]
-                        [ Html.h1 [ style [ ( "opacity", "1" ) ] ] [ text "Game over" ]
-                        , Html.a
-                            [ style [ ( "opacity", "1" ) ]
-                            , Att.href "#restart"
-                            , onClick RestartGame
-                            ]
-                            [ text "Try again?" ]
-                        ]
-                  else
-                    text ""
-                ]
-            , Html.div
-                [ class "debug"
-                , style
-                    [ ( "position", "absolute" )
-                    , ( "right", "0" )
-                    , ( "width", (4 * tileSide |> toString) ++ "px" )
-                    , ( "height", (8 * tileSide |> toString) ++ "px" )
-                    , ( "background-color", "lightgray" )
-                    ]
-                ]
-                [ Html.button [ onClick Spawn ] [ text "Spawn!" ]
-                , Html.button [ onClick Fall ] [ text "Fall!" ]
-                , Html.button [ onClick Collect ] [ text "Collect" ]
-                , Html.p [] [ "Move count: " ++ (model.moveCount |> toString) |> text ]
-                , Html.p [] [ "Random seed: " ++ (toString model.seed) |> text ]
-                , Html.p [] [ "Selected tile: " ++ (model.selectedTile |> toString) |> text ]
-                , Html.p [] [ "Game over? " ++ ((isGameOver kitchenLevel model.things) |> toString) |> text ]
-                ]
+
+{-| View the 'Game over' modal dialog box
+-}
+viewGameOver : Html Msg
+viewGameOver =
+    Html.div
+        [ id "game-over"
+        , style
+            [ ( "position", "absolute" )
+            , ( "top", "0" )
+            , ( "width", "90%" )
+            , ( "height", "90%" )
+            , ( "padding", "5%" )
+            , ( "color", "darkred" )
+            , ( "text-align", "center" )
+            , ( "background-color", "white" )
+            , ( "opacity", "0.75" )
             ]
+        ]
+        [ Html.h1 [ style [ ( "opacity", "1" ) ] ] [ text "Game over" ]
+        , Html.a
+            [ style [ ( "opacity", "1" ) ]
+            , Att.href "#restart"
+            , onClick RestartGame
+            ]
+            [ text "Try again?" ]
+        ]
+
+
+{-| View various debug information.
+
+    (Hidden using css-tricks in thw final game)
+
+-}
+viewDebug : Model -> Html Msg
+viewDebug model =
+    Html.div
+        [ class "debug"
+        , style
+            [ ( "position", "absolute" )
+            , ( "right", "0" )
+            , ( "width", (4 * tileSide |> toString) ++ "px" )
+            , ( "height", (8 * tileSide |> toString) ++ "px" )
+            , ( "background-color", "lightgray" )
+            ]
+        ]
+        [ Html.button [ onClick Spawn ] [ text "Spawn!" ]
+        , Html.button [ onClick Fall ] [ text "Fall!" ]
+        , Html.button [ onClick Collect ] [ text "Collect" ]
+        , Html.p [] [ "Move count: " ++ (model.moveCount |> toString) |> text ]
+        , Html.p [] [ "Random seed: " ++ (toString model.seed) |> text ]
+        , Html.p [] [ "Selected tile: " ++ (model.selectedTile |> toString) |> text ]
+        , Html.p [] [ "Game over? " ++ ((isGameOver kitchenLevel model.things) |> toString) |> text ]
+        ]
 
 
 renderTile : Coords -> RenderableTile -> Html Msg
