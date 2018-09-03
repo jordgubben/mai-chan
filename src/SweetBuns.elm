@@ -442,7 +442,7 @@ isBunCollector floorTile =
 {-| Keep updating regularly while game is running.
 
     - Spawn new things now and then
-    - Lett things fall ASAP
+    - Let things fall (if anything could fall)
 
 -}
 subscriptions : Model -> Sub Msg

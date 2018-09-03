@@ -224,9 +224,7 @@ renderFlour flavour =
 
 
 
-{- \
-   Pick color pattern based on Flavour
--}
+{- \ Pick color pattern based on Flavour -}
 
 
 pickFlavourColors : Maybe Flavour -> ( String, String )
@@ -299,7 +297,6 @@ renderBorderDecoratedSprite cssClass { primaryColor, secondaryColor, borderRadiu
                     [ ( "position", "absolute" )
                     , ( "top", 0 ) |> px
                     , ( "left", 0 ) |> px
-                    , ( "transform", "scale(0.5)" )
                     ]
                 ]
                 [ renderSprite cssClass sprite ]
@@ -318,7 +315,7 @@ renderBorderDecoratedSprite cssClass { primaryColor, secondaryColor, borderRadiu
             ]
 
 
-{-| Render the most basic sprite
+{-| Render the most basic sprite.
 -}
 renderSprite : String -> Sprite a -> Html msg
 renderSprite cssClass sprite =
