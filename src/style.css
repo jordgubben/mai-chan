@@ -8,7 +8,7 @@ body {
 }
 
 div#game {
-	width: 660px; /* 640 + 10*2 */
+	width: 404px; /* 384 + 10*2 */
 	margin: auto;
 
 	background-color: white;

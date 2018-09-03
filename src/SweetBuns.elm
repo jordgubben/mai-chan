@@ -483,7 +483,7 @@ view model =
         [ id "game-container"
         , style
             [ ( "position", "relative" )
-            , ( "width", (10 * tileSide |> toString) ++ "px" )
+            , ( "width", (6 * tileSide |> toString) ++ "px" )
             , ( "height", (8 * tileSide |> toString) ++ "px" )
             , ( "border", "10px solid black" )
             ]
@@ -580,10 +580,11 @@ viewDebug model =
     Html.div
         [ class "debug"
         , style
-            [ ( "position", "absolute" )
+            [ ( "position", "fixed" )
+            , ( "bottom", "0" )
             , ( "right", "0" )
-            , ( "width", (4 * tileSide |> toString) ++ "px" )
-            , ( "height", (8 * tileSide |> toString) ++ "px" )
+            , ( "width", "100%" )
+            , ( "height", (4 * tileSide |> toString) ++ "px" )
             , ( "background-color", "lightgray" )
             ]
         ]
