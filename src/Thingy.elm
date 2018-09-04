@@ -162,21 +162,8 @@ renderBun flavour =
     let
         sprite =
             getSpriteByFlavour bunSprites flavour
-
-        ( primaryColor, secondaryColor ) =
-            pickFlavourColors flavour
-
-        debugName =
-            (flavour |> Maybe.map toString |> Maybe.withDefault "") ++ " Bun"
     in
-        renderBorderDecoratedSprite
-            "bun"
-            { primaryColor = primaryColor
-            , secondaryColor = secondaryColor
-            , borderRadius = 15
-            , debugName = debugName
-            }
-            sprite
+        renderSprite "bun" sprite
 
 
 renderWater : Maybe Flavour -> Html msg
@@ -184,21 +171,8 @@ renderWater flavour =
     let
         sprite =
             getSpriteByFlavour waterSprites flavour
-
-        ( primaryColor, secondaryColor ) =
-            pickFlavourColors flavour
-
-        debugName =
-            (flavour |> Maybe.map toString |> Maybe.withDefault "") ++ " Water"
     in
-        renderBorderDecoratedSprite
-            "water"
-            { primaryColor = primaryColor
-            , secondaryColor = secondaryColor
-            , borderRadius = (spriteSide - 14) // 2
-            , debugName = debugName
-            }
-            sprite
+        renderSprite "water" sprite
 
 
 renderFlour : Maybe Flavour -> Html msg
@@ -206,27 +180,12 @@ renderFlour flavour =
     let
         sprite =
             getSpriteByFlavour flourSprites flavour
-
-        ( primaryColor, secondaryColor ) =
-            pickFlavourColors flavour
-
-        debugName =
-            (flavour |> Maybe.map toString |> Maybe.withDefault "") ++ " Flour"
     in
-        renderBorderDecoratedSprite
-            "flour"
-            { primaryColor = primaryColor
-            , secondaryColor = secondaryColor
-            , borderRadius = 0
-            , debugName = debugName
-            }
-            sprite
+        renderSprite "flour" sprite
 
 
-
-{- \ Pick color pattern based on Flavour -}
-
-
+{-| Pick color pattern based on Flavour.
+-}
 pickFlavourColors : Maybe Flavour -> ( String, String )
 pickFlavourColors flavour =
     case flavour of
@@ -250,69 +209,6 @@ type alias BorderDecoratedSpriteStyle a =
         , primaryColor : String
         , secondaryColor : String
     }
-
-
-{-| Render a sprite surounded by a box border
--}
-renderBorderDecoratedSprite : String -> BorderDecoratedSpriteStyle a -> Sprite {} -> Html msg
-renderBorderDecoratedSprite cssClass { primaryColor, secondaryColor, borderRadius, debugName } sprite =
-    let
-        margin =
-            7
-
-        borderWidth =
-            3
-
-        -- Width & Height of borde box inside (i.e. excluding border)
-        side =
-            spriteSide - (margin * 2) - (borderWidth * 2)
-    in
-        Html.div
-            [ class cssClass
-            , style
-                ([ ( "position", "relative" )
-                 , ( "overflow", "hide" )
-                 , ( "text-align", "center" )
-                 ]
-                )
-            ]
-            [ Html.div
-                [ class (cssClass ++ "-bg")
-                , style
-                    [ ( "position", "absolute" )
-                    , ( "width", side ) |> px
-                    , ( "height", side ) |> px
-                    , ( "margin", margin ) |> px
-                    , ( "border-radius", borderRadius ) |> px
-                    , ( "border-width", borderWidth ) |> px
-                    , ( "border-style", "dashed" )
-                    , ( "border-color", primaryColor )
-                    , ( "background-color", secondaryColor )
-                    ]
-                ]
-                []
-            , Html.span
-                [ class ("sprite-container")
-                , style <|
-                    [ ( "position", "absolute" )
-                    , ( "top", 0 ) |> px
-                    , ( "left", 0 ) |> px
-                    ]
-                ]
-                [ renderSprite cssClass sprite ]
-            , Html.span
-                [ class "debug"
-                , style
-                    [ ( "position", "absolute" )
-                    , ( "width", "100%" )
-                    , ( "top", "45px" )
-                    , ( "left", "0" )
-                    , ( "font-size", "40%" )
-                    ]
-                ]
-                [ text debugName
-                ]
-            ]
 
 
 {-| Render the most basic sprite.
