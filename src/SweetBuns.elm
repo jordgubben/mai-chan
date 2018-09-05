@@ -30,6 +30,7 @@ type alias Model =
     { selectedTile : Maybe Coords
     , things : Grid Thingy
     , moveCount : Int
+    , totalScore : Int
     , seed : Seed
     }
 
@@ -39,6 +40,7 @@ initialModel =
     { selectedTile = Nothing
     , things = initialThings
     , moveCount = 0
+    , totalScore = 0
     , seed = Random.initialSeed 0
     }
 
@@ -100,11 +102,16 @@ update msg model =
             )
 
         Collect ->
-            ( { model
-                | things = collectThings kitchenLevel model.things
-              }
-            , Cmd.none
-            )
+            let
+                ( things_, scoreIncrement ) =
+                    collectThings kitchenLevel model.things
+            in
+                ( { model
+                    | things = things_
+                    , totalScore = model.totalScore + scoreIncrement
+                  }
+                , Cmd.none
+                )
 
 
 {-| Start game with a half full board.
@@ -127,7 +134,12 @@ restartGame model =
         ( newThings, seed_ ) =
             fillBoard model.seed
     in
-        { model | seed = seed_, things = Dict.union initialThings newThings }
+        { model
+            | seed = seed_
+            , things = Dict.union initialThings newThings
+            , moveCount = 0
+            , totalScore = 0
+        }
 
 
 {-| Fill board to the brim with various things
@@ -407,7 +419,7 @@ move from to things =
 
 {-| Collect all collectable Buns on collectors.
 -}
-collectThings : Grid FloorTile -> Grid Thingy -> Grid Thingy
+collectThings : Grid FloorTile -> Grid Thingy -> ( Grid Thingy, Int )
 collectThings level things =
     let
         collectionPoints =
@@ -422,7 +434,7 @@ collectThings level things =
                             && Thingy.isCollectableBun thing
                     )
     in
-        remainingThings
+        ( remainingThings, 100 * (Dict.size collectedThings) )
 
 
 isBunCollector : FloorTile -> Bool
@@ -488,8 +500,44 @@ view model =
             , ( "border", "10px solid black" )
             ]
         ]
-        [ viewBoardContainer model
+        [ viewScore model.totalScore
+        , viewBoardContainer model
         , viewDebug model
+        ]
+
+
+viewScore : Int -> Html msg
+viewScore score =
+    Html.div
+        [ id "score"
+        , style
+            [ ( "position", "absolute" )
+            , ( "top", 0 ) |> px
+            , ( "font-size", tileSide - 4 ) |> px
+            ]
+        ]
+        [ Html.span
+            [ class "label"
+            , style
+                [ ( "display", "inline-block" )
+                , ( "width", 2 * tileSide ) |> px
+                , ( "padding", "10px 0" )
+                , ( "text-align", "left" )
+                ]
+            ]
+            [ text "Score"
+            ]
+        , Html.span
+            [ class "value"
+            , style
+                [ ( "display", "inline-block" )
+                , ( "width", 4 * tileSide ) |> px
+                , ( "padding", "10px 0" )
+                , ( "text-align", "right" )
+                ]
+            ]
+            [ text <| (toString score)
+            ]
         ]
 
 

@@ -145,7 +145,7 @@ collectSuite =
                             ]
 
                     -- When collecting
-                    remainingThings =
+                    ( remainingThings, _ ) =
                         SweetBuns.collectThings initialKitchen initialThings
 
                     -- THe bun on the collector tile is removed
@@ -155,10 +155,10 @@ collectSuite =
                             ]
                 in
                     equal remainingThings expectedThings
-        , test "Only ready Buns are collected (not ingredients" <|
+        , test "Only ready Buns are collected (not ingredients)" <|
             \() ->
                 let
-                    -- Given a level with one collector
+                    -- Given a level with three collectors
                     initialKitchen =
                         Grid.fromList
                             [ ( ( 0, 1 ), BunCollector )
@@ -175,7 +175,7 @@ collectSuite =
                             ]
 
                     -- When collecting
-                    remainingThings =
+                    ( remainingThings, _ ) =
                         SweetBuns.collectThings initialKitchen initialThings
 
                     -- Only the bun is collected
@@ -186,6 +186,26 @@ collectSuite =
                             ]
                 in
                     equal remainingThings expectedThings
+        , test "Colected Buns generate points" <|
+            \() ->
+                let
+                    -- Given a level with one collector
+                    initialKitchen =
+                        Grid.fromList
+                            [ ( ( 0, 1 ), BunCollector )
+                            ]
+
+                    -- And a something on every tile
+                    initialThings =
+                        Grid.fromList
+                            [ ( ( 0, 1 ), bun )
+                            ]
+
+                    -- When collecting
+                    ( _, score ) =
+                        SweetBuns.collectThings initialKitchen initialThings
+                in
+                    equal score 100
         ]
 
 
