@@ -497,11 +497,16 @@ view model =
             [ ( "position", "relative" )
             , ( "width", (6 * tileSide |> toString) ++ "px" )
             , ( "height", (8 * tileSide |> toString) ++ "px" )
-            , ( "border", "10px solid black" )
+            , ( "border", "5px solid black" )
             ]
         ]
         [ viewScore model.totalScore
         , viewBoardContainer model
+        , viewInfo
+            (model.selectedTile
+                |> Maybe.map (\coords -> Dict.get coords model.things)
+                |> Maybe.withDefault Nothing
+            )
         , viewDebug model
         ]
 
@@ -513,7 +518,7 @@ viewScore score =
         , style
             [ ( "position", "absolute" )
             , ( "top", 0 ) |> px
-            , ( "font-size", tileSide - 4 ) |> px
+            , ( "font-size", tileSide // 2 - 10 ) |> px
             ]
         ]
         [ Html.span
@@ -547,7 +552,7 @@ viewBoardContainer model =
         [ id "board-container"
         , style
             [ ( "position", "absolute" )
-            , ( "top", (1 * tileSide |> toString) ++ "px" )
+            , ( "top", (tileSide // 2 |> toString) ++ "px" )
             , ( "left", "0" )
             ]
         ]
@@ -588,6 +593,44 @@ viewBoard model =
                     )
     in
         Grid.toHtmlDiv ( tileSide, tileSide ) renderTile finalGrid
+
+
+viewInfo : Maybe Thingy -> Html msg
+viewInfo tile =
+    Html.div
+        [ id "tile-info"
+        , class "info-box"
+        , style
+            [ ( "position", "absolute" )
+            , ( "width", boardSize.width * tileSide ) |> px
+            , ( "height", 3 * (tileSide // 2) ) |> px
+            , ( "bottom", 0 ) |> px
+            , ( "left", 0 ) |> px
+            , ( "background-color", "white" )
+            ]
+        ]
+        (tile
+            |> Maybe.map
+                (\t ->
+                    [ Html.div
+                        [ style
+                            [ ( "width", tileSide ) |> px
+                            , ( "height", tileSide ) |> px
+                            , ( "padding", tileSide // 4 ) |> px
+                            , ( "float", "left" )
+                            , ( "background-color", "darkgray" )
+                            ]
+                        ]
+                        [ Thingy.toHtml t ]
+                    , Html.div [ class "description" ]
+                        [ Html.p [ style [ ( "padding", 5 ) |> px ] ]
+                            [ text <| Thingy.describe t
+                            ]
+                        ]
+                    ]
+                )
+            |> Maybe.withDefault []
+        )
 
 
 {-| View the 'Game over' modal dialog box
@@ -670,14 +713,14 @@ getTileColor tile =
         "aqua"
     else
         case tile.floor of
-            PlainTile ->
-                "lightgray"
-
             Spawner _ ->
                 "antiquewhite"
 
+            PlainTile ->
+                "lemonchiffon"
+
             BunCollector ->
-                "lawngreen"
+                "yellowgreen"
 
             WallTile ->
                 "darkgray"

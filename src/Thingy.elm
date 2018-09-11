@@ -1,4 +1,4 @@
-module Thingy exposing (Thingy(..), Flavour(..), isFaller, isCollectableBun, mixIngredients, toHtml, spriteSide)
+module Thingy exposing (Thingy(..), Flavour(..), isFaller, isCollectableBun, mixIngredients, describe, toHtml, spriteSide)
 
 import Array
 import Html exposing (Html, text)
@@ -102,7 +102,30 @@ mixBun { flour, water } =
 
 
 
--- # Rendering
+-- # Textual representation
+
+
+describe : Thingy -> String
+describe thingy =
+    case thingy of
+        Flour _ ->
+            "Flour - Mix with water to make a Bun."
+
+        Water _ ->
+            "Water - Mix with Flour to make a Bun."
+
+        Flavouring _ ->
+            "Flavour - Mix with Flavour or Water."
+
+        Bun _ ->
+            "Bun - Send it off!"
+
+        Obstacle ->
+            "Obstacle - Do ignore it."
+
+
+
+-- # Visual representation
 
 
 {-| Render some Thingy as HTML
