@@ -480,7 +480,7 @@ spawnInterval =
 
 fallInterval : Time
 fallInterval =
-    (0.5 * second)
+    (0.25 * second)
 
 
 
