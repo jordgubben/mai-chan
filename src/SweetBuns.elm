@@ -610,25 +610,7 @@ viewInfo tile =
             ]
         ]
         (tile
-            |> Maybe.map
-                (\t ->
-                    [ Html.div
-                        [ style
-                            [ ( "width", tileSide ) |> px
-                            , ( "height", tileSide ) |> px
-                            , ( "padding", tileSide // 4 ) |> px
-                            , ( "float", "left" )
-                            , ( "background-color", "darkgray" )
-                            ]
-                        ]
-                        [ Thingy.toHtml t ]
-                    , Html.div [ class "description" ]
-                        [ Html.p [ style [ ( "padding", 5 ) |> px ] ]
-                            [ text <| Thingy.describe t
-                            ]
-                        ]
-                    ]
-                )
+            |> Maybe.map (\t -> [ Thingy.viewInfo t ])
             |> Maybe.withDefault []
         )
 

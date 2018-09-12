@@ -1,4 +1,4 @@
-module Thingy exposing (Thingy(..), Flavour(..), isFaller, isCollectableBun, mixIngredients, describe, toHtml, spriteSide)
+module Thingy exposing (Thingy(..), Flavour(..), isFaller, isCollectableBun, mixIngredients, viewInfo, toHtml, spriteSide)
 
 import Array
 import Html exposing (Html, text)
@@ -105,23 +105,78 @@ mixBun { flour, water } =
 -- # Textual representation
 
 
-describe : Thingy -> String
+viewInfo : Thingy -> Html msg
+viewInfo thingy =
+    let
+        containerDiv attributes elements =
+            Html.div
+                ([ style
+                    [ ( "position", "relative" )
+                    , ( "width", "100%" )
+                    , ( "height", "100%" )
+                    ]
+                 ]
+                    ++ attributes
+                )
+                elements
+
+        iconDiv icon =
+            Html.div
+                [ class "icon"
+                , style
+                    [ ( "position", "absolute" )
+                    , ( "top", "0" )
+                    , ( "left", "0" )
+                    , ( "width", spriteSide ) |> px
+                    , ( "height", spriteSide ) |> px
+                    , ( "padding", spriteSide // 4 ) |> px
+                    , ( "background-color", "darkgray" )
+                    ]
+                ]
+                [ icon ]
+
+        descriptionDiv ( name, summary ) =
+            Html.div
+                [ class "description"
+                , style
+                    [ ( "position", "absolute" )
+                    , ( "top", "0" )
+                    , ( "right", "0" )
+                    , ( "width", spriteSide * 4 ) |> px
+                    , ( "height", spriteSide * 1 ) |> px
+                    , ( "padding", spriteSide // 4 ) |> px
+                    ]
+                ]
+                [ Html.div [ style [ ( "padding", 5 ) |> px ] ]
+                    [ Html.strong [ class "name" ] [ text name ]
+                    , text " - "
+                    , Html.span [ class "text" ] [ text summary ]
+                    ]
+                ]
+    in
+        containerDiv []
+            [ iconDiv <| toHtml thingy
+            , descriptionDiv <| describe thingy
+            ]
+
+
+describe : Thingy -> ( String, String )
 describe thingy =
     case thingy of
         Flour _ ->
-            "Flour - Mix with water to make a Bun."
+            ( "Flour", "Mix with water to make a Bun." )
 
         Water _ ->
-            "Water - Mix with Flour to make a Bun."
+            ( "Water", "Mix with Flour to make a Bun." )
 
         Flavouring _ ->
-            "Flavour - Mix with Flavour or Water."
+            ( "Flavour", "Mix with Flavour or Water." )
 
         Bun _ ->
-            "Bun - Send it off!"
+            ( "Bun", "Send it off!" )
 
         Obstacle ->
-            "Obstacle - Do ignore it."
+            ( "Obstacle", "Do ignore it." )
 
 
 
