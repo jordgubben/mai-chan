@@ -1,2 +1,20 @@
 # Clips, Screenshots, Releases etc.
 _archive/
+
+# elm-package generated files
+elm-stuff
+
+# elm-repl generated files
+repl-temp-*
+
+# Sublime
+*.sublime-project
+*.sublime-workspace
+
+# Build
+build/
+dist/
+tmp/
+
+# OS files
+.DS_Store
