@@ -4,6 +4,7 @@
     "repository": "https://github.com/jordgubben/game-board.git",
     "license": "MIT",
     "source-directories": [
+        "../deps/game-board/src",
         "../src",
         "."
     ],
