@@ -19,3 +19,9 @@ Running this script puts a releable game bundle under the `build/` folder.
 ```
 
 (Assumes Elm 0.18 is installed)
+
+Contrubuting
+------------
+This game is intended to be a collaborative and playful effort.
+If you have an idea for how to take the game further,
+then please describe/discuss it in an issue before you start implementing.
