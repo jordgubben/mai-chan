@@ -197,15 +197,15 @@ toHtml thingy =
         Water flavour ->
             renderWater flavour
 
-        Flavouring { flavour } ->
-            renderFlavouring flavour
+        Flavouring { flavour, packaged } ->
+            renderFlavouring flavour packaged
 
         Obstacle ->
             obstacleHtml
 
 
-renderFlavouring : Flavour -> Html msg
-renderFlavouring flavour =
+renderFlavouring : Flavour -> Bool -> Html msg
+renderFlavouring flavour packaged =
     let
         ( cssClass, sprite ) =
             case flavour of
@@ -218,7 +218,26 @@ renderFlavouring flavour =
                 Chilli ->
                     ( "chilli", chilliSprite )
     in
-        renderSprite cssClass sprite
+        Html.div [ style [ ( "position", "relative" ) ] ]
+            [ renderSprite cssClass sprite
+            , Html.div
+                [ style
+                    (if packaged then
+                        [ ( "position", "absolute" )
+                        , ( "width", 50 ) |> px
+                        , ( "height", 50 ) |> px
+                        , ( "top", 0 ) |> px
+                        , ( "left", 0 ) |> px
+                        , ( "margin", "4px 4px" )
+                        , ( "background-color", "rgb(0,128, 255, 0.25)" )
+                        , ( "border", "2px solid rgb(0,128, 255, 0.7)" )
+                        ]
+                     else
+                        []
+                    )
+                ]
+                []
+            ]
 
 
 obstacleHtml : Html msg
