@@ -83,12 +83,12 @@ testMix message ( ingredient1, ingredient2 ) expectedResult =
 
 sugar : Thingy
 sugar =
-    Flavouring Sugar
+    Flavouring { flavour = Sugar, packaged = False }
 
 
 chilli : Thingy
 chilli =
-    Flavouring Chilli
+    Flavouring { flavour = Chilli, packaged = False }
 
 
 water : Thingy

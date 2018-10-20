@@ -157,9 +157,9 @@ fillBoard seed =
             , Water Nothing
             , Flour Nothing
             , Flour Nothing
-            , Flavouring Sugar
-            , Flavouring Chilli
-            , Flavouring Chocolate
+            , Flavouring { flavour = Sugar, packaged = True }
+            , Flavouring { flavour = Chilli, packaged = True }
+            , Flavouring { flavour = Chocolate, packaged = True }
             ]
     in
         Grid.drawBox () filledRegion
@@ -767,7 +767,10 @@ spawnables =
 
 spawnableFlavours : List Thingy
 spawnableFlavours =
-    [ Flavouring Sugar, Flavouring Chilli, Flavouring Chocolate ]
+    [ Flavouring { flavour = Sugar, packaged = False }
+    , Flavouring { flavour = Chilli, packaged = False }
+    , Flavouring { flavour = Chocolate, packaged = False }
+    ]
 
 
 kitchenCollectors : Grid FloorTile

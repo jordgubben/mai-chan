@@ -10,7 +10,7 @@ type Thingy
     = Bun (Maybe Flavour)
     | Flour (Maybe Flavour)
     | Water (Maybe Flavour)
-    | Flavouring Flavour
+    | Flavouring { flavour : Flavour, packaged : Bool }
     | Obstacle
 
 
@@ -66,16 +66,16 @@ mixIngredients a b =
         ( Flour flourFlavour, Water waterFlavour ) ->
             mixBun { water = waterFlavour, flour = flourFlavour }
 
-        ( Water Nothing, Flavouring flavour ) ->
+        ( Water Nothing, Flavouring { flavour } ) ->
             Just <| Water (Just flavour)
 
-        ( Flavouring flavour, Water Nothing ) ->
+        ( Flavouring { flavour }, Water Nothing ) ->
             Just <| Water (Just flavour)
 
-        ( Flour Nothing, Flavouring flavour ) ->
+        ( Flour Nothing, Flavouring { flavour } ) ->
             Just <| Flour (Just flavour)
 
-        ( Flavouring flavour, Flour Nothing ) ->
+        ( Flavouring { flavour }, Flour Nothing ) ->
             Just <| Flour (Just flavour)
 
         _ ->
@@ -197,7 +197,7 @@ toHtml thingy =
         Water flavour ->
             renderWater flavour
 
-        Flavouring flavour ->
+        Flavouring { flavour } ->
             renderFlavouring flavour
 
         Obstacle ->
