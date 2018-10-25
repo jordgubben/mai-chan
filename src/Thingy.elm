@@ -67,31 +67,35 @@ mixIngredients a b =
             mixBun { water = waterFlavour, flour = flourFlavour }
 
         ( Water Nothing, Flavouring { flavour, packaged } ) ->
-            if not packaged then
-                Just <| Water (Just flavour)
-            else
-                Nothing
+            mixFlavouringWithWater packaged flavour
 
         ( Flavouring { flavour, packaged }, Water Nothing ) ->
-            if not packaged then
-                Just <| Water (Just flavour)
-            else
-                Nothing
+            mixFlavouringWithWater packaged flavour
 
         ( Flour Nothing, Flavouring { flavour, packaged } ) ->
-            if not packaged then
-                Just <| Flour (Just flavour)
-            else
-                Nothing
+            mixFlavouringWithFlour packaged flavour
 
         ( Flavouring { flavour, packaged }, Flour Nothing ) ->
-            if not packaged then
-                Just <| Flour (Just flavour)
-            else
-                Nothing
+            mixFlavouringWithFlour packaged flavour
 
         _ ->
             Nothing
+
+
+mixFlavouringWithWater : Bool -> Flavour -> Maybe Thingy
+mixFlavouringWithWater packaged flavour =
+    if not packaged then
+        Just <| Water (Just flavour)
+    else
+        Nothing
+
+
+mixFlavouringWithFlour : Bool -> Flavour -> Maybe Thingy
+mixFlavouringWithFlour packaged flavour =
+    if not packaged then
+        Just <| Flour (Just flavour)
+    else
+        Nothing
 
 
 mixBun : { flour : Maybe Flavour, water : Maybe Flavour } -> Maybe Thingy
