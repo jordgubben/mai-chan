@@ -1,9 +1,8 @@
 module Thingy exposing (Thingy(..), Flavour(..), isFaller, isCollectableBun, mixIngredients, viewInfo, toHtml, spriteSide)
 
-import Array
 import Html exposing (Html, text)
 import Html.Attributes as Att exposing (id, class, style)
-import Sprite exposing (Sprite)
+import NeoSprite exposing (Sprite, Sheet)
 
 
 type Thingy
@@ -291,13 +290,11 @@ type alias BorderDecoratedSpriteStyle a =
 
 {-| Render the most basic sprite.
 -}
-renderSprite : String -> Sprite a -> Html msg
+renderSprite : String -> Sprite -> Html msg
 renderSprite cssClass sprite =
     Html.span
-        [ class <| cssClass ++ "-sprite"
-        , style <| Sprite.sprite sprite
-        ]
-        []
+        [ class <| cssClass ++ "-sprite" ]
+        [ NeoSprite.toHtml sprite ]
 
 
 px : ( String, Int ) -> ( String, String )
@@ -309,30 +306,30 @@ px ( name, value ) =
 -- # Sprites
 
 
-chilliSprite : Sprite {}
+chilliSprite : Sprite
 chilliSprite =
     staticSprite ( 1, 0 )
 
 
-sugarSprite : Sprite {}
+sugarSprite : Sprite
 sugarSprite =
     staticSprite ( 2, 0 )
 
 
-chocolateSprite : Sprite {}
+chocolateSprite : Sprite
 chocolateSprite =
     staticSprite ( 3, 0 )
 
 
 type alias FlavouredSpriteKit =
-    { sweet : Sprite {}
-    , chilli : Sprite {}
-    , coco : Sprite {}
-    , basic : Sprite {}
+    { sweet : Sprite
+    , chilli : Sprite
+    , coco : Sprite
+    , basic : Sprite
     }
 
 
-getSpriteByFlavour : FlavouredSpriteKit -> Maybe Flavour -> Sprite {}
+getSpriteByFlavour : FlavouredSpriteKit -> Maybe Flavour -> Sprite
 getSpriteByFlavour kit flavour =
     case flavour of
         Just Sugar ->
@@ -375,19 +372,18 @@ flourSprites =
     }
 
 
-staticSprite : ( Int, Int ) -> Sprite {}
-staticSprite pos =
-    { baseSprite | dope = Array.fromList ([ pos ]) }
+staticSprite : ( Int, Int ) -> Sprite
+staticSprite index =
+    NeoSprite.fromSheet spriteSheet index
 
 
-baseSprite : Sprite {}
-baseSprite =
-    { sheet = "Thingy--sprites.png"
-    , rows = 4
-    , columns = 4
-    , size = ( 256, 256 )
-    , frame = 0
-    , dope = Array.fromList ([ ( 0, 0 ) ])
+spriteSheet : Sheet
+spriteSheet =
+    { imageUrl = "Thingy--sprites.png"
+    , imageWidth = 256
+    , imageHeight = 256
+    , spriteWidth = spriteSide
+    , spriteHeight = spriteSide
     }
 
 

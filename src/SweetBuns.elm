@@ -9,7 +9,6 @@ import Task
 import Html exposing (Html, text)
 import Html.Attributes as Att exposing (id, class, style)
 import Html.Events as Ev exposing (onMouseEnter, onMouseLeave, onClick)
-import Sprite exposing (Sprite)
 import Grid exposing (..)
 import Thingy exposing (Thingy(..), Flavour(..))
 
@@ -706,17 +705,6 @@ getTileColor tile =
 
             WallTile ->
                 "darkgray"
-
-
-{-| Render the most basic sprite
--}
-renderSprite : String -> Sprite a -> Html msg
-renderSprite cssClass sprite =
-    Html.span
-        [ class <| cssClass ++ "-sprite"
-        , style <| Sprite.sprite sprite
-        ]
-        []
 
 
 px : ( String, Int ) -> ( String, String )
