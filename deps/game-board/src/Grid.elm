@@ -1,4 +1,4 @@
-module Grid exposing (Grid, Coords, Size, empty, fromList, put, drawBox, lineRect, get, pickRect, numRows, numCols, translate, rotCv, rotCcv, swap, toHtmlTable, toHtmlDiv)
+module Grid exposing (Grid, Coords, Size, empty, fromList, put, drawBox, lineRect, get, pickRect, numRows, numCols, translate, rotCv, rotCcv, swap, toHtmlTable, toHtmlDiv, toSvgGroup)
 
 {-| Tile grid for (board game like) strategy games.
 
@@ -37,13 +37,15 @@ A Grid can be transformed in various ways.
 
 # Rendering
 
-@docs toHtmlTable, toHtmlDiv
+@docs toHtmlTable, toHtmlDiv, toSvgGroup
 
 -}
 
 import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes exposing (style, class)
+import Svg
+import Svg.Attributes as SvgAt
 import Grid.Bounds as Bounds exposing (minY, minX, maxY, maxX)
 
 
@@ -61,21 +63,50 @@ main =
                 |> put ( 5, -4 ) "Lower right"
                 |> put ( -2, -4 ) "Lower left"
 
-        cell coords content =
+        cellStyle =
+            style
+                [ ( "font-size", "10px" )
+                , ( "background-color", "lightblue" )
+                ]
+
+        outerDivBlockStyle =
+            style
+                [ ( "display", "block" )
+                , ( "width", 300 ) |> px
+                , ( "height", 400 ) |> px
+                , ( "margin", 15 ) |> px
+                , ( "border", "5px solid darkgray" )
+                ]
+
+        cellToHtml coords content =
             Html.div
-                [ style
-                    [ ( "font-size", "10px" )
-                    , ( "background-color", "lightblue" )
-                    ]
+                [ cellStyle
                 ]
                 [ (Html.em [] [ Html.text (toString coords) ])
                 , (Html.p [] [ Html.text content ])
                 ]
+
+        cellToSvg coords content =
+            Svg.g []
+                [ Svg.circle [ SvgAt.cx "16", SvgAt.cy "16", SvgAt.r "16" ] []
+                , Svg.text_ [] [ Svg.text ((toString coords) ++ content) ]
+                ]
     in
         Html.div []
-            [ (grid |> toHtmlTable cell)
-            , Html.p [] [ Html.text "---" ]
-            , (grid |> toHtmlDiv ( 32, 32 ) cell)
+            [ Html.h1 [] [ Html.text "Game board render test" ]
+            , Html.div [ outerDivBlockStyle ]
+                [ Html.h2 [] [ Html.text "Using <table>" ]
+                , (grid |> toHtmlTable cellToHtml)
+                ]
+            , Html.div [ outerDivBlockStyle ]
+                [ Html.h2 [] [ Html.text "Using <div>" ]
+                , (grid |> toHtmlDiv ( 32, 32 ) cellToHtml)
+                ]
+            , Html.div [ outerDivBlockStyle ]
+                [ Html.h2 [] [ Html.text "Using <svg>" ]
+                , Svg.svg [ SvgAt.width "256", SvgAt.height "256", SvgAt.viewBox "-64 -96 256 256" ]
+                    [ (grid |> toSvgGroup ( 32, 32 ) cellToSvg) ]
+                ]
             ]
 
 
@@ -99,7 +130,7 @@ type alias Size n =
     }
 
 
-{-| A Grid of tiles.
+{-| A Grid of cells.
 -}
 type alias Grid a =
     Dict Coords a
@@ -116,7 +147,7 @@ empty =
     Dict.empty
 
 
-{-| Create a grid from a list of coordnates+tile pairs
+{-| Create a grid from a list of coordnates+content pairs
 -}
 fromList : List ( Coords, a ) -> Grid a
 fromList =
@@ -130,18 +161,18 @@ fromList =
 {-| Draw a filled box that expands on positive axises from the origo (0,0).
 -}
 drawBox : t -> Size Int -> Grid t
-drawBox tile { width, height } =
+drawBox content { width, height } =
     List.range 0 (width - 1)
         |> List.map (\x -> List.range 0 (height - 1) |> List.map (\y -> ( x, y )))
         |> List.concat
-        |> List.map (\c -> ( c, tile ))
+        |> List.map (\c -> ( c, content ))
         |> fromList
 
 
 {-| Draw edges of a box that expands on positive axises from the origo (0,0).
 -}
 lineRect : t -> Size Int -> Grid t
-lineRect tile { width, height } =
+lineRect content { width, height } =
     let
         leftSide =
             List.range 0 (height - 1) |> List.map (\y -> ( 0, y ))
@@ -156,7 +187,7 @@ lineRect tile { width, height } =
             List.range 0 (width - 1) |> List.map (\x -> ( x, 0 ))
     in
         List.concat [ leftSide, rightSide, topSide, bottomSide ]
-            |> List.map (\coords -> ( coords, tile ))
+            |> List.map (\coords -> ( coords, content ))
             |> fromList
 
 
@@ -204,7 +235,7 @@ swap c1 c2 grid =
 -- # Editing
 
 
-{-| Place a tile in the Grid.
+{-| Put content in a Grid cell at the given Coords.
 -}
 put : Coords -> a -> Grid a -> Grid a
 put ( x, y ) cell =
@@ -215,14 +246,15 @@ put ( x, y ) cell =
 -- # Retrieval
 
 
-{-| Get a tile from a grid by position.
+{-| Ask for the content of a grid cell by position.
 -}
 get : Coords -> Grid a -> Maybe a
 get =
     Dict.get
 
 
-{-| Get a rect of tiles expanding positive axises (up and right) of from given coords
+{-| Get a rectangle of cells expanding positive axises (up and right)
+of from given coords.
 -}
 pickRect : Size Int -> Coords -> Grid a -> Grid a
 pickRect { width, height } ( left, bottom ) srcGrid =
@@ -234,7 +266,7 @@ pickRect { width, height } ( left, bottom ) srcGrid =
             left + width - 1
     in
         Dict.filter
-            (\( x, y ) tile ->
+            (\( x, y ) _ ->
                 (left <= x && x <= right) && (bottom <= y && y <= top)
             )
             srcGrid
@@ -317,62 +349,90 @@ cellTdStyle =
 
 {-| Render grid using HTML divs.
 
-Parameters are:
+Arguments are:
 
-  - Tile size
+  - Grid cell size
   - Content render func
   - Grid to render
 
 -}
 toHtmlDiv : ( Int, Int ) -> (( Int, Int ) -> a -> Html msg) -> Grid a -> Html msg
-toHtmlDiv ( tileWidth, tileHeight ) viewTile grid =
+toHtmlDiv ( cellWidth, cellHeight ) viewContent grid =
     let
         -- Outer div properties
         gridWidth =
-            Bounds.numCols grid * tileWidth
+            Bounds.numCols grid * cellWidth
 
         gridHeight =
-            Bounds.numRows grid * tileHeight
+            Bounds.numRows grid * cellHeight
 
         gridStyle =
             style
                 [ ( "position", "relative" )
-                , "width" % gridWidth
-                , "height" % gridHeight
+                , ( "width", gridWidth ) |> px
+                , ( "height", gridHeight ) |> px
                 ]
 
-        -- Create inner div(s) for every tile in grid
-        tileDiv ( ( x, y ), content ) =
+        -- Create inner div(s) for every occupied cell in grid
+        cellDiv ( ( x, y ), content ) =
             let
-                tileLeft =
-                    (x - Bounds.minX grid) * tileWidth
+                cellLeft =
+                    (x - Bounds.minX grid) * cellWidth
 
-                tileBottom =
-                    (y - Bounds.minY grid) * tileHeight
+                cellBottom =
+                    (y - Bounds.minY grid) * cellHeight
+
+                cellStyle =
+                    style
+                        [ ( "position", "absolute" )
+                        , ( "width", cellWidth ) |> px
+                        , ( "height", cellHeight ) |> px
+                        , ( "bottom", cellBottom ) |> px
+                        , ( "left", cellLeft ) |> px
+                        , ( "overflow", "hidden" )
+                        ]
             in
                 Html.div
                     [ class "grid-cell"
-                    , style
-                        [ ( "position", "absolute" )
-                        , "width" % tileWidth
-                        , "height" % tileHeight
-                        , "bottom" % tileBottom
-                        , "left" % tileLeft
-                        , ( "overflow", "hidden" )
-                        ]
+                    , cellStyle
                     ]
-                    [ viewTile ( x, y ) content ]
+                    [ viewContent ( x, y ) content ]
     in
-        -- Wrap tiles in a common outer div
+        -- Wrap cells in a common outer div
         Html.div
             [ class "grid", gridStyle ]
-            (Dict.toList grid |> List.map tileDiv)
+            (Dict.toList grid |> List.map cellDiv)
 
 
-{-|
+{-| Render grid using SVG groups.
 
-    Local operator for css sizes and offsets in pixels
+Arguments are:
+
+  - Grid cell size
+  - Content render func
+  - Grid to render
+
+(Note: Positive y-axis is up in this package, but down in SVG coordinates.
+This compromise to keep the behaviour of the function as close as possible
+to it's HTML siblings, while still maitaining unsuprising SVG behaviour
+inside content rendering functions.)
+
 -}
-(%) : String -> number -> ( String, String )
-(%) magnitude pixels =
+toSvgGroup : ( Int, Int ) -> (Coords -> a -> Svg.Svg msg) -> Grid a -> Svg.Svg msg
+toSvgGroup ( cellWidth, cellHeight ) viewContent grid =
+    let
+        cellGroup : ( Coords, a ) -> Svg.Svg msg
+        cellGroup ( ( x, y ), content ) =
+            Svg.g
+                [ SvgAt.transform ("translate(" ++ (toString (x * cellWidth)) ++ " " ++ (toString (-y * cellHeight)) ++ ")")
+                ]
+                [ viewContent ( x, y ) content ]
+    in
+        Svg.g [] (Dict.toList grid |> List.map cellGroup)
+
+
+{-| Helper for css-style sizes and offsets in pixels.
+-}
+px : ( String, number ) -> ( String, String )
+px ( magnitude, pixels ) =
     ( magnitude, (toString pixels) ++ "px" )

@@ -8,10 +8,9 @@ Tile source:
 
 -}
 
-import Array
 import Html exposing (Html)
 import Html.Attributes exposing (style)
-import Sprite
+import NeoSprite exposing (Sprite, Sheet)
 import Grid
 
 
@@ -27,12 +26,12 @@ main =
 
 
 type alias Tile =
-    Sprite.Sprite {}
+    NeoSprite.Sprite
 
 
 renderTile : a -> Tile -> Html msg
 renderTile _ tile =
-    Html.span [ style <| Sprite.sprite tile ] []
+    NeoSprite.toHtml tile
 
 
 
@@ -152,18 +151,14 @@ turfEdgeBottomLeftRight =
 -}
 staticTile : ( Int, Int ) -> Tile
 staticTile tileLoc =
-    { baseTile
-        | frame = 0
-        , dope = Array.fromList [ tileLoc ]
-    }
+    NeoSprite.fromSheet sheet tileLoc
 
 
-baseTile : Tile
-baseTile =
-    { sheet = "FloatingIslandsTiles.png"
-    , rows = 8
-    , columns = 23
-    , size = ( 368, 128 )
-    , frame = 0
-    , dope = Array.empty
+sheet : Sheet
+sheet =
+    { imageUrl = "FloatingIslandsTiles.png"
+    , imageWidth = 368
+    , imageHeight = 128
+    , spriteWidth = 368 // 23
+    , spriteHeight = 128 // 8
     }
