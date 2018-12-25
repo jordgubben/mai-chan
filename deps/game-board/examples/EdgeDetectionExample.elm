@@ -88,14 +88,17 @@ view { landscape } =
                                     "darkblue"
                                 else
                                     "lightblue"
-                        in
-                            Html.div
-                                [ style
+
+                            cellStyle =
+                                style
                                     [ ( "width", "100%" )
                                     , ( "height", "100%" )
                                     , ( "background-color", color )
                                     , ( "cursor", "pointer" )
                                     ]
+                        in
+                            Html.div
+                                [ cellStyle
                                 , onClick (Toggle coords)
                                 ]
                                 [ Html.text " " ]
@@ -164,9 +167,9 @@ edgeBox edgeColor fillColor edges =
              else
                 fillColor
             )
-    in
-        Html.div
-            [ style
+
+        boxStyle =
+            style
                 [ ( "width", "100%" )
                 , ( "height", "100%" )
                 , ( "background-color", fillColor )
@@ -177,8 +180,8 @@ edgeBox edgeColor fillColor edges =
                 , ( "border-top-color", borderStyle .top )
                 , ( "border-bottom-color", borderStyle .bottom )
                 ]
-            ]
-            []
+    in
+        Html.div [ boxStyle ] []
 
 
 turfPalette : EdgeDetection.TerrainPalette FloatingIslandsTiles.Tile
