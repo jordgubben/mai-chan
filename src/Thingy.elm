@@ -6,6 +6,84 @@ import Html.Attributes as Att exposing (id, class, style)
 import Sprite exposing (Sprite)
 
 
+{-| Helper preview program to used to check that all sprites are rendered correctly.
+-}
+main : Html m
+main =
+    let
+        neutralThingies =
+            [ ( "Neutral flavoured Bun", (Bun Nothing) )
+            , ( "Neutral flavoured Flour", (Flour Nothing) )
+            , ( "Neutral flavoured Water", (Water Nothing) )
+            ]
+
+        -- Everything Chilli
+        allChilli =
+            [ ( "Chilli", (Flavouring { flavour = Chilli, packaged = False }) )
+            , ( "Packaged Chilli", (Flavouring { flavour = Chilli, packaged = True }) )
+            , ( "Chilli flavoured Bun", (Bun (Just Chilli)) )
+            , ( "Chilli flavoured Flour", (Flour (Just Chilli)) )
+            , ( "Chilli flavoured Water", (Water (Just Chilli)) )
+            ]
+
+        -- Everything Sweet
+        allSweets =
+            [ ( "Sugar", (Flavouring { flavour = Sugar, packaged = False }) )
+            , ( "Packaged Sugar", (Flavouring { flavour = Sugar, packaged = True }) )
+            , ( "Sweet Bun (OMG! Game title!)", (Bun (Just Sugar)) )
+            , ( "Sweet Flour", (Flour (Just Sugar)) )
+            , ( "Sweet Water", (Water (Just Sugar)) )
+            ]
+
+        -- Everything Chocolate
+        allChocolate =
+            [ ( "Chocolate", (Flavouring { flavour = Chocolate, packaged = False }) )
+            , ( "Packaged Chocolate", (Flavouring { flavour = Chocolate, packaged = True }) )
+            , ( "Choco Bun ", (Bun (Just Chocolate)) )
+            , ( "Choco Flour ", (Flour (Just Chocolate)) )
+            , ( "Choco Water ", (Water (Just Chocolate)) )
+            ]
+
+        -- Misc. others
+        allOthers =
+            [ ( "Obstacle", Obstacle )
+            ]
+
+        displayThings title thingies =
+            Html.div []
+                ((Html.h2 [] [ text title ])
+                    :: (thingies
+                            |> List.map
+                                (\( desc, thing ) ->
+                                    Html.div
+                                        [ style
+                                            [ ( "display", "inline-block" )
+                                            , ( "border", "1px solid black" )
+                                            , ( "width", "100px" )
+                                            , ( "margin", "5px" )
+                                            , ( "padding", "10px" )
+                                            ]
+                                        ]
+                                        [ thing |> toHtml, text desc ]
+                                )
+                       )
+                )
+    in
+        Html.div []
+            [ Html.h1 [] [ text "Thingy preview" ]
+            , Html.p [] [ text "Bellow are all the possible renderable states of a 'Thingy'." ]
+            , (displayThings "Flavour neutral things" neutralThingies)
+            , (displayThings "All the Chilli" allChilli)
+            , (displayThings "All the Sweets" allSweets)
+            , (displayThings "All the chocolate" allChocolate)
+            , (displayThings "All other things" allOthers)
+            ]
+
+
+
+-- # Types
+
+
 type Thingy
     = Bun (Maybe Flavour)
     | Flour (Maybe Flavour)
