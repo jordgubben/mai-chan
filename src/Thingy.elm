@@ -300,37 +300,25 @@ toHtml thingy =
 renderFlavouring : Flavour -> Bool -> Html msg
 renderFlavouring flavour packaged =
     let
-        ( cssClass, sprite ) =
+        ( cssClass, spriteKit ) =
             case flavour of
                 Sugar ->
-                    ( "sugar", sugarSprite )
+                    ( "sugar", sugarSprites )
 
                 Chocolate ->
-                    ( "chocolate", chocolateSprite )
+                    ( "chocolate", chocolateSprites )
 
                 Chilli ->
-                    ( "chilli", chilliSprite )
+                    ( "chilli", chilliSprites )
+
+        sprite =
+            if packaged then
+                spriteKit.packaged
+            else
+                spriteKit.unpackaged
     in
         Html.div [ style [ ( "position", "relative" ) ] ]
-            [ renderSprite cssClass sprite
-            , Html.div
-                [ style
-                    (if packaged then
-                        [ ( "position", "absolute" )
-                        , ( "width", 50 ) |> px
-                        , ( "height", 50 ) |> px
-                        , ( "top", 0 ) |> px
-                        , ( "left", 0 ) |> px
-                        , ( "margin", "4px 4px" )
-                        , ( "background-color", "rgb(0,128, 255, 0.25)" )
-                        , ( "border", "2px solid rgb(0,128, 255, 0.7)" )
-                        ]
-                     else
-                        []
-                    )
-                ]
-                []
-            ]
+            [ renderSprite cssClass sprite ]
 
 
 obstacleHtml : Html msg
@@ -419,22 +407,38 @@ px ( name, value ) =
 -- # Sprites
 
 
-chilliSprite : Sprite
-chilliSprite =
-    staticSprite ( 1, 0 )
+{-| Collection of Sprites for Flavouring (i.e. Chilli, Cocolate, Sugar)
+-}
+type alias FlavourSpriteKit =
+    { unpackaged : Sprite
+    , packaged : Sprite
+    }
 
 
-sugarSprite : Sprite
-sugarSprite =
-    staticSprite ( 2, 0 )
+chilliSprites : FlavourSpriteKit
+chilliSprites =
+    { unpackaged = staticSprite ( 1, 0 )
+    , packaged = staticSprite ( 1, 1 )
+    }
 
 
-chocolateSprite : Sprite
-chocolateSprite =
-    staticSprite ( 3, 0 )
+sugarSprites : FlavourSpriteKit
+sugarSprites =
+    { unpackaged = staticSprite ( 2, 0 )
+    , packaged = staticSprite ( 2, 1 )
+    }
 
 
-type alias FlavouredSpriteKit =
+chocolateSprites : FlavourSpriteKit
+chocolateSprites =
+    { unpackaged = staticSprite ( 3, 0 )
+    , packaged = staticSprite ( 3, 1 )
+    }
+
+
+{-| Collection of Sprites for a Thingy with flavour (currently Flour, Water or Bun)
+-}
+type alias FlavouringSpriteKit =
     { sweet : Sprite
     , chilli : Sprite
     , coco : Sprite
@@ -442,7 +446,7 @@ type alias FlavouredSpriteKit =
     }
 
 
-getSpriteByFlavour : FlavouredSpriteKit -> Maybe Flavour -> Sprite
+getSpriteByFlavour : FlavouringSpriteKit -> Maybe Flavour -> Sprite
 getSpriteByFlavour kit flavour =
     case flavour of
         Just Sugar ->
@@ -458,17 +462,8 @@ getSpriteByFlavour kit flavour =
             kit.basic
 
 
-bunSprites : FlavouredSpriteKit
+bunSprites : FlavouringSpriteKit
 bunSprites =
-    { chilli = staticSprite ( 1, 1 )
-    , sweet = staticSprite ( 2, 1 )
-    , coco = staticSprite ( 3, 1 )
-    , basic = staticSprite ( 0, 1 )
-    }
-
-
-waterSprites : FlavouredSpriteKit
-waterSprites =
     { chilli = staticSprite ( 1, 2 )
     , sweet = staticSprite ( 2, 2 )
     , coco = staticSprite ( 3, 2 )
@@ -476,12 +471,21 @@ waterSprites =
     }
 
 
-flourSprites : FlavouredSpriteKit
-flourSprites =
+waterSprites : FlavouringSpriteKit
+waterSprites =
     { chilli = staticSprite ( 1, 3 )
     , sweet = staticSprite ( 2, 3 )
     , coco = staticSprite ( 3, 3 )
     , basic = staticSprite ( 0, 3 )
+    }
+
+
+flourSprites : FlavouringSpriteKit
+flourSprites =
+    { chilli = staticSprite ( 1, 4 )
+    , sweet = staticSprite ( 2, 4 )
+    , coco = staticSprite ( 3, 4 )
+    , basic = staticSprite ( 0, 4 )
     }
 
 
