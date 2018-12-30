@@ -9,7 +9,6 @@ import Task
 import Html exposing (Html, text)
 import Html.Attributes as Att exposing (id, class, style)
 import Html.Events exposing (onClick, onDoubleClick)
-import Sprite exposing (Sprite)
 import Grid exposing (..)
 import Thingy exposing (Thingy(..), Flavour(..))
 
@@ -68,9 +67,14 @@ type FloorTile
 -}
 type alias RenderableTile =
     { content : Maybe Thingy
-    , highlight : Bool
+    , highlight : Maybe Highlight
     , floor : FloorTile
     }
+
+
+type Highlight
+    = SelectedMover
+    | PossibleMovementDestination
 
 
 
@@ -608,15 +612,9 @@ viewBoard model =
                 |> Grid.translate ( 0, 1 - boardSize.height )
                 |> Dict.intersect kitchenLevel
                 -- Convert to full tiles
-                |> Dict.map (\_ floorTile -> RenderableTile Nothing False floorTile)
-                -- Render highlighed column
-                |> Dict.map
-                    (\coords tile ->
-                        if (Just coords == model.selectedTile) then
-                            { tile | highlight = True }
-                        else
-                            tile
-                    )
+                |> Dict.map (\_ floorTile -> RenderableTile Nothing Nothing floorTile)
+                -- Render highlighed tiles
+                |> Dict.map (\tileCoords tile -> { tile | highlight = getPossibleHighlight model tileCoords })
                 -- Render buns
                 |> Dict.map
                     (\coords tile ->
@@ -626,6 +624,23 @@ viewBoard model =
                     )
     in
         Grid.toHtmlDiv ( tileSide, tileSide ) renderTile finalGrid
+
+
+{-| Determine if the tile at the given coords should be highlighted in some way.
+-}
+getPossibleHighlight : Model -> Coords -> Maybe Highlight
+getPossibleHighlight { selectedTile } tileCoords =
+    Maybe.map
+        (\selectedCoords ->
+            if (tileCoords == selectedCoords) then
+                Just SelectedMover
+            else if (isValidMove selectedCoords tileCoords) then
+                Just PossibleMovementDestination
+            else
+                Nothing
+        )
+        selectedTile
+        |> Maybe.withDefault (Nothing)
 
 
 viewInfo : Maybe Thingy -> Html msg
@@ -724,33 +739,25 @@ renderTile coords tile =
 
 
 getTileColor : RenderableTile -> String
-getTileColor tile =
-    if tile.highlight then
-        "aqua"
-    else
-        case tile.floor of
-            Spawner _ ->
-                "antiquewhite"
+getTileColor { highlight, floor } =
+    case ( highlight, floor ) of
+        ( Just SelectedMover, _ ) ->
+            "darkblue"
 
-            PlainTile ->
-                "lemonchiffon"
+        ( Just PossibleMovementDestination, _ ) ->
+            "aliceblue"
 
-            BunCollector ->
-                "yellowgreen"
+        ( Nothing, Spawner _ ) ->
+            "antiquewhite"
 
-            WallTile ->
-                "darkgray"
+        ( Nothing, PlainTile ) ->
+            "lemonchiffon"
 
+        ( Nothing, BunCollector ) ->
+            "yellowgreen"
 
-{-| Render the most basic sprite
--}
-renderSprite : String -> Sprite a -> Html msg
-renderSprite cssClass sprite =
-    Html.span
-        [ class <| cssClass ++ "-sprite"
-        , style <| Sprite.sprite sprite
-        ]
-        []
+        ( Nothing, WallTile ) ->
+            "darkgray"
 
 
 px : ( String, Int ) -> ( String, String )
