@@ -63,7 +63,11 @@ main =
                                             , ( "padding", "10px" )
                                             ]
                                         ]
-                                        [ thing |> toHtml, text desc ]
+                                        [ Html.h3 [] [ text desc ]
+                                        , thing |> toHtml
+                                        , Html.p [] [ thing |> describe >> Tuple.first >> text ]
+                                        , Html.p [] [ thing |> describe >> Tuple.second >> text ]
+                                        ]
                                 )
                        )
                 )
