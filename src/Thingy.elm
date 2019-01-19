@@ -266,8 +266,11 @@ describe thingy =
         Water _ ->
             ( "Water", "Mix with Flour to make a Bun." )
 
-        Flavouring _ ->
-            ( "Flavour", "Mix with Flavour or Water." )
+        Flavouring { packaged } ->
+            if packaged then
+                ( "Packaged Flavour", "Double-click to unpack" )
+            else
+                ( "Flavour", "Mix with Flavour or Water." )
 
         Bun _ ->
             ( "Bun", "Send it off!" )
