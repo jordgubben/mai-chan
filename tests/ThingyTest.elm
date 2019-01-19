@@ -42,6 +42,12 @@ mixingSuite =
         , testMix "Can not mix *sweet* Flour with *spicy* Water"
             ( Water (Just Chilli), Flour (Just Sugar) )
             (Nothing)
+        , testMix "Can not mix packaged Sugar with Water"
+            ( Water Nothing, Flavouring { flavour = Sugar, packaged = True } )
+            (Nothing)
+        , testMix "Can not mix packaged Sugar with Flour"
+            ( Flour Nothing, Flavouring { flavour = Sugar, packaged = True } )
+            (Nothing)
         ]
 
 
@@ -55,7 +61,7 @@ testMix message ( ingredient1, ingredient2 ) expectedResult =
                 ++ (ingredient1 |> toString)
                 ++ "] with ["
                 ++ (ingredient2 |> toString)
-                ++ "] produces ["
+                ++ "] should produce ["
                 ++ (expectedResult |> toString)
                 ++ "]"
             )
@@ -67,7 +73,7 @@ testMix message ( ingredient1, ingredient2 ) expectedResult =
                 ++ (ingredient2 |> toString)
                 ++ "] with ["
                 ++ (ingredient1 |> toString)
-                ++ "] produces ["
+                ++ "] should produce ["
                 ++ (expectedResult |> toString)
                 ++ "]"
             )
@@ -83,12 +89,12 @@ testMix message ( ingredient1, ingredient2 ) expectedResult =
 
 sugar : Thingy
 sugar =
-    Flavouring Sugar
+    Flavouring { flavour = Sugar, packaged = False }
 
 
 chilli : Thingy
 chilli =
-    Flavouring Chilli
+    Flavouring { flavour = Chilli, packaged = False }
 
 
 water : Thingy

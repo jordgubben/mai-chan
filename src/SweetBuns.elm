@@ -8,7 +8,7 @@ import Delay
 import Task
 import Html exposing (Html, text)
 import Html.Attributes as Att exposing (id, class, style)
-import Html.Events as Ev exposing (onMouseEnter, onMouseLeave, onClick)
+import Html.Events exposing (onClick, onDoubleClick)
 import Grid exposing (..)
 import Thingy exposing (Thingy(..), Flavour(..))
 
@@ -48,6 +48,7 @@ initialModel =
 -}
 type Msg
     = SelectTile Coords
+    | ActivateTile Coords
     | Fall
     | Spawn
     | Collect
@@ -92,6 +93,12 @@ update msg model =
         SelectTile coords ->
             if not <| isGameOver kitchenLevel model.things then
                 selectTile coords model
+            else
+                ( model, Cmd.none )
+
+        ActivateTile coords ->
+            if not <| isGameOver kitchenLevel model.things then
+                ( { model | things = activateTile coords model.things }, Cmd.none )
             else
                 ( model, Cmd.none )
 
@@ -161,9 +168,9 @@ fillBoard seed =
             , Water Nothing
             , Flour Nothing
             , Flour Nothing
-            , Flavouring Sugar
-            , Flavouring Chilli
-            , Flavouring Chocolate
+            , Flavouring { flavour = Sugar, packaged = True }
+            , Flavouring { flavour = Chilli, packaged = True }
+            , Flavouring { flavour = Chocolate, packaged = True }
             ]
     in
         Grid.drawBox () filledRegion
@@ -181,9 +188,11 @@ fillBoard seed =
                 ( Grid.empty, seed )
 
 
-{-| Handle players selection of a tile.
+{-| Handle players selection of a tile (triggred by clicking).
+
 If no tile has been selcted, then just select it.
 If a tile is already selected, then attempt to move.
+
 -}
 selectTile : Coords -> Model -> ( Model, Cmd Msg )
 selectTile coords model =
@@ -214,6 +223,30 @@ selectTile coords model =
 
         Nothing ->
             ( { model | selectedTile = Just coords }, Cmd.none )
+
+
+{-| Activate a tile (triggerd by double clicking)
+
+Acitvates the thing at given coordinates
+(but only if there is something there).
+
+-}
+activateTile : Coords -> Grid Thingy -> Grid Thingy
+activateTile coords things =
+    (Dict.get coords things)
+        |> Maybe.map
+            (\t ->
+                case t of
+                    -- Unpack flavourings
+                    Flavouring f ->
+                        Flavouring { f | packaged = False }
+
+                    -- .. otherwise do nothing
+                    _ ->
+                        t
+            )
+        |> Maybe.map (\t -> Grid.put coords t things)
+        |> Maybe.withDefault (things)
 
 
 isGameOver : Grid FloorTile -> Grid Thingy -> Bool
@@ -696,6 +729,7 @@ renderTile coords tile =
             , ( "border", "1px solid darkgray" )
             ]
         , onClick (SelectTile coords)
+        , onDoubleClick (ActivateTile coords)
         ]
         [ tile.content |> Maybe.map Thingy.toHtml |> Maybe.withDefault (text "")
         , Html.span
@@ -774,7 +808,10 @@ spawnables =
 
 spawnableFlavours : List Thingy
 spawnableFlavours =
-    [ Flavouring Sugar, Flavouring Chilli, Flavouring Chocolate ]
+    [ Flavouring { flavour = Sugar, packaged = False }
+    , Flavouring { flavour = Chilli, packaged = False }
+    , Flavouring { flavour = Chocolate, packaged = False }
+    ]
 
 
 kitchenCollectors : Grid FloorTile

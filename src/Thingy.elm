@@ -5,11 +5,93 @@ import Html.Attributes as Att exposing (id, class, style)
 import NeoSprite exposing (Sprite, Sheet)
 
 
+{-| Helper preview program to used to check that all sprites are rendered correctly.
+-}
+main : Html m
+main =
+    let
+        neutralThingies =
+            [ ( "Neutral flavoured Bun", (Bun Nothing) )
+            , ( "Neutral flavoured Flour", (Flour Nothing) )
+            , ( "Neutral flavoured Water", (Water Nothing) )
+            ]
+
+        -- Everything Chilli
+        allChilli =
+            [ ( "Chilli", (Flavouring { flavour = Chilli, packaged = False }) )
+            , ( "Packaged Chilli", (Flavouring { flavour = Chilli, packaged = True }) )
+            , ( "Chilli flavoured Bun", (Bun (Just Chilli)) )
+            , ( "Chilli flavoured Flour", (Flour (Just Chilli)) )
+            , ( "Chilli flavoured Water", (Water (Just Chilli)) )
+            ]
+
+        -- Everything Sweet
+        allSweets =
+            [ ( "Sugar", (Flavouring { flavour = Sugar, packaged = False }) )
+            , ( "Packaged Sugar", (Flavouring { flavour = Sugar, packaged = True }) )
+            , ( "Sweet Bun (OMG! Game title!)", (Bun (Just Sugar)) )
+            , ( "Sweet Flour", (Flour (Just Sugar)) )
+            , ( "Sweet Water", (Water (Just Sugar)) )
+            ]
+
+        -- Everything Chocolate
+        allChocolate =
+            [ ( "Chocolate", (Flavouring { flavour = Chocolate, packaged = False }) )
+            , ( "Packaged Chocolate", (Flavouring { flavour = Chocolate, packaged = True }) )
+            , ( "Choco Bun ", (Bun (Just Chocolate)) )
+            , ( "Choco Flour ", (Flour (Just Chocolate)) )
+            , ( "Choco Water ", (Water (Just Chocolate)) )
+            ]
+
+        -- Misc. others
+        allOthers =
+            [ ( "Obstacle", Obstacle )
+            ]
+
+        displayThings title thingies =
+            Html.div []
+                ((Html.h2 [] [ text title ])
+                    :: (thingies
+                            |> List.map
+                                (\( desc, thing ) ->
+                                    Html.div
+                                        [ style
+                                            [ ( "display", "inline-block" )
+                                            , ( "border", "1px solid black" )
+                                            , ( "width", "100px" )
+                                            , ( "margin", "5px" )
+                                            , ( "padding", "10px" )
+                                            ]
+                                        ]
+                                        [ Html.h3 [] [ text desc ]
+                                        , thing |> toHtml
+                                        , Html.p [] [ thing |> describe >> Tuple.first >> text ]
+                                        , Html.p [] [ thing |> describe >> Tuple.second >> text ]
+                                        ]
+                                )
+                       )
+                )
+    in
+        Html.div []
+            [ Html.h1 [] [ text "Thingy preview" ]
+            , Html.p [] [ text "Bellow are all the possible renderable states of a 'Thingy'." ]
+            , (displayThings "Flavour neutral things" neutralThingies)
+            , (displayThings "All the Chilli" allChilli)
+            , (displayThings "All the Sweets" allSweets)
+            , (displayThings "All the chocolate" allChocolate)
+            , (displayThings "All other things" allOthers)
+            ]
+
+
+
+-- # Types
+
+
 type Thingy
     = Bun (Maybe Flavour)
     | Flour (Maybe Flavour)
     | Water (Maybe Flavour)
-    | Flavouring Flavour
+    | Flavouring { flavour : Flavour, packaged : Bool }
     | Obstacle
 
 
@@ -65,20 +147,36 @@ mixIngredients a b =
         ( Flour flourFlavour, Water waterFlavour ) ->
             mixBun { water = waterFlavour, flour = flourFlavour }
 
-        ( Water Nothing, Flavouring flavour ) ->
-            Just <| Water (Just flavour)
+        ( Water Nothing, Flavouring { flavour, packaged } ) ->
+            mixFlavouringWithWater packaged flavour
 
-        ( Flavouring flavour, Water Nothing ) ->
-            Just <| Water (Just flavour)
+        ( Flavouring { flavour, packaged }, Water Nothing ) ->
+            mixFlavouringWithWater packaged flavour
 
-        ( Flour Nothing, Flavouring flavour ) ->
-            Just <| Flour (Just flavour)
+        ( Flour Nothing, Flavouring { flavour, packaged } ) ->
+            mixFlavouringWithFlour packaged flavour
 
-        ( Flavouring flavour, Flour Nothing ) ->
-            Just <| Flour (Just flavour)
+        ( Flavouring { flavour, packaged }, Flour Nothing ) ->
+            mixFlavouringWithFlour packaged flavour
 
         _ ->
             Nothing
+
+
+mixFlavouringWithWater : Bool -> Flavour -> Maybe Thingy
+mixFlavouringWithWater packaged flavour =
+    if not packaged then
+        Just <| Water (Just flavour)
+    else
+        Nothing
+
+
+mixFlavouringWithFlour : Bool -> Flavour -> Maybe Thingy
+mixFlavouringWithFlour packaged flavour =
+    if not packaged then
+        Just <| Flour (Just flavour)
+    else
+        Nothing
 
 
 mixBun : { flour : Maybe Flavour, water : Maybe Flavour } -> Maybe Thingy
@@ -168,8 +266,11 @@ describe thingy =
         Water _ ->
             ( "Water", "Mix with Flour to make a Bun." )
 
-        Flavouring _ ->
-            ( "Flavour", "Mix with Flavour or Water." )
+        Flavouring { packaged } ->
+            if packaged then
+                ( "Packaged Flavour", "Double-click to unpack" )
+            else
+                ( "Flavour", "Mix with Flavour or Water." )
 
         Bun _ ->
             ( "Bun", "Send it off!" )
@@ -196,28 +297,35 @@ toHtml thingy =
         Water flavour ->
             renderWater flavour
 
-        Flavouring flavour ->
-            renderFlavouring flavour
+        Flavouring { flavour, packaged } ->
+            renderFlavouring flavour packaged
 
         Obstacle ->
             obstacleHtml
 
 
-renderFlavouring : Flavour -> Html msg
-renderFlavouring flavour =
+renderFlavouring : Flavour -> Bool -> Html msg
+renderFlavouring flavour packaged =
     let
-        ( cssClass, sprite ) =
+        ( cssClass, spriteKit ) =
             case flavour of
                 Sugar ->
-                    ( "sugar", sugarSprite )
+                    ( "sugar", sugarSprites )
 
                 Chocolate ->
-                    ( "chocolate", chocolateSprite )
+                    ( "chocolate", chocolateSprites )
 
                 Chilli ->
-                    ( "chilli", chilliSprite )
+                    ( "chilli", chilliSprites )
+
+        sprite =
+            if packaged then
+                spriteKit.packaged
+            else
+                spriteKit.unpackaged
     in
-        renderSprite cssClass sprite
+        Html.div [ style [ ( "position", "relative" ) ] ]
+            [ renderSprite cssClass sprite ]
 
 
 obstacleHtml : Html msg
@@ -306,22 +414,38 @@ px ( name, value ) =
 -- # Sprites
 
 
-chilliSprite : Sprite
-chilliSprite =
-    staticSprite ( 1, 0 )
+{-| Collection of Sprites for Flavouring (i.e. Chilli, Cocolate, Sugar)
+-}
+type alias FlavourSpriteKit =
+    { unpackaged : Sprite
+    , packaged : Sprite
+    }
 
 
-sugarSprite : Sprite
-sugarSprite =
-    staticSprite ( 2, 0 )
+chilliSprites : FlavourSpriteKit
+chilliSprites =
+    { unpackaged = staticSprite ( 1, 0 )
+    , packaged = staticSprite ( 1, 1 )
+    }
 
 
-chocolateSprite : Sprite
-chocolateSprite =
-    staticSprite ( 3, 0 )
+sugarSprites : FlavourSpriteKit
+sugarSprites =
+    { unpackaged = staticSprite ( 2, 0 )
+    , packaged = staticSprite ( 2, 1 )
+    }
 
 
-type alias FlavouredSpriteKit =
+chocolateSprites : FlavourSpriteKit
+chocolateSprites =
+    { unpackaged = staticSprite ( 3, 0 )
+    , packaged = staticSprite ( 3, 1 )
+    }
+
+
+{-| Collection of Sprites for a Thingy with flavour (currently Flour, Water or Bun)
+-}
+type alias FlavouringSpriteKit =
     { sweet : Sprite
     , chilli : Sprite
     , coco : Sprite
@@ -329,7 +453,7 @@ type alias FlavouredSpriteKit =
     }
 
 
-getSpriteByFlavour : FlavouredSpriteKit -> Maybe Flavour -> Sprite
+getSpriteByFlavour : FlavouringSpriteKit -> Maybe Flavour -> Sprite
 getSpriteByFlavour kit flavour =
     case flavour of
         Just Sugar ->
@@ -345,17 +469,8 @@ getSpriteByFlavour kit flavour =
             kit.basic
 
 
-bunSprites : FlavouredSpriteKit
+bunSprites : FlavouringSpriteKit
 bunSprites =
-    { chilli = staticSprite ( 1, 1 )
-    , sweet = staticSprite ( 2, 1 )
-    , coco = staticSprite ( 3, 1 )
-    , basic = staticSprite ( 0, 1 )
-    }
-
-
-waterSprites : FlavouredSpriteKit
-waterSprites =
     { chilli = staticSprite ( 1, 2 )
     , sweet = staticSprite ( 2, 2 )
     , coco = staticSprite ( 3, 2 )
@@ -363,12 +478,21 @@ waterSprites =
     }
 
 
-flourSprites : FlavouredSpriteKit
-flourSprites =
+waterSprites : FlavouringSpriteKit
+waterSprites =
     { chilli = staticSprite ( 1, 3 )
     , sweet = staticSprite ( 2, 3 )
     , coco = staticSprite ( 3, 3 )
     , basic = staticSprite ( 0, 3 )
+    }
+
+
+flourSprites : FlavouringSpriteKit
+flourSprites =
+    { chilli = staticSprite ( 1, 4 )
+    , sweet = staticSprite ( 2, 4 )
+    , coco = staticSprite ( 3, 4 )
+    , basic = staticSprite ( 0, 4 )
     }
 
 
