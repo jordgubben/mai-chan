@@ -8,6 +8,7 @@ The first release was a branch in 'game-board' repo.
 
  - Packaged flavours do not mix
  - Highlight possible movement
+ - Move in a cross pattern
 
 v0.1 - (A Game by It's Cover 2018)
 ---------------------------------

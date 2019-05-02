@@ -378,7 +378,7 @@ isValidMove from to =
         ( dx, dy ) =
             ( toX - fromX, toY - fromY )
     in
-        (-1 <= dx && dx <= 1) && (-1 <= dy && dy <= 1)
+        dx == 0 || dy == 0
 
 
 isStable : Grid FloorTile -> Grid Thingy -> Bool

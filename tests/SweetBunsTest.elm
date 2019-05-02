@@ -465,18 +465,43 @@ consciousMovementSuite =
                             ]
                 in
                     movedThings |> equal expectedThings
-        , test "Can not move to an non-adjacent tile" <|
+        , describe "Can move to any tile in a cross pattern"
+            (let
+                -- Given a bun
+                initialThings =
+                    Grid.fromList [ ( ( 10, 10 ), bun ) ]
+
+                testMoveOk targetCoords =
+                    let
+                        -- When moving
+                        movedThings =
+                            SweetBuns.attemptMove Set.empty ( 10, 10 ) targetCoords initialThings
+
+                        -- Then that is ok
+                        expectedThings =
+                            Grid.fromList [ ( targetCoords, bun ) ]
+                    in
+                        movedThings |> equal expectedThings
+             in
+                [ fuzz int "(verically)" <|
+                    \y -> testMoveOk ( 10, y )
+                , fuzz int "(horizontally)" <|
+                    \x -> testMoveOk ( x, 10 )
+                ]
+            )
+        , test "Can not move tiles outside cross pattern" <|
             \() ->
                 let
                     -- Given a bun
                     initialThings =
                         Grid.fromList [ ( ( 10, 10 ), bun ) ]
 
-                    -- When moving to a non-adjacent tile
+                    --  When attempting to move
                     movedThings =
-                        SweetBuns.attemptMove Set.empty ( 10, 10 ) ( 10, 100 ) initialThings
+                        SweetBuns.attemptMove Set.empty ( 10, 10 ) ( 11, 11 ) initialThings
+
+                    -- Then is prevented
                 in
-                    -- Then it is not moved
                     movedThings |> equal initialThings
         ]
 
