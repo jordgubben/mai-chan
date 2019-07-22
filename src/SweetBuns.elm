@@ -107,7 +107,10 @@ update msg model =
 
         Fall ->
             ( { model
-                | things = applyGravity kitchenLevel model.things
+                | things =
+                    applyGravity
+                        (obstacleTileArea kitchenLevel)
+                        model.things
               }
             , Delay.after 1 second Collect
             )
@@ -349,17 +352,17 @@ pickRandom seed list =
 -}
 attemptMove : Set Coords -> Coords -> Coords -> Grid Thingy -> Grid Thingy
 attemptMove terrain from to things =
-    if isValidMove from to && not (Set.member to terrain) then
-        let
-            things_ =
-                move from to things
-        in
-            -- If movement could not be prefomed in any other way,
-            -- Then let the things teade places
-            if things == things_ then
-                Grid.swap from to things
-            else
-                things_
+    if not (isValidMove from to && not (Set.member to terrain)) then
+        things
+        -- If movement is possible, do it
+        -- (might mix things)
+    else if (moveMixing from to things) /= things then
+        moveMixing from to things
+        -- If movement could not be prefomed in any other way,
+        -- Then let the things trade places if that causes a chain reaction
+    else if not (Grid.swap from to things |> isStable terrain) then
+        Grid.swap from to things
+        -- Else change nothing
     else
         things
 
@@ -381,15 +384,15 @@ isValidMove from to =
         dx == 0 || dy == 0
 
 
-isStable : Grid FloorTile -> Grid Thingy -> Bool
-isStable floor things =
-    things == applyGravity floor things
+isStable : Set Coords -> Grid Thingy -> Bool
+isStable terrain things =
+    things == applyGravity terrain things
 
 
 {-| Let things fall down where possible, poretially causing mixing of ingredients.
 -}
-applyGravity : Grid FloorTile -> Grid Thingy -> Grid Thingy
-applyGravity level things =
+applyGravity : Set Coords -> Grid Thingy -> Grid Thingy
+applyGravity terrain things =
     let
         ( fallers, obstacleThings ) =
             Dict.partition (always Thingy.isFaller) things
@@ -397,18 +400,14 @@ applyGravity level things =
         obstacles : Set Coords
         obstacles =
             Set.union
-                (level
-                    |> Dict.filter (always isObstacleTile)
-                    |> Dict.keys
-                    |> Set.fromList
-                )
+                terrain
                 (obstacleThings |> Dict.keys |> Set.fromList)
 
         fallers_ =
             List.foldl
                 (\( x, y ) m ->
                     if not (Set.member ( x, y - 1 ) obstacles) then
-                        move ( x, y ) ( x, y - 1 ) m
+                        moveMixing ( x, y ) ( x, y - 1 ) m
                     else
                         m
                 )
@@ -418,6 +417,11 @@ applyGravity level things =
         Dict.union
             fallers_
             obstacleThings
+
+
+obstacleTileArea : Grid FloorTile -> Set Coords
+obstacleTileArea =
+    Dict.filter (always isObstacleTile) >> Dict.keys >> Set.fromList
 
 
 isObstacleTile : FloorTile -> Bool
@@ -434,8 +438,8 @@ isObstacleTile tile =
 Will mix ingredients if possible.
 If move can not be preformed, then the original unchanged grid is returned.
 -}
-move : Coords -> Coords -> Grid Thingy -> Grid Thingy
-move from to things =
+moveMixing : Coords -> Coords -> Grid Thingy -> Grid Thingy
+moveMixing from to things =
     case ( Grid.get from things, Grid.get to things ) of
         ( Nothing, _ ) ->
             things
@@ -500,7 +504,7 @@ subscriptions model =
         Sub.batch
             ([ Time.every spawnInterval (\_ -> Spawn) ]
                 -- Only Have things fall there is something thst could fall (save messages)
-                ++ (if not <| isStable kitchenLevel model.things then
+                ++ (if not <| isStable (obstacleTileArea kitchenLevel) model.things then
                         [ Time.every fallInterval (\_ -> Fall) ]
                     else
                         []

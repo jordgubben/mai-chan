@@ -221,7 +221,7 @@ fallingSuite =
 
                     -- When progressing movement
                     movedState =
-                        SweetBuns.applyGravity Grid.empty initialState
+                        SweetBuns.applyGravity Set.empty initialState
 
                     -- Then it moves down
                     expectedState =
@@ -237,7 +237,7 @@ fallingSuite =
                         Grid.fromList [ ( ( 0, 1 ), bun ) ]
 
                     terrain =
-                        Grid.drawBox WallTile (Grid.Size 1 1)
+                        Set.fromList [ ( 0, 0 ) ]
 
                     -- When checking if stable
                     stability =
@@ -254,7 +254,7 @@ fallingSuite =
                         Grid.fromList [ ( ( 0, 2 ), bun ) ]
 
                     terrain =
-                        Grid.drawBox WallTile (Grid.Size 1 1)
+                        Set.fromList [ ( 0, 0 ) ]
 
                     -- When checking if stable
                     stability =
@@ -334,8 +334,7 @@ fallingSuite =
 
                     terrain =
                         [ ( 0, 0 ), ( 1, 0 ), ( 2, 0 ), ( 3, 1 ) ]
-                            |> List.map (\coords -> ( coords, WallTile ))
-                            |> Grid.fromList
+                            |> Set.fromList
 
                     -- When progressing movement
                     movedState =
@@ -360,7 +359,7 @@ fallingSuite =
 
                     -- When the Water moves (down)
                     movedState =
-                        SweetBuns.applyGravity Grid.empty initialState
+                        SweetBuns.applyGravity Set.empty initialState
 
                     -- Then a Bun is created
                     expectedState =
@@ -435,36 +434,59 @@ consciousMovementSuite =
                         Grid.fromList [ ( ( 15, 10 ), bun ) ]
                 in
                     movedThings |> equal expectedThings
-        , test "Can move by swaping places" <|
+        , test "Can move by swaping places, if it destabilizes the grid" <|
             \() ->
                 let
                     -- Given a a chilli,
                     -- with *sweet* water on top of it
-                    -- and *sweet* flour beside it
+                    -- and *sweet* flour below it
                     initialThings =
                         Grid.fromList
-                            [ ( ( 0, 0 ), chilli )
-                            , ( ( 0, 1 ), Water (Just Sugar) )
-                            , ( ( -1, 0 ), Flour (Just Sugar) )
+                            [ ( ( 0, 2 ), Water (Just Sugar) )
+                            , ( ( 0, 1 ), chilli )
+                            , ( ( 0, 0 ), Flour (Just Sugar) )
                             ]
 
                     -- And terrain below it
                     terrain =
-                        Set.fromList [ ( -1, -1 ), ( 0, -1 ) ]
+                        Set.fromList [ ( 0, -1 ) ]
 
                     -- When moving flour onto chilli
                     movedThings =
-                        SweetBuns.attemptMove terrain ( -1, 0 ) ( 0, 0 ) initialThings
+                        SweetBuns.attemptMove terrain ( 0, 1 ) ( 0, 2 ) initialThings
 
                     -- Then they trade places, (causing a chain reaction)
                     expectedThings =
                         Grid.fromList
-                            [ ( ( -1, 0 ), chilli )
+                            [ ( ( 0, 2 ), chilli )
                             , ( ( 0, 1 ), Water (Just Sugar) )
                             , ( ( 0, 0 ), Flour (Just Sugar) )
                             ]
                 in
                     movedThings |> equal expectedThings
+        , test "Can not move by swaping places, if the result is stable" <|
+            \() ->
+                let
+                    -- Given a a chilli,
+                    -- with *sweet* water on top of it
+                    -- and *chilly* flour below it
+                    initialThings =
+                        Grid.fromList
+                            [ ( ( 0, 2 ), Water (Just Sugar) )
+                            , ( ( 0, 1 ), chilli )
+                            , ( ( 0, 0 ), Flour (Just Chilli) )
+                            ]
+
+                    -- And terrain below it
+                    terrain =
+                        Set.fromList [ ( 0, -1 ) ]
+
+                    -- When moving flour onto chilli
+                    movedThings =
+                        SweetBuns.attemptMove terrain ( 0, 1 ) ( 0, 2 ) initialThings
+                in
+                    -- Then nothing happens (since it causes no chain reaction)
+                    movedThings |> equal initialThings
         , describe "Can move to any tile in a cross pattern"
             (let
                 -- Given a bun
@@ -560,9 +582,4 @@ bun =
 -}
 expectNoMovemenemt : Set.Set Grid.Coords -> Grid.Grid Thingy -> Expectation
 expectNoMovemenemt terrain buns =
-    let
-        floor : Grid.Grid FloorTile
-        floor =
-            terrain |> Set.toList |> List.map (\coords -> ( coords, WallTile )) |> Grid.fromList
-    in
-        SweetBuns.applyGravity floor buns |> equal buns
+    SweetBuns.applyGravity terrain buns |> equal buns
