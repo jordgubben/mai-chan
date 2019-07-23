@@ -75,6 +75,7 @@ type alias RenderableTile =
 type Highlight
     = SelectedMover
     | PossibleMovementDestination
+    | ForbiddenMovementDestination
 
 
 
@@ -204,11 +205,7 @@ selectTile coords model =
             let
                 things_ =
                     attemptMove
-                        (kitchenLevel
-                            |> Dict.filter (always isObstacleTile)
-                            |> Dict.keys
-                            |> Set.fromList
-                        )
+                        (obstacleTileArea kitchenLevel)
                         moverCoords
                         coords
                         model.things
@@ -346,6 +343,13 @@ pickRandom seed list =
             |> List.head
         , seed_
         )
+
+
+{-| Check if a move is possible, so that it can be hilighted properly
+-}
+isPossibleMove : Grid FloorTile -> Grid Thingy -> Coords -> Coords -> Bool
+isPossibleMove level things from to =
+    ((attemptMove (obstacleTileArea level) from to things) /= things)
 
 
 {-| Handle players attempt to move something
@@ -633,17 +637,20 @@ viewBoard model =
 {-| Determine if the tile at the given coords should be highlighted in some way.
 -}
 getPossibleHighlight : Model -> Coords -> Maybe Highlight
-getPossibleHighlight { selectedTile } tileCoords =
-    Maybe.map
-        (\selectedCoords ->
-            if (tileCoords == selectedCoords) then
-                Just SelectedMover
-            else if (isValidMove selectedCoords tileCoords) then
-                Just PossibleMovementDestination
-            else
-                Nothing
-        )
-        selectedTile
+getPossibleHighlight { things, selectedTile } tileCoords =
+    selectedTile
+        |> Maybe.map
+            (\selectedCoords ->
+                if (tileCoords == selectedCoords) then
+                    Just SelectedMover
+                else if (isValidMove selectedCoords tileCoords) then
+                    if (isPossibleMove kitchenLevel things selectedCoords tileCoords) then
+                        Just PossibleMovementDestination
+                    else
+                        Just ForbiddenMovementDestination
+                else
+                    Nothing
+            )
         |> Maybe.withDefault (Nothing)
 
 
@@ -749,7 +756,10 @@ getTileColor { highlight, floor } =
             "darkblue"
 
         ( Just PossibleMovementDestination, _ ) ->
-            "aliceblue"
+            "palegreen"
+
+        ( Just ForbiddenMovementDestination, _ ) ->
+            "indianred"
 
         ( Nothing, Spawner _ ) ->
             "antiquewhite"
