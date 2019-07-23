@@ -146,7 +146,10 @@ collectSuite =
 
                     -- When collecting
                     ( remainingThings, _ ) =
-                        SweetBuns.collectThings initialKitchen initialThings
+                        SweetBuns.collectThings
+                            { floor = initialKitchen
+                            , things = initialThings
+                            }
 
                     -- THe bun on the collector tile is removed
                     expectedThings =
@@ -176,7 +179,7 @@ collectSuite =
 
                     -- When collecting
                     ( remainingThings, _ ) =
-                        SweetBuns.collectThings initialKitchen initialThings
+                        SweetBuns.collectThings { floor = initialKitchen, things = initialThings }
 
                     -- Only the bun is collected
                     expectedThings =
@@ -203,7 +206,10 @@ collectSuite =
 
                     -- When collecting
                     ( _, score ) =
-                        SweetBuns.collectThings initialKitchen initialThings
+                        SweetBuns.collectThings
+                            { floor = initialKitchen
+                            , things = initialThings
+                            }
                 in
                     equal score 100
         ]
@@ -535,15 +541,16 @@ gameProgressSuite =
             \() ->
                 let
                     -- Given a single spawn tile
-                    floor =
-                        Grid.fromList [ ( ( 0, 0 ), Spawner [ water ] ) ]
-
-                    -- And it is covered
-                    things =
-                        Grid.fromList [ ( ( 0, 0 ), water ) ]
+                    board =
+                        { floor =
+                            Grid.fromList [ ( ( 0, 0 ), Spawner [ water ] ) ]
+                        , -- And it is covered
+                          things =
+                            Grid.fromList [ ( ( 0, 0 ), water ) ]
+                        }
                 in
                     -- When checking if game over
-                    SweetBuns.isGameOver floor things
+                    SweetBuns.isGameOver board
                         -- Then it is game over
                         |> Expect.true "Supposed to be 'Game over'"
         ]

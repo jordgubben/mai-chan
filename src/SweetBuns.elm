@@ -34,6 +34,12 @@ type alias Model =
     }
 
 
+type alias Board =
+    { things : Grid Thingy
+    , floor : Grid FloorTile
+    }
+
+
 initialModel : Model
 initialModel =
     { selectedTile = Nothing
@@ -92,13 +98,13 @@ update msg model =
             ( restartGame model, Cmd.none )
 
         SelectTile coords ->
-            if not <| isGameOver kitchenLevel model.things then
+            if not <| isGameOver { floor = kitchenLevel, things = model.things } then
                 selectTile coords model
             else
                 ( model, Cmd.none )
 
         ActivateTile coords ->
-            if not <| isGameOver kitchenLevel model.things then
+            if not <| isGameOver { floor = kitchenLevel, things = model.things } then
                 ( { model | things = activateTile coords model.things }, Cmd.none )
             else
                 ( model, Cmd.none )
@@ -119,7 +125,7 @@ update msg model =
         Collect ->
             let
                 ( things_, scoreIncrement ) =
-                    collectThings kitchenLevel model.things
+                    collectThings { floor = kitchenLevel, things = model.things }
             in
                 ( { model
                     | things = things_
@@ -249,8 +255,8 @@ activateTile coords things =
         |> Maybe.withDefault (things)
 
 
-isGameOver : Grid FloorTile -> Grid Thingy -> Bool
-isGameOver floor things =
+isGameOver : Board -> Bool
+isGameOver { floor, things } =
     let
         spawnPoints : Set Coords
         spawnPoints =
@@ -347,9 +353,9 @@ pickRandom seed list =
 
 {-| Check if a move is possible, so that it can be hilighted properly
 -}
-isPossibleMove : Grid FloorTile -> Grid Thingy -> Coords -> Coords -> Bool
-isPossibleMove level things from to =
-    ((attemptMove (obstacleTileArea level) from to things) /= things)
+isPossibleMove : Board -> Coords -> Coords -> Bool
+isPossibleMove { floor, things } from to =
+    ((attemptMove (obstacleTileArea floor) from to things) /= things)
 
 
 {-| Handle players attempt to move something
@@ -464,11 +470,11 @@ moveMixing from to things =
 
 {-| Collect all collectable Buns on collectors.
 -}
-collectThings : Grid FloorTile -> Grid Thingy -> ( Grid Thingy, Int )
-collectThings level things =
+collectThings : Board -> ( Grid Thingy, Int )
+collectThings { floor, things } =
     let
         collectionPoints =
-            level |> Dict.filter (\_ tile -> isBunCollector tile) |> Dict.keys |> Set.fromList
+            floor |> Dict.filter (\_ tile -> isBunCollector tile) |> Dict.keys |> Set.fromList
 
         -- Collect thing if it is a _bun_ on a collection point
         ( collectedThings, remainingThings ) =
@@ -504,7 +510,7 @@ isBunCollector floorTile =
 -}
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    if not <| isGameOver kitchenLevel model.things then
+    if not <| isGameOver { floor = kitchenLevel, things = model.things } then
         Sub.batch
             ([ Time.every spawnInterval (\_ -> Spawn) ]
                 -- Only Have things fall there is something thst could fall (save messages)
@@ -602,7 +608,7 @@ viewBoardContainer model =
             ]
         ]
         [ viewBoard model
-        , if isGameOver kitchenLevel model.things then
+        , if isGameOver { floor = kitchenLevel, things = model.things } then
             viewGameOver
           else
             text ""
@@ -644,7 +650,7 @@ getPossibleHighlight { things, selectedTile } tileCoords =
                 if (tileCoords == selectedCoords) then
                     Just SelectedMover
                 else if (isValidMove selectedCoords tileCoords) then
-                    if (isPossibleMove kitchenLevel things selectedCoords tileCoords) then
+                    if (isPossibleMove { floor = kitchenLevel, things = things } selectedCoords tileCoords) then
                         Just PossibleMovementDestination
                     else
                         Just ForbiddenMovementDestination
@@ -726,7 +732,7 @@ viewDebug model =
         , Html.p [] [ "Move count: " ++ (model.moveCount |> toString) |> text ]
         , Html.p [] [ "Random seed: " ++ (toString model.seed) |> text ]
         , Html.p [] [ "Selected tile: " ++ (model.selectedTile |> toString) |> text ]
-        , Html.p [] [ "Game over? " ++ ((isGameOver kitchenLevel model.things) |> toString) |> text ]
+        , Html.p [] [ "Game over? " ++ ((isGameOver { floor = kitchenLevel, things = model.things }) |> toString) |> text ]
         ]
 
 
