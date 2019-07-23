@@ -526,7 +526,7 @@ subscriptions model =
 
 spawnInterval : Time
 spawnInterval =
-    (3 * second)
+    (6 * second)
 
 
 fallInterval : Time
