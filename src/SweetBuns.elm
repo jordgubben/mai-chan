@@ -3,7 +3,7 @@ module SweetBuns exposing (..)
 import Random exposing (Seed)
 import Set exposing (Set)
 import Dict
-import Time exposing (Time, second)
+import Time exposing (Time, second, inSeconds)
 import Delay
 import Task
 import Html exposing (Html, text)
@@ -512,7 +512,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     if not <| isGameOver { floor = kitchenLevel, things = model.things } then
         Sub.batch
-            ([ Time.every spawnInterval (\_ -> Spawn) ]
+            ([ Time.every (spawnInterval model) (\_ -> Spawn) ]
                 -- Only Have things fall there is something thst could fall (save messages)
                 ++ (if not <| isStable (obstacleTileArea kitchenLevel) model.things then
                         [ Time.every fallInterval (\_ -> Fall) ]
@@ -524,9 +524,45 @@ subscriptions model =
         Sub.none
 
 
-spawnInterval : Time
-spawnInterval =
-    (6 * second)
+{-| Increases the spawn when the board fills up.
+
+    Increasing the spawn intervall means we give the player more
+    time to think when the board is getting crammed.
+
+    Decreasing the spawn intervall when the board is nearly
+    empty means it will fill upp again faster.
+
+    Note:
+    It's currenly unclear what effect constantly shifting
+    time intervalls has on the subscription.
+    Theoretically it could constantly be resetting on every change,
+    causing the associated message to be sent less often.
+    Rounding intervall to the nearest second should eliviate moste
+    of the problem if it exists.
+
+-}
+spawnInterval : { a | things : Grid Thingy } -> Time
+spawnInterval { things } =
+    let
+        baseIntervall =
+            0.25
+
+        extraIntervall =
+            9.0
+
+        coveredArea =
+            Dict.size things |> toFloat
+
+        totalArea =
+            (boardSize.width * boardSize.height) |> toFloat
+
+        coveredPortion =
+            coveredArea / totalArea
+
+        intervall =
+            baseIntervall + extraIntervall * coveredPortion * coveredPortion
+    in
+        (round intervall |> toFloat) * second
 
 
 fallInterval : Time
@@ -732,6 +768,7 @@ viewDebug model =
         , Html.p [] [ "Move count: " ++ (model.moveCount |> toString) |> text ]
         , Html.p [] [ "Random seed: " ++ (toString model.seed) |> text ]
         , Html.p [] [ "Selected tile: " ++ (model.selectedTile |> toString) |> text ]
+        , Html.p [] [ "Spawn interval: " ++ (spawnInterval model |> inSeconds |> toString) ++ "s" |> text ]
         , Html.p [] [ "Game over? " ++ ((isGameOver { floor = kitchenLevel, things = model.things }) |> toString) |> text ]
         ]
 
