@@ -255,6 +255,12 @@ activateTile coords things =
         |> Maybe.withDefault (things)
 
 
+{-| Detect game over.
+
+The game is over if all spawn points are covered,
+even after tings that could fall have done so.
+
+-}
 isGameOver : Board -> Bool
 isGameOver { floor, things } =
     let
@@ -269,11 +275,17 @@ isGameOver { floor, things } =
             things
                 |> Dict.keys
                 |> Set.fromList
+
+        allSpawnersOccupied =
+            Set.diff
+                spawnPoints
+                occupants
+                |> Set.isEmpty
+
+        boardStable =
+            isStable (obstacleTileArea floor) things
     in
-        Set.diff
-            spawnPoints
-            occupants
-            |> Set.isEmpty
+        allSpawnersOccupied && boardStable
 
 
 {-| Spawn ingredients at spawn points

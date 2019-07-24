@@ -537,22 +537,44 @@ consciousMovementSuite =
 gameProgressSuite : Test
 gameProgressSuite =
     describe "Game progress"
-        [ test "Game over if all spawn tiles are covered" <|
+        [ test "Game over if all spawn tiles are covered and conditions are stable" <|
             \() ->
                 let
-                    -- Given a single spawn tile
+                    -- Given a single spawn tile with flooe under it
                     board =
                         { floor =
-                            Grid.fromList [ ( ( 0, 0 ), Spawner [ water ] ) ]
+                            Grid.fromList
+                                [ ( ( 0, 1 ), Spawner [ water ] )
+                                , ( ( 0, 0 ), WallTile )
+                                ]
                         , -- And it is covered
                           things =
-                            Grid.fromList [ ( ( 0, 0 ), water ) ]
+                            Grid.fromList [ ( ( 0, 1 ), water ) ]
                         }
                 in
                     -- When checking if game over
                     SweetBuns.isGameOver board
                         -- Then it is game over
                         |> Expect.true "Supposed to be 'Game over'"
+        , test "Not Game over if all spawn tiles, but falling cold free one of them" <|
+            \() ->
+                let
+                    -- Given a single spawn tile with floor nor directly under it
+                    board =
+                        { floor =
+                            Grid.fromList
+                                [ ( ( 0, 2 ), Spawner [ water ] )
+                                , ( ( 0, 0 ), WallTile )
+                                ]
+                        , -- And it is covered right now
+                          things =
+                            Grid.fromList [ ( ( 0, 2 ), water ) ]
+                        }
+                in
+                    -- When checking if game over
+                    SweetBuns.isGameOver board
+                        -- Then it is not game over
+                        |> Expect.false "Not supposed to be 'Game over'"
         ]
 
 
