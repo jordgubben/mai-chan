@@ -5,7 +5,7 @@ import Set
 import Dict
 import Grid
 import Thingy exposing (Thingy(..), Flavour(..))
-import SweetBuns exposing (FloorTile(..))
+import SweetBuns exposing (Board, FloorTile(..))
 import Test exposing (..)
 import Fuzz exposing (..)
 import Expect exposing (Expectation, equal, fail)
@@ -382,12 +382,15 @@ consciousMovementSuite =
             \() ->
                 let
                     -- Given a bun with no neighbours
-                    initialThings =
-                        Grid.fromList [ ( ( 10, 20 ), bun ) ]
+                    initialBoard =
+                        { emptyBoard
+                            | things =
+                                Grid.fromList [ ( ( 10, 20 ), bun ) ]
+                        }
 
                     -- When moving
                     movedThings =
-                        SweetBuns.attemptMove Set.empty ( 10, 20 ) ( 10, 21 ) initialThings
+                        SweetBuns.attemptMove ( 10, 20 ) ( 10, 21 ) initialBoard
 
                     -- Then it is moved
                     expectedThings =
@@ -398,42 +401,54 @@ consciousMovementSuite =
             \() ->
                 let
                     -- Given a bun with a neighbour
-                    initialThings =
-                        Grid.fromList [ ( ( 14, 10 ), bun ), ( ( 15, 10 ), bun ) ]
+                    initialBoard =
+                        { emptyBoard
+                            | things =
+                                Grid.fromList
+                                    [ ( ( 14, 10 ), bun )
+                                    , ( ( 15, 10 ), bun )
+                                    ]
+                        }
 
                     -- When moving on onto neighbour
                     movedThings =
-                        SweetBuns.attemptMove Set.empty ( 14, 10 ) ( 15, 10 ) initialThings
+                        SweetBuns.attemptMove ( 14, 10 ) ( 15, 10 ) initialBoard
                 in
                     -- Then it is not moved
-                    movedThings |> equal initialThings
+                    movedThings |> equal initialBoard.things
         , test "Can not move to an terrain tile" <|
             \() ->
                 let
-                    -- Given a single bun
-                    initialThings =
-                        Grid.fromList [ ( ( 0, 0 ), bun ) ]
-
-                    -- And some terrain
-                    terrain =
-                        Set.fromList [ ( 0, -1 ) ]
+                    initialBoard =
+                        { -- Given a single bun
+                          things = Grid.fromList [ ( ( 0, 0 ), bun ) ]
+                        , -- And some terrain
+                          floor =
+                            Grid.fromList [ ( ( 0, -1 ), WallTile ) ]
+                        }
 
                     -- When moving on onto terrain
                     movedThings =
-                        SweetBuns.attemptMove terrain ( 0, 0 ) ( 0, -1 ) initialThings
+                        SweetBuns.attemptMove ( 0, 0 ) ( 0, -1 ) initialBoard
                 in
                     -- Then it is not moved
-                    movedThings |> equal initialThings
+                    movedThings |> equal initialBoard.things
         , test "Can move to an occupied tile if ingredients are mixable" <|
             \() ->
                 let
                     -- Given a bun with a neighbour
-                    initialThings =
-                        Grid.fromList [ ( ( 14, 10 ), water ), ( ( 15, 10 ), flour ) ]
+                    initialBoard =
+                        { emptyBoard
+                            | things =
+                                Grid.fromList
+                                    [ ( ( 14, 10 ), water )
+                                    , ( ( 15, 10 ), flour )
+                                    ]
+                        }
 
                     -- When moving on onto neighbour
                     movedThings =
-                        SweetBuns.attemptMove Set.empty ( 14, 10 ) ( 15, 10 ) initialThings
+                        SweetBuns.attemptMove ( 14, 10 ) ( 15, 10 ) initialBoard
 
                     -- Then it is not moved
                     expectedThings =
@@ -443,23 +458,24 @@ consciousMovementSuite =
         , test "Can move by swaping places, if it destabilizes the grid" <|
             \() ->
                 let
-                    -- Given a a chilli,
-                    -- with *sweet* water on top of it
-                    -- and *sweet* flour below it
-                    initialThings =
-                        Grid.fromList
-                            [ ( ( 0, 2 ), Water (Just Sugar) )
-                            , ( ( 0, 1 ), chilli )
-                            , ( ( 0, 0 ), Flour (Just Sugar) )
-                            ]
-
-                    -- And terrain below it
-                    terrain =
-                        Set.fromList [ ( 0, -1 ) ]
+                    initialBoard =
+                        { -- Given a a chilli,
+                          -- with *sweet* water on top of it
+                          -- and *sweet* flour below it
+                          things =
+                            Grid.fromList
+                                [ ( ( 0, 2 ), Water (Just Sugar) )
+                                , ( ( 0, 1 ), chilli )
+                                , ( ( 0, 0 ), Flour (Just Sugar) )
+                                ]
+                        , -- And terrain below it
+                          floor =
+                            Grid.fromList [ ( ( 0, -1 ), WallTile ) ]
+                        }
 
                     -- When moving flour onto chilli
                     movedThings =
-                        SweetBuns.attemptMove terrain ( 0, 1 ) ( 0, 2 ) initialThings
+                        SweetBuns.attemptMove ( 0, 1 ) ( 0, 2 ) initialBoard
 
                     -- Then they trade places, (causing a chain reaction)
                     expectedThings =
@@ -473,37 +489,40 @@ consciousMovementSuite =
         , test "Can not move by swaping places, if the result is stable" <|
             \() ->
                 let
-                    -- Given a a chilli,
-                    -- with *sweet* water on top of it
-                    -- and *chilly* flour below it
-                    initialThings =
-                        Grid.fromList
-                            [ ( ( 0, 2 ), Water (Just Sugar) )
-                            , ( ( 0, 1 ), chilli )
-                            , ( ( 0, 0 ), Flour (Just Chilli) )
-                            ]
-
-                    -- And terrain below it
-                    terrain =
-                        Set.fromList [ ( 0, -1 ) ]
+                    initialBoard =
+                        { -- Given a a chilli,
+                          -- with *sweet* water on top of it
+                          -- and *chilly* flour below it
+                          things =
+                            Grid.fromList
+                                [ ( ( 0, 2 ), Water (Just Sugar) )
+                                , ( ( 0, 1 ), chilli )
+                                , ( ( 0, 0 ), Flour (Just Chilli) )
+                                ]
+                        , -- And terrain below it
+                          floor =
+                            Grid.fromList [ ( ( 0, -1 ), WallTile ) ]
+                        }
 
                     -- When moving flour onto chilli
                     movedThings =
-                        SweetBuns.attemptMove terrain ( 0, 1 ) ( 0, 2 ) initialThings
+                        SweetBuns.attemptMove ( 0, 1 ) ( 0, 2 ) initialBoard
                 in
                     -- Then nothing happens (since it causes no chain reaction)
-                    movedThings |> equal initialThings
+                    movedThings |> equal initialBoard.things
         , describe "Can move to any tile in a cross pattern"
             (let
                 -- Given a bun
-                initialThings =
-                    Grid.fromList [ ( ( 10, 10 ), bun ) ]
+                initialBoard =
+                    { emptyBoard
+                        | things = Grid.fromList [ ( ( 10, 10 ), bun ) ]
+                    }
 
                 testMoveOk targetCoords =
                     let
                         -- When moving
                         movedThings =
-                            SweetBuns.attemptMove Set.empty ( 10, 10 ) targetCoords initialThings
+                            SweetBuns.attemptMove ( 10, 10 ) targetCoords initialBoard
 
                         -- Then that is ok
                         expectedThings =
@@ -521,16 +540,18 @@ consciousMovementSuite =
             \() ->
                 let
                     -- Given a bun
-                    initialThings =
-                        Grid.fromList [ ( ( 10, 10 ), bun ) ]
+                    initialBoard =
+                        { emptyBoard
+                            | things = Grid.fromList [ ( ( 10, 10 ), bun ) ]
+                        }
 
                     --  When attempting to move
                     movedThings =
-                        SweetBuns.attemptMove Set.empty ( 10, 10 ) ( 11, 11 ) initialThings
+                        SweetBuns.attemptMove ( 10, 10 ) ( 11, 11 ) initialBoard
 
                     -- Then is prevented
                 in
-                    movedThings |> equal initialThings
+                    movedThings |> equal initialBoard.things
         ]
 
 
@@ -580,6 +601,13 @@ gameProgressSuite =
 
 
 -- # HELPERS
+
+
+emptyBoard : Board
+emptyBoard =
+    { floor = Grid.empty
+    , things = Grid.empty
+    }
 
 
 sugar : Thingy

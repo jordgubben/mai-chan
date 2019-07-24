@@ -211,10 +211,9 @@ selectTile coords model =
             let
                 things_ =
                     attemptMove
-                        (obstacleTileArea kitchenLevel)
                         moverCoords
                         coords
-                        model.things
+                        { floor = kitchenLevel, things = model.things }
             in
                 ( { model
                     | things = things_
@@ -366,15 +365,23 @@ pickRandom seed list =
 {-| Check if a move is possible, so that it can be hilighted properly
 -}
 isPossibleMove : Board -> Coords -> Coords -> Bool
-isPossibleMove { floor, things } from to =
-    ((attemptMove (obstacleTileArea floor) from to things) /= things)
+isPossibleMove board from to =
+    ((attemptMove from to board) /= board.things)
 
 
 {-| Handle players attempt to move something
 -}
-attemptMove : Set Coords -> Coords -> Coords -> Grid Thingy -> Grid Thingy
-attemptMove terrain from to things =
-    if not (isValidMove from to && not (Set.member to terrain)) then
+attemptMove : Coords -> Coords -> Board -> Grid Thingy
+attemptMove from to { floor, things } =
+    -- Only move if move is withing movement pattern
+    if not (isValidMove from to) then
+        things
+        -- Only move if not into terrain
+    else if
+        Grid.get to floor
+            |> Maybe.map isObstacleTile
+            |> Maybe.withDefault False
+    then
         things
         -- If movement is possible, do it
         -- (might mix things)
@@ -382,7 +389,7 @@ attemptMove terrain from to things =
         moveMixing from to things
         -- If movement could not be prefomed in any other way,
         -- Then let the things trade places if that causes a chain reaction
-    else if not (Grid.swap from to things |> isStable terrain) then
+    else if not (Grid.swap from to things |> isStable (obstacleTileArea floor)) then
         Grid.swap from to things
         -- Else change nothing
     else
