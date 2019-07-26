@@ -1,0 +1,28 @@
+{
+  "name": "Mai-chans sweet buns",
+  "version": "0.2.0",
+  "description": "A prototype puzzler about baking bread.",
+  "devDependencies": {
+    "elm": "^0.19.0-no-deps",
+    "elm-format": "^0.8.1",
+    "elm-upgrade": "^0.19.6"
+  },
+  "scripts": {
+    "test": "./test-all.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jordgubben/mai-chan.git"
+  },
+  "keywords": [
+    "elm",
+    "game",
+    "agbic"
+  ],
+  "author": "Jakob Eklund",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jordgubben/mai-chan/issues"
+  },
+  "homepage": "https://jordgubben.itch.io/mai-chans-sweet-buns"
+}
