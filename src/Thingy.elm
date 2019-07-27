@@ -1,5 +1,6 @@
 module Thingy exposing (Flavour(..), Thingy(..), isCollectableBun, isFaller, mixIngredients, spriteSide, toHtml, viewInfo)
 
+import String exposing (fromInt)
 import Html exposing (Html, text)
 import Html.Attributes as Att exposing (class, id, style)
 import NeoSprite exposing (Sheet, Sprite)
@@ -403,7 +404,7 @@ renderSprite cssClass sprite =
 
 px : ( String, Int ) -> ( String, String )
 px ( name, value ) =
-    ( name, (value |> toString) ++ "px" )
+    ( name, (value |> fromInt) ++ "px" )
 
 
 

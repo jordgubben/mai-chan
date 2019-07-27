@@ -1,5 +1,6 @@
 module NeoSprite exposing (Sheet, Sprite, fromSheet, toHtml, toSvg)
 
+import String exposing (fromInt)
 import Html exposing (Html, text)
 import Html.Attributes exposing (style)
 import Svg exposing (Svg)
@@ -156,11 +157,3 @@ toHtml sprite =
 px : Int -> String
 px =
     fromInt >> (\s -> s ++ "px")
-
-
-{-| Convert Int to String.
-(Simplify migration to Elm 0.19)
--}
-fromInt : Int -> String
-fromInt i =
-    i |> toString

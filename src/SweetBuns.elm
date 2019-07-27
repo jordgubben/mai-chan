@@ -1,8 +1,10 @@
 module SweetBuns exposing (Board, FloorTile(..), Highlight(..), Model, Msg(..), RenderableTile, activateTile, applyGravity, attemptMove, boardSize, collectThings, fallInterval, fillBoard, findSpawnPoints, getPossibleHighlight, getTileColor, initGame, initialModel, initialThings, isBunCollector, isGameOver, isObstacleTile, isPossibleMove, isStable, isValidMove, kitchenCollectors, kitchenFloor, kitchenLevel, kitchenSpawners, kitchenWalls, main, moveMixing, obstacleTileArea, pickRandom, px, renderTile, restartGame, selectTile, spawnInterval, spawnSingelThingRnd, spawnThings, spawnableFlavours, spawnables, subscriptions, tileSide, update, view, viewBoard, viewBoardContainer, viewDebug, viewGameOver, viewInfo, viewScore)
 
-import Delay
+import String exposing (fromInt, fromFloat)
+import Delay exposing (TimeUnit(..))
 import Dict
 import Grid exposing (..)
+import Browser
 import Html exposing (Html, text)
 import Html.Attributes as Att exposing (class, id, style)
 import Html.Events exposing (onClick, onDoubleClick)
@@ -10,13 +12,13 @@ import Random exposing (Seed)
 import Set exposing (Set)
 import Task
 import Thingy exposing (Flavour(..), Thingy(..))
-import Time exposing (Time, inSeconds, second)
+import Time exposing (Posix, toSecond)
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
-        { init = ( initialModel, Task.perform IntiGame Time.now )
+    Browser.element
+        { init = \() ->( initialModel, Task.perform IntiGame Time.now )
         , update = update
         , view = view
         , subscriptions = subscriptions
@@ -58,7 +60,7 @@ type Msg
     | Fall
     | Spawn
     | Collect
-    | IntiGame Time
+    | IntiGame Posix
     | RestartGame
 
 
@@ -121,7 +123,7 @@ update msg model =
                         (obstacleTileArea kitchenLevel)
                         model.things
               }
-            , Delay.after 1 second Collect
+            , Delay.after 1 Second Collect
             )
 
         Collect ->
@@ -139,11 +141,11 @@ update msg model =
 
 {-| Start game with a half full board.
 -}
-initGame : Time -> Model -> Model
+initGame : Posix -> Model -> Model
 initGame time model =
     let
         seed =
-            time |> Time.inMilliseconds |> round |> Random.initialSeed
+            time |> Time.posixToMillis  |> Random.initialSeed
 
         ( newThings, seed_ ) =
             fillBoard seed
@@ -168,7 +170,7 @@ restartGame model =
 {-| Fill board to the brim with various things
 -}
 fillBoard : Seed -> ( Grid Thingy, Seed )
-fillBoard seed =
+fillBoard fillSeed =
     let
         filledRegion =
             { boardSize | height = boardSize.height - 1 }
@@ -197,7 +199,7 @@ fillBoard seed =
                 , seed_
                 )
             )
-            ( Grid.empty, seed )
+            ( Grid.empty, fillSeed )
 
 
 {-| Handle players selection of a tile (triggred by clicking).
@@ -223,7 +225,7 @@ selectTile coords model =
                 , moveCount = model.moveCount + 1
               }
             , if model.things /= things_ then
-                Delay.after 0.25 second Spawn
+                Delay.after 0.25 Second Spawn
 
               else
                 Cmd.none
@@ -570,7 +572,7 @@ subscriptions model =
     of the problem if it exists.
 
 -}
-spawnInterval : { a | things : Grid Thingy } -> Time
+spawnInterval : { a | things : Grid Thingy } -> Float
 spawnInterval { things } =
     let
         baseIntervall =
@@ -594,11 +596,12 @@ spawnInterval { things } =
     (round intervall |> toFloat) * second
 
 
-fallInterval : Time
+fallInterval : Float
 fallInterval =
-    0.25 * second
+    0.25 * second 
 
-
+second =
+    1000.0
 
 -- # VIEW
 
@@ -610,8 +613,8 @@ view model =
     Html.div
         [ id "game-container"
         , style "position" "relative"
-        , style "width" ((6 * tileSide |> toString) ++ "px")
-        , style "height" ((8 * tileSide |> toString) ++ "px")
+        , style "width" ((6 * tileSide |> fromInt) ++ "px")
+        , style "height" ((8 * tileSide |> fromInt) ++ "px")
         , style "border" "5px solid black"
         ]
         [ viewScore model.totalScore
@@ -649,7 +652,7 @@ viewScore score =
             , style "padding" "10px 0"
             , style "text-align" "right"
             ]
-            [ text <| toString score
+            [ text <| fromInt score
             ]
         ]
 
@@ -659,7 +662,7 @@ viewBoardContainer model =
     Html.div
         [ id "board-container"
         , style "position" "absolute"
-        , style "top" ((tileSide // 2 |> toString) ++ "px")
+        , style "top" ((tileSide // 2 |> fromInt) ++ "px")
         , style "left" "0"
         ]
         [ viewBoard model
@@ -776,25 +779,25 @@ viewDebug model =
         , style "bottom" "0"
         , style "right" "0"
         , style "width" "100%"
-        , style "height" ((4 * tileSide |> toString) ++ "px")
+        , style "height" ((4 * tileSide |> fromInt) ++ "px")
         , style "background-color" "lightgray"
         ]
         [ Html.button [ onClick Spawn ] [ text "Spawn!" ]
         , Html.button [ onClick Fall ] [ text "Fall!" ]
         , Html.button [ onClick Collect ] [ text "Collect" ]
-        , Html.p [] [ "Move count: " ++ (model.moveCount |> toString) |> text ]
-        , Html.p [] [ "Random seed: " ++ toString model.seed |> text ]
-        , Html.p [] [ "Selected tile: " ++ (model.selectedTile |> toString) |> text ]
-        , Html.p [] [ "Spawn interval: " ++ (spawnInterval model |> inSeconds |> toString) ++ "s" |> text ]
-        , Html.p [] [ "Game over? " ++ (isGameOver { floor = kitchenLevel, things = model.things } |> toString) |> text ]
+        , Html.p [] [ "Move count: " ++ (model.moveCount |> fromInt) |> text ]
+        , Html.p [] [ "Random seed: " ++ Debug.toString model.seed |> text ]
+        , Html.p [] [ "Selected tile: " ++ (model.selectedTile |> Debug.toString) |> text ]
+        , Html.p [] [ "Spawn interval: " ++ (spawnInterval model |> fromFloat) ++ "ms" |> text ]
+        , Html.p [] [ "Game over? " ++ (isGameOver { floor = kitchenLevel, things = model.things } |> Debug.toString) |> text ]
         ]
 
 
 renderTile : Coords -> RenderableTile -> Html Msg
 renderTile coords tile =
     Html.div
-        [ style "width" (toString tileSide ++ "px")
-        , style "height" (toString tileSide ++ "px")
+        [ style "width" (fromInt tileSide ++ "px")
+        , style "height" (fromInt tileSide ++ "px")
         , style "background-color" (getTileColor tile)
         , style "border" "1px solid darkgray"
         , onClick (SelectTile coords)
@@ -803,7 +806,7 @@ renderTile coords tile =
         [ tile.content |> Maybe.map Thingy.toHtml |> Maybe.withDefault (text "")
         , Html.span
             [ class "debug", style "font-size" "25%" ]
-            [ Html.text (toString coords) ]
+            [ Html.text (Debug.toString coords) ]
         ]
 
 
@@ -834,7 +837,7 @@ getTileColor { highlight, floor } =
 
 px : ( String, Int ) -> ( String, String )
 px ( name, value ) =
-    ( name, (value |> toString) ++ "px" )
+    ( name, (value |> fromInt) ++ "px" )
 
 
 
