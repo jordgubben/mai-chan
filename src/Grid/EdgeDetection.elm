@@ -1,7 +1,8 @@
-module Grid.EdgeDetection exposing (..)
+module Grid.EdgeDetection exposing (Area, Coords, EdgeSet, TerrainPalette(..), addEdgeTile, bakeKey, edges, emptyPalette, getEdgeTile)
 
-import Set exposing (Set)
 import Dict exposing (Dict)
+import Set exposing (Set)
+
 
 
 -- Type(s)
@@ -57,10 +58,11 @@ bakeKey edgeSet =
         check ( hasEdge, val ) acc =
             if hasEdge edgeSet then
                 val + acc
+
             else
                 acc
     in
-        edgeValues |> List.foldl check 0
+    edgeValues |> List.foldl check 0
 
 
 

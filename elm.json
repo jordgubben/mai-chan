@@ -1,0 +1,19 @@
+{
+    "type": "package",
+    "name": "jordgubben/game-board",
+    "summary": "Create board game like strategy/tactics games in elm.",
+    "license": "MIT",
+    "version": "0.0.0",
+    "exposed-modules": [
+        "Grid"
+    ],
+    "elm-version": "0.19.0 <= v < 0.20.0",
+    "dependencies": {
+        "elm/core": "1.0.0 <= v < 2.0.0",
+        "elm/html": "1.0.0 <= v < 2.0.0",
+        "elm/svg": "1.0.1 <= v < 2.0.0"
+    },
+    "test-dependencies": {
+        "elm-explorations/test": "1.2.0 <= v < 2.0.0"
+    }
+}

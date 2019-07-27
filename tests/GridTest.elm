@@ -1,13 +1,14 @@
-module GridTest exposing (..)
+module GridTest exposing (drawingSuite, exampleGrid, expectCellCountEquals, expectTileDivCountEquals, expectTileDivSize, renderingSuite, retrievalSuite, transformationSuite)
 
 import Dict
-import Html
-import Grid exposing (..)
 import Expect exposing (Expectation, equal)
-import Test exposing (..)
 import Fuzz exposing (..)
+import Grid exposing (..)
+import Html
+import Test exposing (..)
 import Test.Html.Query as Query
-import Test.Html.Selector exposing (tag, class, style, all)
+import Test.Html.Selector exposing (all, class, style, tag)
+
 
 
 -- # Test: Drawing
@@ -18,17 +19,16 @@ drawingSuite =
     describe "Drawing"
         [ describe "Grid.drawBox : t -> {w,h} -> Grid t"
             [ test "Draws a grid with the defined width and height" <|
-                (\_ ->
+                \_ ->
                     Grid.drawBox "Tile" { width = 3, height = 4 }
                         |> Expect.all
                             [ Grid.numRows >> equal 4
                             , Grid.numCols >> equal 3
                             ]
-                )
             ]
         , describe "Grid.lineRect : t -> {w,h} -> Grid t"
             [ test "Draws a grid with the defined width and height" <|
-                (\_ ->
+                \_ ->
                     Grid.lineRect "Tile" { width = 5, height = 8 }
                         |> Expect.all
                             [ Grid.numRows >> equal 8
@@ -37,7 +37,6 @@ drawingSuite =
                             , Dict.get ( 4, 7 ) >> equal (Just "Tile")
                             , Dict.size >> equal (8 * 2 + 3 * 2)
                             ]
-                )
             ]
         ]
 
@@ -51,7 +50,7 @@ transformationSuite =
     describe "Grid transformation"
         [ describe "Grid.translate"
             [ test "Moves grid content in the given direction" <|
-                (\_ ->
+                \_ ->
                     let
                         original =
                             Grid.fromList [ ( ( 0, 0 ), True ), ( ( 1, -2 ), True ) ]
@@ -62,16 +61,14 @@ transformationSuite =
                         expected =
                             Grid.fromList [ ( ( 3, 5 ), True ), ( ( 4, 3 ), True ) ]
                     in
-                        translated |> equal expected
-                )
+                    translated |> equal expected
             , fuzz (tuple ( int, int )) "Translate one way and then the other returns the grid to it's original state" <|
-                (\( x, y ) ->
+                \( x, y ) ->
                     exampleGrid |> Grid.translate ( x, y ) |> Grid.translate ( -x, -y ) |> equal exampleGrid
-                )
             ]
         , describe "Grid.rotCv"
             [ test "Rotates clockwise" <|
-                (\_ ->
+                \_ ->
                     let
                         original =
                             Grid.fromList [ ( ( -1, -1 ), 'n' ), ( ( 1, 3 ), 'P' ) ]
@@ -88,18 +85,17 @@ transformationSuite =
                         rot4 =
                             Grid.rotCv rot3
                     in
-                        Expect.all
-                            [ (\_ -> rot1 |> equal (Grid.fromList [ ( ( -1, 1 ), 'n' ), ( ( 3, -1 ), 'P' ) ]))
-                            , (\_ -> rot2 |> equal (Grid.fromList [ ( ( 1, 1 ), 'n' ), ( ( -1, -3 ), 'P' ) ]))
-                            , (\_ -> rot3 |> equal (Grid.fromList [ ( ( 1, -1 ), 'n' ), ( ( -3, 1 ), 'P' ) ]))
-                            , (\_ -> rot4 |> equal original)
-                            ]
-                            never
-                )
+                    Expect.all
+                        [ \_ -> rot1 |> equal (Grid.fromList [ ( ( -1, 1 ), 'n' ), ( ( 3, -1 ), 'P' ) ])
+                        , \_ -> rot2 |> equal (Grid.fromList [ ( ( 1, 1 ), 'n' ), ( ( -1, -3 ), 'P' ) ])
+                        , \_ -> rot3 |> equal (Grid.fromList [ ( ( 1, -1 ), 'n' ), ( ( -3, 1 ), 'P' ) ])
+                        , \_ -> rot4 |> equal original
+                        ]
+                        never
             ]
         , describe "Grid.rotCcv"
             [ test "Rotates counter clockwise" <|
-                (\_ ->
+                \_ ->
                     let
                         original =
                             Grid.fromList [ ( ( -1, -1 ), 'n' ), ( ( 1, 3 ), 'P' ) ]
@@ -116,14 +112,13 @@ transformationSuite =
                         rot4 =
                             Grid.rotCcv rot3
                     in
-                        Expect.all
-                            [ (\_ -> rot1 |> equal (Grid.fromList [ ( ( 1, -1 ), 'n' ), ( ( -3, 1 ), 'P' ) ]))
-                            , (\_ -> rot2 |> equal (Grid.fromList [ ( ( 1, 1 ), 'n' ), ( ( -1, -3 ), 'P' ) ]))
-                            , (\_ -> rot3 |> equal (Grid.fromList [ ( ( -1, 1 ), 'n' ), ( ( 3, -1 ), 'P' ) ]))
-                            , (\_ -> rot4 |> equal original)
-                            ]
-                            never
-                )
+                    Expect.all
+                        [ \_ -> rot1 |> equal (Grid.fromList [ ( ( 1, -1 ), 'n' ), ( ( -3, 1 ), 'P' ) ])
+                        , \_ -> rot2 |> equal (Grid.fromList [ ( ( 1, 1 ), 'n' ), ( ( -1, -3 ), 'P' ) ])
+                        , \_ -> rot3 |> equal (Grid.fromList [ ( ( -1, 1 ), 'n' ), ( ( 3, -1 ), 'P' ) ])
+                        , \_ -> rot4 |> equal original
+                        ]
+                        never
             , describe "Grid.swap"
                 [ test "Makes two cells trade content" <|
                     \() ->
@@ -137,7 +132,7 @@ transformationSuite =
                             expected =
                                 Grid.fromList [ ( ( 1, 0 ), "S" ), ( ( 0, -1 ), "N" ) ]
                         in
-                            swapped |> equal expected
+                        swapped |> equal expected
                 , test "Restores if repeated" <|
                     \() ->
                         let
@@ -149,7 +144,7 @@ transformationSuite =
                                     |> Grid.swap ( 1, 0 ) ( 0, -1 )
                                     |> Grid.swap ( 1, 0 ) ( 0, -1 )
                         in
-                            doubleSwapped |> equal original
+                        doubleSwapped |> equal original
                 ]
             ]
         ]
@@ -169,7 +164,7 @@ retrievalSuite =
                         -- Given a larger grid
                         srcGrid =
                             Grid.drawBox () (Size 10 10)
-                                |> Dict.map (\coords _ -> toString coords)
+                                |> Dict.map (\coords _ -> coordsToString coords)
 
                         -- When picking
                         pickedGrid =
@@ -179,9 +174,9 @@ retrievalSuite =
                         expectedGrid =
                             Grid.drawBox () (Size 2 2)
                                 |> Grid.translate ( 3, 4 )
-                                |> Dict.map (\coords _ -> toString coords)
+                                |> Dict.map (\coords _ -> coordsToString coords)
                     in
-                        equal expectedGrid pickedGrid
+                    equal expectedGrid pickedGrid
             ]
         ]
 
@@ -197,31 +192,31 @@ renderingSuite =
             [ test "Creates a table spanning all the cells" <|
                 \() ->
                     exampleGrid
-                        |> Grid.toHtmlTable (\_ _ -> (Html.text ""))
+                        |> Grid.toHtmlTable (\_ _ -> Html.text "")
                         |> expectCellCountEquals
-                            ((Grid.numRows exampleGrid) * (Grid.numCols exampleGrid))
+                            (Grid.numRows exampleGrid * Grid.numCols exampleGrid)
             , test "If the grid is empty, then the table is empty" <|
                 \() ->
                     Grid.empty
-                        |> Grid.toHtmlTable (\_ _ -> (Html.text ""))
+                        |> Grid.toHtmlTable (\_ _ -> Html.text "")
                         |> expectCellCountEquals 0
             ]
         , describe "Grid.toHtmlDiv"
             [ test "Creates a div containing a div for each grid tile " <|
                 \() ->
                     exampleGrid
-                        |> Grid.toHtmlDiv ( 16, 16 ) (\_ _ -> (Html.text ""))
+                        |> Grid.toHtmlDiv ( 16, 16 ) (\_ _ -> Html.text "")
                         |> expectTileDivCountEquals (Dict.size exampleGrid)
             , test "Creates an outer div large anough to house all tiles" <|
                 \() ->
                     exampleGrid
-                        |> Grid.toHtmlDiv ( 16, 16 ) (\_ _ -> (Html.text ""))
+                        |> Grid.toHtmlDiv ( 16, 16 ) (\_ _ -> Html.text "")
                         |> expectTileDivSize
                             ( 16 * Grid.numCols exampleGrid, 16 * Grid.numRows exampleGrid )
             , test "If the grid is empty, then there are no inner divs" <|
                 \() ->
                     Grid.empty
-                        |> Grid.toHtmlDiv ( 16, 16 ) (\_ _ -> (Html.text ""))
+                        |> Grid.toHtmlDiv ( 16, 16 ) (\_ _ -> Html.text "")
                         |> expectTileDivCountEquals 0
             ]
         ]
@@ -229,6 +224,11 @@ renderingSuite =
 
 
 -- # Helpers
+
+
+coordsToString : Coords -> String
+coordsToString ( cx, cy ) =
+    String.fromInt cx ++ "," ++ String.fromInt cy
 
 
 exampleGrid : Grid String
@@ -268,8 +268,6 @@ expectTileDivSize ( expWidth, expHeight ) html =
     html
         |> Query.fromHtml
         |> Query.has
-            [ style
-                [ ( "width", toString expWidth ++ "px" )
-                , ( "height", toString expHeight ++ "px" )
-                ]
+            [ style "width" (String.fromInt expWidth ++ "px")
+            , style "height" (String.fromInt expHeight ++ "px")
             ]

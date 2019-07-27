@@ -22,13 +22,12 @@ fromAscii ( ( offsetX, offsetY ), ascii ) =
 
         possitionedCells : List ( Grid.Coords, Char )
         possitionedCells =
-            (List.map2
+            List.map2
                 (\y cells ->
                     List.map2 (\x cell -> ( ( offsetX + x, offsetY - y ), cell )) (List.range 0 (List.length cells)) cells
                 )
                 (List.range 0 (List.length charCells))
                 charCells
-            )
                 |> List.concat
     in
-        Grid.fromList possitionedCells
+    Grid.fromList possitionedCells
