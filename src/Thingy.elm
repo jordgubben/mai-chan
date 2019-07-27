@@ -1,8 +1,8 @@
-module Thingy exposing (Thingy(..), Flavour(..), isFaller, isCollectableBun, mixIngredients, viewInfo, toHtml, spriteSide)
+module Thingy exposing (Flavour(..), Thingy(..), isCollectableBun, isFaller, mixIngredients, spriteSide, toHtml, viewInfo)
 
 import Html exposing (Html, text)
-import Html.Attributes as Att exposing (id, class, style)
-import NeoSprite exposing (Sprite, Sheet)
+import Html.Attributes as Att exposing (class, id, style)
+import NeoSprite exposing (Sheet, Sprite)
 
 
 {-| Helper preview program to used to check that all sprites are rendered correctly.
@@ -11,36 +11,36 @@ main : Html m
 main =
     let
         neutralThingies =
-            [ ( "Neutral flavoured Bun", (Bun Nothing) )
-            , ( "Neutral flavoured Flour", (Flour Nothing) )
-            , ( "Neutral flavoured Water", (Water Nothing) )
+            [ ( "Neutral flavoured Bun", Bun Nothing )
+            , ( "Neutral flavoured Flour", Flour Nothing )
+            , ( "Neutral flavoured Water", Water Nothing )
             ]
 
         -- Everything Chilli
         allChilli =
-            [ ( "Chilli", (Flavouring { flavour = Chilli, packaged = False }) )
-            , ( "Packaged Chilli", (Flavouring { flavour = Chilli, packaged = True }) )
-            , ( "Chilli flavoured Bun", (Bun (Just Chilli)) )
-            , ( "Chilli flavoured Flour", (Flour (Just Chilli)) )
-            , ( "Chilli flavoured Water", (Water (Just Chilli)) )
+            [ ( "Chilli", Flavouring { flavour = Chilli, packaged = False } )
+            , ( "Packaged Chilli", Flavouring { flavour = Chilli, packaged = True } )
+            , ( "Chilli flavoured Bun", Bun (Just Chilli) )
+            , ( "Chilli flavoured Flour", Flour (Just Chilli) )
+            , ( "Chilli flavoured Water", Water (Just Chilli) )
             ]
 
         -- Everything Sweet
         allSweets =
-            [ ( "Sugar", (Flavouring { flavour = Sugar, packaged = False }) )
-            , ( "Packaged Sugar", (Flavouring { flavour = Sugar, packaged = True }) )
-            , ( "Sweet Bun (OMG! Game title!)", (Bun (Just Sugar)) )
-            , ( "Sweet Flour", (Flour (Just Sugar)) )
-            , ( "Sweet Water", (Water (Just Sugar)) )
+            [ ( "Sugar", Flavouring { flavour = Sugar, packaged = False } )
+            , ( "Packaged Sugar", Flavouring { flavour = Sugar, packaged = True } )
+            , ( "Sweet Bun (OMG! Game title!)", Bun (Just Sugar) )
+            , ( "Sweet Flour", Flour (Just Sugar) )
+            , ( "Sweet Water", Water (Just Sugar) )
             ]
 
         -- Everything Chocolate
         allChocolate =
-            [ ( "Chocolate", (Flavouring { flavour = Chocolate, packaged = False }) )
-            , ( "Packaged Chocolate", (Flavouring { flavour = Chocolate, packaged = True }) )
-            , ( "Choco Bun ", (Bun (Just Chocolate)) )
-            , ( "Choco Flour ", (Flour (Just Chocolate)) )
-            , ( "Choco Water ", (Water (Just Chocolate)) )
+            [ ( "Chocolate", Flavouring { flavour = Chocolate, packaged = False } )
+            , ( "Packaged Chocolate", Flavouring { flavour = Chocolate, packaged = True } )
+            , ( "Choco Bun ", Bun (Just Chocolate) )
+            , ( "Choco Flour ", Flour (Just Chocolate) )
+            , ( "Choco Water ", Water (Just Chocolate) )
             ]
 
         -- Misc. others
@@ -50,18 +50,16 @@ main =
 
         displayThings title thingies =
             Html.div []
-                ((Html.h2 [] [ text title ])
+                (Html.h2 [] [ text title ]
                     :: (thingies
                             |> List.map
                                 (\( desc, thing ) ->
                                     Html.div
-                                        [ style
-                                            [ ( "display", "inline-block" )
-                                            , ( "border", "1px solid black" )
-                                            , ( "width", "100px" )
-                                            , ( "margin", "5px" )
-                                            , ( "padding", "10px" )
-                                            ]
+                                        [ style "display" "inline-block"
+                                        , style "border" "1px solid black"
+                                        , style "width" "100px"
+                                        , style "margin" "5px"
+                                        , style "padding" "10px"
                                         ]
                                         [ Html.h3 [] [ text desc ]
                                         , thing |> toHtml
@@ -72,15 +70,15 @@ main =
                        )
                 )
     in
-        Html.div []
-            [ Html.h1 [] [ text "Thingy preview" ]
-            , Html.p [] [ text "Bellow are all the possible renderable states of a 'Thingy'." ]
-            , (displayThings "Flavour neutral things" neutralThingies)
-            , (displayThings "All the Chilli" allChilli)
-            , (displayThings "All the Sweets" allSweets)
-            , (displayThings "All the chocolate" allChocolate)
-            , (displayThings "All other things" allOthers)
-            ]
+    Html.div []
+        [ Html.h1 [] [ text "Thingy preview" ]
+        , Html.p [] [ text "Bellow are all the possible renderable states of a 'Thingy'." ]
+        , displayThings "Flavour neutral things" neutralThingies
+        , displayThings "All the Chilli" allChilli
+        , displayThings "All the Sweets" allSweets
+        , displayThings "All the chocolate" allChocolate
+        , displayThings "All other things" allOthers
+        ]
 
 
 
@@ -120,6 +118,7 @@ isFaller thing =
 {-|
 
     Is this Thingy a Bun ready for collection?
+
 -}
 isCollectableBun : Thingy -> Bool
 isCollectableBun thing =
@@ -167,6 +166,7 @@ mixFlavouringWithWater : Bool -> Flavour -> Maybe Thingy
 mixFlavouringWithWater packaged flavour =
     if not packaged then
         Just <| Water (Just flavour)
+
     else
         Nothing
 
@@ -175,6 +175,7 @@ mixFlavouringWithFlour : Bool -> Flavour -> Maybe Thingy
 mixFlavouringWithFlour packaged flavour =
     if not packaged then
         Just <| Flour (Just flavour)
+
     else
         Nothing
 
@@ -189,8 +190,9 @@ mixBun { flour, water } =
             Just <| Bun <| Just flavour
 
         ( Just flourFlavour, Just waterFlavour ) ->
-            if (flourFlavour == waterFlavour) then
+            if flourFlavour == waterFlavour then
                 Just <| Bun <| Just flourFlavour
+
             else
                 Nothing
 
@@ -207,11 +209,9 @@ viewInfo thingy =
     let
         containerDiv attributes elements =
             Html.div
-                ([ style
-                    [ ( "position", "relative" )
-                    , ( "width", "100%" )
-                    , ( "height", "100%" )
-                    ]
+                ([ style "position" "relative"
+                 , style "width" "100%"
+                 , style "height" "100%"
                  ]
                     ++ attributes
                 )
@@ -220,41 +220,37 @@ viewInfo thingy =
         iconDiv icon =
             Html.div
                 [ class "icon"
-                , style
-                    [ ( "position", "absolute" )
-                    , ( "top", "0" )
-                    , ( "left", "0" )
-                    , ( "width", spriteSide ) |> px
-                    , ( "height", spriteSide ) |> px
-                    , ( "padding", spriteSide // 4 ) |> px
-                    , ( "background-color", "darkgray" )
-                    ]
+                , style "position" "absolute"
+                , style "top" "0"
+                , style "left" "0"
+                , (\( a, b ) -> style a b) (( "width", spriteSide ) |> px)
+                , (\( a, b ) -> style a b) (( "height", spriteSide ) |> px)
+                , (\( a, b ) -> style a b) (( "padding", spriteSide // 4 ) |> px)
+                , style "background-color" "darkgray"
                 ]
                 [ icon ]
 
         descriptionDiv ( name, summary ) =
             Html.div
                 [ class "description"
-                , style
-                    [ ( "position", "absolute" )
-                    , ( "top", "0" )
-                    , ( "right", "0" )
-                    , ( "width", spriteSide * 4 ) |> px
-                    , ( "height", spriteSide * 1 ) |> px
-                    , ( "padding", spriteSide // 4 ) |> px
-                    ]
+                , style "position" "absolute"
+                , style "top" "0"
+                , style "right" "0"
+                , (\( a, b ) -> style a b) (( "width", spriteSide * 4 ) |> px)
+                , (\( a, b ) -> style a b) (( "height", spriteSide * 1 ) |> px)
+                , (\( a, b ) -> style a b) (( "padding", spriteSide // 4 ) |> px)
                 ]
-                [ Html.div [ style [ ( "padding", 5 ) |> px ] ]
+                [ Html.div [ (\( a, b ) -> style a b) (( "padding", 5 ) |> px) ]
                     [ Html.strong [ class "name" ] [ text name ]
                     , text " - "
                     , Html.span [ class "text" ] [ text summary ]
                     ]
                 ]
     in
-        containerDiv []
-            [ iconDiv <| toHtml thingy
-            , descriptionDiv <| describe thingy
-            ]
+    containerDiv []
+        [ iconDiv <| toHtml thingy
+        , descriptionDiv <| describe thingy
+        ]
 
 
 describe : Thingy -> ( String, String )
@@ -269,6 +265,7 @@ describe thingy =
         Flavouring { packaged } ->
             if packaged then
                 ( "Packaged Flavour", "Double-click to unpack" )
+
             else
                 ( "Flavour", "Mix with Flavour or Water." )
 
@@ -321,23 +318,22 @@ renderFlavouring flavour packaged =
         sprite =
             if packaged then
                 spriteKit.packaged
+
             else
                 spriteKit.unpackaged
     in
-        Html.div [ style [ ( "position", "relative" ) ] ]
-            [ renderSprite cssClass sprite ]
+    Html.div [ style "position" "relative" ]
+        [ renderSprite cssClass sprite ]
 
 
 obstacleHtml : Html msg
 obstacleHtml =
     Html.div
-        [ style
-            [ ( "width", "50px" )
-            , ( "height", "50px" )
-            , ( "margin", "4px 4px" )
-            , ( "background-color", "black" )
-            , ( "border", "2px dotted darkgray" )
-            ]
+        [ style "width" "50px"
+        , style "height" "50px"
+        , style "margin" "4px 4px"
+        , style "background-color" "black"
+        , style "border" "2px dotted darkgray"
         ]
         []
 
@@ -348,7 +344,7 @@ renderBun flavour =
         sprite =
             getSpriteByFlavour bunSprites flavour
     in
-        renderSprite "bun" sprite
+    renderSprite "bun" sprite
 
 
 renderWater : Maybe Flavour -> Html msg
@@ -357,7 +353,7 @@ renderWater flavour =
         sprite =
             getSpriteByFlavour waterSprites flavour
     in
-        renderSprite "water" sprite
+    renderSprite "water" sprite
 
 
 renderFlour : Maybe Flavour -> Html msg
@@ -366,7 +362,7 @@ renderFlour flavour =
         sprite =
             getSpriteByFlavour flourSprites flavour
     in
-        renderSprite "flour" sprite
+    renderSprite "flour" sprite
 
 
 {-| Pick color pattern based on Flavour.

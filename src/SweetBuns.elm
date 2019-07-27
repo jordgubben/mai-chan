@@ -1,16 +1,16 @@
-module SweetBuns exposing (..)
+module SweetBuns exposing (Board, FloorTile(..), Highlight(..), Model, Msg(..), RenderableTile, activateTile, applyGravity, attemptMove, boardSize, collectThings, fallInterval, fillBoard, findSpawnPoints, getPossibleHighlight, getTileColor, initGame, initialModel, initialThings, isBunCollector, isGameOver, isObstacleTile, isPossibleMove, isStable, isValidMove, kitchenCollectors, kitchenFloor, kitchenLevel, kitchenSpawners, kitchenWalls, main, moveMixing, obstacleTileArea, pickRandom, px, renderTile, restartGame, selectTile, spawnInterval, spawnSingelThingRnd, spawnThings, spawnableFlavours, spawnables, subscriptions, tileSide, update, view, viewBoard, viewBoardContainer, viewDebug, viewGameOver, viewInfo, viewScore)
 
+import Delay
+import Dict
+import Grid exposing (..)
+import Html exposing (Html, text)
+import Html.Attributes as Att exposing (class, id, style)
+import Html.Events exposing (onClick, onDoubleClick)
 import Random exposing (Seed)
 import Set exposing (Set)
-import Dict
-import Time exposing (Time, second, inSeconds)
-import Delay
 import Task
-import Html exposing (Html, text)
-import Html.Attributes as Att exposing (id, class, style)
-import Html.Events exposing (onClick, onDoubleClick)
-import Grid exposing (..)
-import Thingy exposing (Thingy(..), Flavour(..))
+import Thingy exposing (Flavour(..), Thingy(..))
+import Time exposing (Time, inSeconds, second)
 
 
 main : Program Never Model Msg
@@ -100,12 +100,14 @@ update msg model =
         SelectTile coords ->
             if not <| isGameOver { floor = kitchenLevel, things = model.things } then
                 selectTile coords model
+
             else
                 ( model, Cmd.none )
 
         ActivateTile coords ->
             if not <| isGameOver { floor = kitchenLevel, things = model.things } then
                 ( { model | things = activateTile coords model.things }, Cmd.none )
+
             else
                 ( model, Cmd.none )
 
@@ -127,12 +129,12 @@ update msg model =
                 ( things_, scoreIncrement ) =
                     collectThings { floor = kitchenLevel, things = model.things }
             in
-                ( { model
-                    | things = things_
-                    , totalScore = model.totalScore + scoreIncrement
-                  }
-                , Cmd.none
-                )
+            ( { model
+                | things = things_
+                , totalScore = model.totalScore + scoreIncrement
+              }
+            , Cmd.none
+            )
 
 
 {-| Start game with a half full board.
@@ -146,7 +148,7 @@ initGame time model =
         ( newThings, seed_ ) =
             fillBoard seed
     in
-        { model | seed = seed_, things = Dict.union model.things newThings }
+    { model | seed = seed_, things = Dict.union model.things newThings }
 
 
 restartGame : Model -> Model
@@ -155,12 +157,12 @@ restartGame model =
         ( newThings, seed_ ) =
             fillBoard model.seed
     in
-        { model
-            | seed = seed_
-            , things = Dict.union initialThings newThings
-            , moveCount = 0
-            , totalScore = 0
-        }
+    { model
+        | seed = seed_
+        , things = Dict.union initialThings newThings
+        , moveCount = 0
+        , totalScore = 0
+    }
 
 
 {-| Fill board to the brim with various things
@@ -183,19 +185,19 @@ fillBoard seed =
             , Flavouring { flavour = Chocolate, packaged = True }
             ]
     in
-        Grid.drawBox () filledRegion
-            |> Grid.translate ( 0, 0 - filledRegion.height )
-            |> Dict.foldl
-                (\coords _ ( things, seed ) ->
-                    let
-                        ( newThing, seed_ ) =
-                            pickRandom seed filler
-                    in
-                        ( Grid.put coords (newThing |> Maybe.withDefault Obstacle) things
-                        , seed_
-                        )
+    Grid.drawBox () filledRegion
+        |> Grid.translate ( 0, 0 - filledRegion.height )
+        |> Dict.foldl
+            (\coords _ ( things, seed ) ->
+                let
+                    ( newThing, seed_ ) =
+                        pickRandom seed filler
+                in
+                ( Grid.put coords (newThing |> Maybe.withDefault Obstacle) things
+                , seed_
                 )
-                ( Grid.empty, seed )
+            )
+            ( Grid.empty, seed )
 
 
 {-| Handle players selection of a tile (triggred by clicking).
@@ -215,16 +217,17 @@ selectTile coords model =
                         coords
                         { floor = kitchenLevel, things = model.things }
             in
-                ( { model
-                    | things = things_
-                    , selectedTile = Nothing
-                    , moveCount = model.moveCount + 1
-                  }
-                , if model.things /= things_ then
-                    Delay.after 0.25 second Spawn
-                  else
-                    Cmd.none
-                )
+            ( { model
+                | things = things_
+                , selectedTile = Nothing
+                , moveCount = model.moveCount + 1
+              }
+            , if model.things /= things_ then
+                Delay.after 0.25 second Spawn
+
+              else
+                Cmd.none
+            )
 
         Nothing ->
             ( { model | selectedTile = Just coords }, Cmd.none )
@@ -238,7 +241,7 @@ Acitvates the thing at given coordinates
 -}
 activateTile : Coords -> Grid Thingy -> Grid Thingy
 activateTile coords things =
-    (Dict.get coords things)
+    Dict.get coords things
         |> Maybe.map
             (\t ->
                 case t of
@@ -251,7 +254,7 @@ activateTile coords things =
                         t
             )
         |> Maybe.map (\t -> Grid.put coords t things)
-        |> Maybe.withDefault (things)
+        |> Maybe.withDefault things
 
 
 {-| Detect game over.
@@ -284,7 +287,7 @@ isGameOver { floor, things } =
         boardStable =
             isStable (obstacleTileArea floor) things
     in
-        allSpawnersOccupied && boardStable
+    allSpawnersOccupied && boardStable
 
 
 {-| Spawn ingredients at spawn points
@@ -303,7 +306,7 @@ spawnThings model =
                     )
                 |> Maybe.withDefault model.things
     in
-        { model | things = things_, seed = seed_ }
+    { model | things = things_, seed = seed_ }
 
 
 spawnSingelThingRnd : Seed -> Grid FloorTile -> Set Coords -> ( Maybe ( Coords, Thingy ), Seed )
@@ -313,23 +316,23 @@ spawnSingelThingRnd seed level spawnObstacles =
         ( singlePoint, seed_ ) =
             pickRandom seed
                 (findSpawnPoints level
-                    |> List.filter (Tuple.first >> (flip Set.member) spawnObstacles >> not)
+                    |> List.filter (Tuple.first >> (\b a -> Set.member a b) spawnObstacles >> not)
                 )
     in
-        ( case singlePoint of
-            Just ( coords, things ) ->
-                let
-                    ( rndThing, seed__ ) =
-                        pickRandom seed_ things
-                in
-                    rndThing
-                        |> Maybe.map (\t -> Just ( coords, t ))
-                        |> Maybe.withDefault Nothing
+    ( case singlePoint of
+        Just ( coords, things ) ->
+            let
+                ( rndThing, seed__ ) =
+                    pickRandom seed_ things
+            in
+            rndThing
+                |> Maybe.map (\t -> Just ( coords, t ))
+                |> Maybe.withDefault Nothing
 
-            Nothing ->
-                Nothing
-        , seed_
-        )
+        Nothing ->
+            Nothing
+    , seed_
+    )
 
 
 findSpawnPoints : Grid FloorTile -> List ( Coords, List Thingy )
@@ -353,20 +356,20 @@ pickRandom : Seed -> List a -> ( Maybe a, Seed )
 pickRandom seed list =
     let
         ( pointsToDrop, seed_ ) =
-            (Random.step (Random.int 0 (List.length list - 1)) seed)
+            Random.step (Random.int 0 (List.length list - 1)) seed
     in
-        ( list
-            |> List.drop pointsToDrop
-            |> List.head
-        , seed_
-        )
+    ( list
+        |> List.drop pointsToDrop
+        |> List.head
+    , seed_
+    )
 
 
 {-| Check if a move is possible, so that it can be hilighted properly
 -}
 isPossibleMove : Board -> Coords -> Coords -> Bool
 isPossibleMove board from to =
-    ((attemptMove from to board) /= board.things)
+    attemptMove from to board /= board.things
 
 
 {-| Handle players attempt to move something
@@ -377,6 +380,7 @@ attemptMove from to { floor, things } =
     if not (isValidMove from to) then
         things
         -- Only move if not into terrain
+
     else if
         Grid.get to floor
             |> Maybe.map isObstacleTile
@@ -385,13 +389,16 @@ attemptMove from to { floor, things } =
         things
         -- If movement is possible, do it
         -- (might mix things)
-    else if (moveMixing from to things) /= things then
+
+    else if moveMixing from to things /= things then
         moveMixing from to things
         -- If movement could not be prefomed in any other way,
         -- Then let the things trade places if that causes a chain reaction
+
     else if not (Grid.swap from to things |> isStable (obstacleTileArea floor)) then
         Grid.swap from to things
         -- Else change nothing
+
     else
         things
 
@@ -410,7 +417,7 @@ isValidMove from to =
         ( dx, dy ) =
             ( toX - fromX, toY - fromY )
     in
-        dx == 0 || dy == 0
+    dx == 0 || dy == 0
 
 
 isStable : Set Coords -> Grid Thingy -> Bool
@@ -437,15 +444,16 @@ applyGravity terrain things =
                 (\( x, y ) m ->
                     if not (Set.member ( x, y - 1 ) obstacles) then
                         moveMixing ( x, y ) ( x, y - 1 ) m
+
                     else
                         m
                 )
                 fallers
                 (Dict.keys fallers)
     in
-        Dict.union
-            fallers_
-            obstacleThings
+    Dict.union
+        fallers_
+        obstacleThings
 
 
 obstacleTileArea : Grid FloorTile -> Set Coords
@@ -500,11 +508,11 @@ collectThings { floor, things } =
             things
                 |> Dict.partition
                     (\coords thing ->
-                        (Set.member coords collectionPoints)
+                        Set.member coords collectionPoints
                             && Thingy.isCollectableBun thing
                     )
     in
-        ( remainingThings, 100 * (Dict.size collectedThings) )
+    ( remainingThings, 100 * Dict.size collectedThings )
 
 
 isBunCollector : FloorTile -> Bool
@@ -535,10 +543,12 @@ subscriptions model =
                 -- Only Have things fall there is something thst could fall (save messages)
                 ++ (if not <| isStable (obstacleTileArea kitchenLevel) model.things then
                         [ Time.every fallInterval (\_ -> Fall) ]
+
                     else
                         []
                    )
             )
+
     else
         Sub.none
 
@@ -581,12 +591,12 @@ spawnInterval { things } =
         intervall =
             baseIntervall + extraIntervall * coveredPortion * coveredPortion
     in
-        (round intervall |> toFloat) * second
+    (round intervall |> toFloat) * second
 
 
 fallInterval : Time
 fallInterval =
-    (0.25 * second)
+    0.25 * second
 
 
 
@@ -599,12 +609,10 @@ view : Model -> Html Msg
 view model =
     Html.div
         [ id "game-container"
-        , style
-            [ ( "position", "relative" )
-            , ( "width", (6 * tileSide |> toString) ++ "px" )
-            , ( "height", (8 * tileSide |> toString) ++ "px" )
-            , ( "border", "5px solid black" )
-            ]
+        , style "position" "relative"
+        , style "width" ((6 * tileSide |> toString) ++ "px")
+        , style "height" ((8 * tileSide |> toString) ++ "px")
+        , style "border" "5px solid black"
         ]
         [ viewScore model.totalScore
         , viewBoardContainer model
@@ -621,33 +629,27 @@ viewScore : Int -> Html msg
 viewScore score =
     Html.div
         [ id "score"
-        , style
-            [ ( "position", "absolute" )
-            , ( "top", 0 ) |> px
-            , ( "font-size", tileSide // 2 - 10 ) |> px
-            ]
+        , style "position" "absolute"
+        , (\( a, b ) -> style a b) (( "top", 0 ) |> px)
+        , (\( a, b ) -> style a b) (( "font-size", tileSide // 2 - 10 ) |> px)
         ]
         [ Html.span
             [ class "label"
-            , style
-                [ ( "display", "inline-block" )
-                , ( "width", 2 * tileSide ) |> px
-                , ( "padding", "10px 0" )
-                , ( "text-align", "left" )
-                ]
+            , style "display" "inline-block"
+            , (\( a, b ) -> style a b) (( "width", 2 * tileSide ) |> px)
+            , style "padding" "10px 0"
+            , style "text-align" "left"
             ]
             [ text "Score"
             ]
         , Html.span
             [ class "value"
-            , style
-                [ ( "display", "inline-block" )
-                , ( "width", 4 * tileSide ) |> px
-                , ( "padding", "10px 0" )
-                , ( "text-align", "right" )
-                ]
+            , style "display" "inline-block"
+            , (\( a, b ) -> style a b) (( "width", 4 * tileSide ) |> px)
+            , style "padding" "10px 0"
+            , style "text-align" "right"
             ]
-            [ text <| (toString score)
+            [ text <| toString score
             ]
         ]
 
@@ -656,15 +658,14 @@ viewBoardContainer : Model -> Html Msg
 viewBoardContainer model =
     Html.div
         [ id "board-container"
-        , style
-            [ ( "position", "absolute" )
-            , ( "top", (tileSide // 2 |> toString) ++ "px" )
-            , ( "left", "0" )
-            ]
+        , style "position" "absolute"
+        , style "top" ((tileSide // 2 |> toString) ++ "px")
+        , style "left" "0"
         ]
         [ viewBoard model
         , if isGameOver { floor = kitchenLevel, things = model.things } then
             viewGameOver
+
           else
             text ""
         ]
@@ -677,7 +678,7 @@ viewBoard model =
     let
         finalGrid : Grid RenderableTile
         finalGrid =
-            Grid.drawBox (PlainTile) boardSize
+            Grid.drawBox PlainTile boardSize
                 |> Grid.translate ( 0, 1 - boardSize.height )
                 |> Dict.intersect kitchenLevel
                 -- Convert to full tiles
@@ -688,11 +689,11 @@ viewBoard model =
                 |> Dict.map
                     (\coords tile ->
                         { tile
-                            | content = (Dict.get coords model.things)
+                            | content = Dict.get coords model.things
                         }
                     )
     in
-        Grid.toHtmlDiv ( tileSide, tileSide ) renderTile finalGrid
+    Grid.toHtmlDiv ( tileSide, tileSide ) renderTile finalGrid
 
 
 {-| Determine if the tile at the given coords should be highlighted in some way.
@@ -702,17 +703,20 @@ getPossibleHighlight { things, selectedTile } tileCoords =
     selectedTile
         |> Maybe.map
             (\selectedCoords ->
-                if (tileCoords == selectedCoords) then
+                if tileCoords == selectedCoords then
                     Just SelectedMover
-                else if (isValidMove selectedCoords tileCoords) then
-                    if (isPossibleMove { floor = kitchenLevel, things = things } selectedCoords tileCoords) then
+
+                else if isValidMove selectedCoords tileCoords then
+                    if isPossibleMove { floor = kitchenLevel, things = things } selectedCoords tileCoords then
                         Just PossibleMovementDestination
+
                     else
                         Just ForbiddenMovementDestination
+
                 else
                     Nothing
             )
-        |> Maybe.withDefault (Nothing)
+        |> Maybe.withDefault Nothing
 
 
 viewInfo : Maybe Thingy -> Html msg
@@ -720,14 +724,12 @@ viewInfo tile =
     Html.div
         [ id "tile-info"
         , class "info-box"
-        , style
-            [ ( "position", "absolute" )
-            , ( "width", boardSize.width * tileSide ) |> px
-            , ( "height", 3 * (tileSide // 2) ) |> px
-            , ( "bottom", 0 ) |> px
-            , ( "left", 0 ) |> px
-            , ( "background-color", "white" )
-            ]
+        , style "position" "absolute"
+        , (\( a, b ) -> style a b) (( "width", boardSize.width * tileSide ) |> px)
+        , (\( a, b ) -> style a b) (( "height", 3 * (tileSide // 2) ) |> px)
+        , (\( a, b ) -> style a b) (( "bottom", 0 ) |> px)
+        , (\( a, b ) -> style a b) (( "left", 0 ) |> px)
+        , style "background-color" "white"
         ]
         (tile
             |> Maybe.map (\t -> [ Thingy.viewInfo t ])
@@ -741,21 +743,19 @@ viewGameOver : Html Msg
 viewGameOver =
     Html.div
         [ id "game-over"
-        , style
-            [ ( "position", "absolute" )
-            , ( "top", "0" )
-            , ( "width", "90%" )
-            , ( "height", "90%" )
-            , ( "padding", "5%" )
-            , ( "color", "darkred" )
-            , ( "text-align", "center" )
-            , ( "background-color", "white" )
-            , ( "opacity", "0.75" )
-            ]
+        , style "position" "absolute"
+        , style "top" "0"
+        , style "width" "90%"
+        , style "height" "90%"
+        , style "padding" "5%"
+        , style "color" "darkred"
+        , style "text-align" "center"
+        , style "background-color" "white"
+        , style "opacity" "0.75"
         ]
-        [ Html.h1 [ style [ ( "opacity", "1" ) ] ] [ text "Game over" ]
+        [ Html.h1 [ style "opacity" "1" ] [ text "Game over" ]
         , Html.a
-            [ style [ ( "opacity", "1" ) ]
+            [ style "opacity" "1"
             , Att.href "#restart"
             , onClick RestartGame
             ]
@@ -772,41 +772,37 @@ viewDebug : Model -> Html Msg
 viewDebug model =
     Html.div
         [ class "debug"
-        , style
-            [ ( "position", "fixed" )
-            , ( "bottom", "0" )
-            , ( "right", "0" )
-            , ( "width", "100%" )
-            , ( "height", (4 * tileSide |> toString) ++ "px" )
-            , ( "background-color", "lightgray" )
-            ]
+        , style "position" "fixed"
+        , style "bottom" "0"
+        , style "right" "0"
+        , style "width" "100%"
+        , style "height" ((4 * tileSide |> toString) ++ "px")
+        , style "background-color" "lightgray"
         ]
         [ Html.button [ onClick Spawn ] [ text "Spawn!" ]
         , Html.button [ onClick Fall ] [ text "Fall!" ]
         , Html.button [ onClick Collect ] [ text "Collect" ]
         , Html.p [] [ "Move count: " ++ (model.moveCount |> toString) |> text ]
-        , Html.p [] [ "Random seed: " ++ (toString model.seed) |> text ]
+        , Html.p [] [ "Random seed: " ++ toString model.seed |> text ]
         , Html.p [] [ "Selected tile: " ++ (model.selectedTile |> toString) |> text ]
         , Html.p [] [ "Spawn interval: " ++ (spawnInterval model |> inSeconds |> toString) ++ "s" |> text ]
-        , Html.p [] [ "Game over? " ++ ((isGameOver { floor = kitchenLevel, things = model.things }) |> toString) |> text ]
+        , Html.p [] [ "Game over? " ++ (isGameOver { floor = kitchenLevel, things = model.things } |> toString) |> text ]
         ]
 
 
 renderTile : Coords -> RenderableTile -> Html Msg
 renderTile coords tile =
     Html.div
-        [ style
-            [ ( "width", toString (tileSide) ++ "px" )
-            , ( "height", toString (tileSide) ++ "px" )
-            , ( "background-color", getTileColor tile )
-            , ( "border", "1px solid darkgray" )
-            ]
+        [ style "width" (toString tileSide ++ "px")
+        , style "height" (toString tileSide ++ "px")
+        , style "background-color" (getTileColor tile)
+        , style "border" "1px solid darkgray"
         , onClick (SelectTile coords)
         , onDoubleClick (ActivateTile coords)
         ]
         [ tile.content |> Maybe.map Thingy.toHtml |> Maybe.withDefault (text "")
         , Html.span
-            [ class "debug", style [ ( "font-size", "25%" ) ] ]
+            [ class "debug", style "font-size" "25%" ]
             [ Html.text (toString coords) ]
         ]
 
