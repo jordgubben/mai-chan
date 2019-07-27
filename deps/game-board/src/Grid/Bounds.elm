@@ -1,6 +1,7 @@
-module Grid.Bounds exposing (..)
+module Grid.Bounds exposing (Coords, Grid, maxX, maxY, minX, minY, numCols, numRows)
 
 import Dict exposing (Dict)
+
 
 
 -- # Types
@@ -22,16 +23,18 @@ numRows : Grid a -> Int
 numRows grid =
     if Dict.isEmpty grid then
         0
+
     else
-        (maxY grid) - (minY grid) + 1
+        maxY grid - minY grid + 1
 
 
 numCols : Grid a -> Int
 numCols grid =
     if Dict.isEmpty grid then
         0
+
     else
-        (maxX grid) - (minX grid) + 1
+        maxX grid - minX grid + 1
 
 
 minX : Grid a -> Int

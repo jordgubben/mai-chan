@@ -1,16 +1,16 @@
-module Grid.AsciiTest exposing (..)
+module Grid.AsciiTest exposing (asciiSuite)
 
+import Expect exposing (Expectation, equal)
 import Grid
 import Grid.Ascii as Ascii
 import Test exposing (..)
-import Expect exposing (Expectation, equal)
 
 
 asciiSuite : Test
 asciiSuite =
     describe "AsciiGris(s)"
         [ test "Creates grids from asci" <|
-            (\() ->
+            \() ->
                 let
                     -- Given some assci
                     srcAscii =
@@ -38,8 +38,7 @@ asciiSuite =
                             , ( ( 6, 1 ), '4' )
                             ]
                 in
-                    equal expectedGrid asciiGrid
-            )
+                equal expectedGrid asciiGrid
 
         --        , todo "Creates ascii from grids"
         --        , todo "Cobvert back and forth without destructing"

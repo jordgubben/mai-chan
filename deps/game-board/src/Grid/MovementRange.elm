@@ -3,6 +3,7 @@ module Grid.MovementRange exposing (Coords, chart)
 import Set exposing (Set)
 
 
+
 -- # Types
 
 
@@ -19,14 +20,16 @@ type alias Coords =
     Chart out all coordinates reachable
     from the given starting point
     in the given number of steps.
+
 -}
 chart : Set Coords -> Coords -> Int -> Set Coords
 chart obstacles startingPoint steps =
     Set.diff
         (if steps <= 1 then
-            (Set.insert startingPoint (neighbours startingPoint))
+            Set.insert startingPoint (neighbours startingPoint)
+
          else
-            (chart obstacles startingPoint (steps - 1))
+            chart obstacles startingPoint (steps - 1)
                 |> Set.toList
                 |> List.map (neighbours >> Set.toList)
                 |> List.concat
