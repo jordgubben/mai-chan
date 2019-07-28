@@ -789,10 +789,31 @@ viewDebug model =
         , Html.button [ onClick Fall ] [ text "Fall!" ]
         , Html.button [ onClick Collect ] [ text "Collect" ]
         , Html.p [] [ "Move count: " ++ (model.moveCount |> fromInt) |> text ]
-        , Html.p [] [ "Random seed: " ++ Debug.toString model.seed |> text ]
-        , Html.p [] [ "Selected tile: " ++ (model.selectedTile |> Debug.toString) |> text ]
+        , Html.p []
+            [ "Random seed: "
+                ++ (model.seed
+                        |> Random.step (Random.int Random.minInt Random.maxInt)
+                        |> Tuple.first
+                        >> fromInt
+                   )
+                |> text
+            ]
+        , Html.p []
+            [ "Selected tile: "
+                ++ (model.selectedTile
+                        |> Maybe.map strFromCoords
+                        |> Maybe.withDefault ""
+                   )
+                |> text
+            ]
         , Html.p [] [ "Spawn interval: " ++ (spawnInterval model |> fromFloat) ++ "ms" |> text ]
-        , Html.p [] [ "Game over? " ++ (isGameOver { floor = kitchenLevel, things = model.things } |> Debug.toString) |> text ]
+        , Html.p []
+            [ "Game over? "
+                ++ (isGameOver { floor = kitchenLevel, things = model.things }
+                        |> strFromBool
+                   )
+                |> text
+            ]
         ]
 
 
@@ -809,7 +830,7 @@ renderTile coords tile =
         [ tile.content |> Maybe.map Thingy.toHtml |> Maybe.withDefault (text "")
         , Html.span
             [ class "debug", style "font-size" "25%" ]
-            [ Html.text (Debug.toString coords) ]
+            [ Html.text (strFromCoords coords) ]
         ]
 
 
@@ -836,6 +857,20 @@ getTileColor { highlight, floor } =
 
         ( Nothing, WallTile ) ->
             "darkgray"
+
+
+strFromBool : Bool -> String
+strFromBool b =
+    if b then
+        "Yes"
+
+    else
+        "No"
+
+
+strFromCoords : Coords -> String
+strFromCoords ( x, y ) =
+    "(" ++ fromInt x ++ ", " ++ fromInt y
 
 
 px : ( String, Int ) -> ( String, String )

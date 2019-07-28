@@ -3,7 +3,7 @@
 HASH=`git rev-parse --short HEAD`
 
 # Build game
-npx elm make src/SweetBuns.elm --output build/main.js
+npx elm make src/SweetBuns.elm --output build/main.js --optimize
 npx elm make src/SweetBuns.elm --output build/SweetBuns-$HASH.html 
 npx elm make src/SweetBuns.elm --debug --output build/SweetBuns-$HASH-debug.html 
 
