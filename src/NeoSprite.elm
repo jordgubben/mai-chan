@@ -1,8 +1,8 @@
 module NeoSprite exposing (Sheet, Sprite, fromSheet, toHtml, toSvg)
 
-import String exposing (fromInt)
 import Html exposing (Html, text)
 import Html.Attributes exposing (style)
+import String exposing (fromInt)
 import Svg exposing (Svg)
 import Svg.Attributes as SvgAt
 

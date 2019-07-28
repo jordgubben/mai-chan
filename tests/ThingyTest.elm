@@ -1,13 +1,14 @@
-module ThingyTest exposing (..)
+module ThingyTest exposing (bun, chilli, flour, mixingSuite, sugar, testMix, water)
 
-import Thingy exposing (Thingy(..), Flavour(..))
-import Test exposing (..)
 import Expect exposing (Expectation, equal, fail)
+import Test exposing (..)
+import Thingy exposing (Flavour(..), Thingy(..))
 
 
 {-|
 
     Test the combination of various things
+
 -}
 mixingSuite : Test
 mixingSuite =
@@ -20,10 +21,10 @@ mixingSuite =
             (Just <| Water (Just Sugar))
         , testMix "Already *sweet* Water and  Sugar do not mix"
             ( Water (Just Sugar), sugar )
-            (Nothing)
+            Nothing
         , testMix "Already *sweet* Flour and Sugar do not mix"
             ( Flour (Just Sugar), sugar )
-            (Nothing)
+            Nothing
         , testMix "Mixing Flour with Sugar produces a *Sweet* Flour"
             ( flour, sugar )
             (Just <| Flour (Just Sugar))
@@ -41,13 +42,13 @@ mixingSuite =
             (Just <| Bun (Just Sugar))
         , testMix "Can not mix *sweet* Flour with *spicy* Water"
             ( Water (Just Chilli), Flour (Just Sugar) )
-            (Nothing)
+            Nothing
         , testMix "Can not mix packaged Sugar with Water"
             ( Water Nothing, Flavouring { flavour = Sugar, packaged = True } )
-            (Nothing)
+            Nothing
         , testMix "Can not mix packaged Sugar with Flour"
             ( Flour Nothing, Flavouring { flavour = Sugar, packaged = True } )
-            (Nothing)
+            Nothing
         ]
 
 
@@ -67,7 +68,7 @@ testMix message ( ingredient1, ingredient2 ) expectedResult =
             )
           <|
             \() ->
-                Thingy.mixIngredients ingredient1 ingredient2 |> equal (expectedResult)
+                Thingy.mixIngredients ingredient1 ingredient2 |> equal expectedResult
         , test
             ("Mixing ["
                 ++ (ingredient2 |> Debug.toString)
@@ -79,7 +80,7 @@ testMix message ( ingredient1, ingredient2 ) expectedResult =
             )
           <|
             \() ->
-                Thingy.mixIngredients ingredient2 ingredient1 |> equal (expectedResult)
+                Thingy.mixIngredients ingredient2 ingredient1 |> equal expectedResult
         ]
 
 

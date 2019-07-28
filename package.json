@@ -9,6 +9,7 @@
     "elm-upgrade": "^0.19.6"
   },
   "scripts": {
+    "format": "npx elm-format src/ tests/",
     "test": "./test-all.sh"
   },
   "repository": {

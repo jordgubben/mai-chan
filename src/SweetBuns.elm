@@ -1,15 +1,15 @@
 module SweetBuns exposing (Board, FloorTile(..), Highlight(..), Model, Msg(..), RenderableTile, activateTile, applyGravity, attemptMove, boardSize, collectThings, fallInterval, fillBoard, findSpawnPoints, getPossibleHighlight, getTileColor, initGame, initialModel, initialThings, isBunCollector, isGameOver, isObstacleTile, isPossibleMove, isStable, isValidMove, kitchenCollectors, kitchenFloor, kitchenLevel, kitchenSpawners, kitchenWalls, main, moveMixing, obstacleTileArea, pickRandom, px, renderTile, restartGame, selectTile, spawnInterval, spawnSingelThingRnd, spawnThings, spawnableFlavours, spawnables, subscriptions, tileSide, update, view, viewBoard, viewBoardContainer, viewDebug, viewGameOver, viewInfo, viewScore)
 
-import String exposing (fromInt, fromFloat)
+import Browser
 import Delay exposing (TimeUnit(..))
 import Dict
 import Grid exposing (..)
-import Browser
 import Html exposing (Html, text)
 import Html.Attributes as Att exposing (class, id, style)
 import Html.Events exposing (onClick, onDoubleClick)
 import Random exposing (Seed)
 import Set exposing (Set)
+import String exposing (fromFloat, fromInt)
 import Task
 import Thingy exposing (Flavour(..), Thingy(..))
 import Time exposing (Posix, toSecond)
@@ -18,7 +18,7 @@ import Time exposing (Posix, toSecond)
 main : Program () Model Msg
 main =
     Browser.element
-        { init = \() ->( initialModel, Task.perform IntiGame Time.now )
+        { init = \() -> ( initialModel, Task.perform IntiGame Time.now )
         , update = update
         , view = view
         , subscriptions = subscriptions
@@ -145,7 +145,7 @@ initGame : Posix -> Model -> Model
 initGame time model =
     let
         seed =
-            time |> Time.posixToMillis  |> Random.initialSeed
+            time |> Time.posixToMillis |> Random.initialSeed
 
         ( newThings, seed_ ) =
             fillBoard seed
@@ -598,10 +598,13 @@ spawnInterval { things } =
 
 fallInterval : Float
 fallInterval =
-    0.25 * second 
+    0.25 * second
+
 
 second =
     1000.0
+
+
 
 -- # VIEW
 

@@ -1,14 +1,14 @@
-module SweetBunsTest exposing (..)
+module SweetBunsTest exposing (bun, chilli, collectSuite, consciousMovementSuite, emptyBoard, expectNoMovemenemt, fallingSuite, flour, gameProgressSuite, spawnSuite, sugar, water)
 
+import Dict
+import Expect exposing (Expectation, equal, fail)
+import Fuzz exposing (..)
+import Grid
 import Random exposing (Seed)
 import Set
-import Dict
-import Grid
-import Thingy exposing (Thingy(..), Flavour(..))
 import SweetBuns exposing (Board, FloorTile(..))
 import Test exposing (..)
-import Fuzz exposing (..)
-import Expect exposing (Expectation, equal, fail)
+import Thingy exposing (Flavour(..), Thingy(..))
 
 
 spawnSuite : Test
@@ -24,21 +24,21 @@ spawnSuite =
                     initialKitchen =
                         Grid.fromList
                             [ ( ( 0, 0 ), PlainTile )
-                            , ( ( 0, 1 ), (Spawner [ bun ]) )
-                            , ( ( 0, 2 ), (Spawner [ bun ]) )
-                            , ( ( 0, 3 ), (Spawner [ bun ]) )
+                            , ( ( 0, 1 ), Spawner [ bun ] )
+                            , ( ( 0, 2 ), Spawner [ bun ] )
+                            , ( ( 0, 3 ), Spawner [ bun ] )
                             ]
 
                     -- When spawning
                     ( spawnedThing, _ ) =
                         SweetBuns.spawnSingelThingRnd seed initialKitchen Set.empty
                 in
-                    spawnedThing
-                        |> Maybe.map
-                            (\( coords, thing ) ->
-                                (Grid.get coords initialKitchen) |> equal (Just (Spawner [ bun ]))
-                            )
-                        |> Maybe.withDefault (Expect.fail "Supposed to spawn something")
+                spawnedThing
+                    |> Maybe.map
+                        (\( coords, thing ) ->
+                            Grid.get coords initialKitchen |> equal (Just (Spawner [ bun ]))
+                        )
+                    |> Maybe.withDefault (Expect.fail "Supposed to spawn something")
         , fuzz int "Spawners spawn their defined thing" <|
             \s ->
                 let
@@ -49,9 +49,9 @@ spawnSuite =
                     initialKitchen =
                         Grid.fromList
                             [ ( ( 0, 0 ), PlainTile )
-                            , ( ( 0, 1 ), (Spawner [ water ]) )
-                            , ( ( 0, 2 ), (Spawner [ flour ]) )
-                            , ( ( 0, 3 ), (Spawner [ bun ]) )
+                            , ( ( 0, 1 ), Spawner [ water ] )
+                            , ( ( 0, 2 ), Spawner [ flour ] )
+                            , ( ( 0, 3 ), Spawner [ bun ] )
                             ]
 
                     -- When spawning
@@ -60,18 +60,18 @@ spawnSuite =
                         SweetBuns.spawnSingelThingRnd seed initialKitchen Set.empty
                             |> Tuple.first
                 in
-                    -- Then spawns the selected Sparners type of thing
-                    spawnedThing
-                        |> Maybe.map
-                            (\( coords, thing ) ->
-                                case (Grid.get coords initialKitchen) of
-                                    Just (Spawner things) ->
-                                        equal (Just thing) (things |> List.head)
+                -- Then spawns the selected Sparners type of thing
+                spawnedThing
+                    |> Maybe.map
+                        (\( coords, thing ) ->
+                            case Grid.get coords initialKitchen of
+                                Just (Spawner things) ->
+                                    equal (Just thing) (things |> List.head)
 
-                                    _ ->
-                                        Expect.fail ("Expected a spawner at " ++ Debug.toString coords)
-                            )
-                        |> Maybe.withDefault (Expect.fail "Should spawn something")
+                                _ ->
+                                    Expect.fail ("Expected a spawner at " ++ Debug.toString coords)
+                        )
+                    |> Maybe.withDefault (Expect.fail "Should spawn something")
         , fuzz int "Spawners can spawn one of several things, but nothing else than defined" <|
             \s ->
                 let
@@ -87,7 +87,7 @@ spawnSuite =
 
                     initialKitchen =
                         Grid.fromList
-                            [ ( spawnerCoords, (Spawner spawnables) )
+                            [ ( spawnerCoords, Spawner spawnables )
                             ]
 
                     -- When spawning
@@ -96,15 +96,15 @@ spawnSuite =
                         SweetBuns.spawnSingelThingRnd seed initialKitchen Set.empty
                             |> Tuple.first
                 in
-                    -- Then spawns the selected Sparners type of thing
-                    spawnedThing
-                        |> Maybe.map
-                            (\( _, thing ) ->
-                                Expect.true
-                                    ("Should be one of " ++ (Debug.toString spawnables))
-                                    (List.member thing spawnables)
-                            )
-                        |> Maybe.withDefault (Expect.fail "Should spawn something")
+                -- Then spawns the selected Sparners type of thing
+                spawnedThing
+                    |> Maybe.map
+                        (\( _, thing ) ->
+                            Expect.true
+                                ("Should be one of " ++ Debug.toString spawnables)
+                                (List.member thing spawnables)
+                        )
+                    |> Maybe.withDefault (Expect.fail "Should spawn something")
         , test "Only spawn on unoccupied spawners" <|
             \() ->
                 let
@@ -119,8 +119,8 @@ spawnSuite =
                     ( spawnedThing, _ ) =
                         SweetBuns.spawnSingelThingRnd (Random.initialSeed 0) floor obstacles
                 in
-                    -- Nothing is spawned
-                    spawnedThing |> equal Nothing
+                -- Nothing is spawned
+                spawnedThing |> equal Nothing
         ]
 
 
@@ -157,7 +157,7 @@ collectSuite =
                             [ ( ( 0, 0 ), bun )
                             ]
                 in
-                    equal remainingThings expectedThings
+                equal remainingThings expectedThings
         , test "Only ready Buns are collected (not ingredients)" <|
             \() ->
                 let
@@ -188,7 +188,7 @@ collectSuite =
                             , ( ( 0, 2 ), water )
                             ]
                 in
-                    equal remainingThings expectedThings
+                equal remainingThings expectedThings
         , test "Colected Buns generate points" <|
             \() ->
                 let
@@ -211,7 +211,7 @@ collectSuite =
                             , things = initialThings
                             }
                 in
-                    equal score 100
+                equal score 100
         ]
 
 
@@ -219,7 +219,7 @@ fallingSuite : Test
 fallingSuite =
     describe "Falling things fall downward"
         [ test "Move down" <|
-            (\_ ->
+            \_ ->
                 let
                     -- Given a single bun (free of obstacles)
                     initialState =
@@ -231,10 +231,9 @@ fallingSuite =
 
                     -- Then it moves down
                     expectedState =
-                        (Grid.fromList [ ( ( 2, 0 ), bun ) ])
+                        Grid.fromList [ ( ( 2, 0 ), bun ) ]
                 in
-                    equal movedState expectedState
-            )
+                equal movedState expectedState
         , test "Is stable if nothing is going to fall"
             (\_ ->
                 let
@@ -249,8 +248,8 @@ fallingSuite =
                     stability =
                         SweetBuns.isStable terrain initialState
                 in
-                    -- Then is stable
-                    Expect.true "Should be stable" stability
+                -- Then is stable
+                Expect.true "Should be stable" stability
             )
         , test "Is unstable if something is going to fall"
             (\_ ->
@@ -266,11 +265,11 @@ fallingSuite =
                     stability =
                         SweetBuns.isStable terrain initialState
                 in
-                    -- Then is not stable
-                    Expect.false "Should not be stable" stability
+                -- Then is not stable
+                Expect.false "Should not be stable" stability
             )
         , test "Obstacles prevent downward movement" <|
-            (\_ ->
+            \_ ->
                 let
                     -- Given a single bun surrounded by terrain
                     initialState =
@@ -279,12 +278,11 @@ fallingSuite =
                     terrain =
                         Set.fromList [ ( 1, 1 ), ( 2, 0 ), ( 3, 1 ) ]
                 in
-                    -- When progressing movement
-                    -- Then they stay in the same place
-                    expectNoMovemenemt terrain initialState
-            )
+                -- When progressing movement
+                -- Then they stay in the same place
+                expectNoMovemenemt terrain initialState
         , test "Other buns prevent downward movement" <|
-            (\_ ->
+            \_ ->
                 let
                     -- Given two buns stacked on to of each other
                     initialState =
@@ -294,12 +292,11 @@ fallingSuite =
                     terrain =
                         Set.fromList [ ( 1, 2 ), ( 1, 1 ), ( 2, 0 ), ( 3, 2 ), ( 3, 1 ) ]
                 in
-                    -- When progressing movement
-                    -- Then they stay in the same place
-                    expectNoMovemenemt terrain initialState
-            )
+                -- When progressing movement
+                -- Then they stay in the same place
+                expectNoMovemenemt terrain initialState
         , test "Stays still, even though moving to the right is possible" <|
-            (\_ ->
+            \_ ->
                 let
                     -- Given a bun blocked from moving down or to the left
                     initialState =
@@ -311,10 +308,9 @@ fallingSuite =
                     -- When progressing movement
                     -- Then is stays in place
                 in
-                    expectNoMovemenemt terrain initialState
-            )
+                expectNoMovemenemt terrain initialState
         , test "Stays still, even though moving to the left is possible" <|
-            (\_ ->
+            \_ ->
                 let
                     -- Given a bun bocked from moving down and to the right
                     initialState =
@@ -323,12 +319,11 @@ fallingSuite =
                     terrain =
                         Set.fromList [ ( 3, 1 ), ( 2, 0 ) ]
                 in
-                    -- When progressing movement
-                    -- Then it stays is place
-                    expectNoMovemenemt terrain initialState
-            )
+                -- When progressing movement
+                -- Then it stays is place
+                expectNoMovemenemt terrain initialState
         , test "Do not overwrite each other" <|
-            (\_ ->
+            \_ ->
                 let
                     -- Given two buns destined to end up tn the same place
                     initialState =
@@ -349,8 +344,7 @@ fallingSuite =
                     -- Then all buns still are there
                     -- (Exact placement is not relevant)
                 in
-                    equal (Dict.size movedState) (Dict.size initialState)
-            )
+                equal (Dict.size movedState) (Dict.size initialState)
         , test "Mixable ingredients can be moved onto each other, combining into a new Thing" <|
             \() ->
                 let
@@ -371,7 +365,7 @@ fallingSuite =
                     expectedState =
                         Grid.fromList [ ( ( 0, 0 ), bun ), ( ( 0, -1 ), Obstacle ) ]
                 in
-                    equal movedState expectedState
+                equal movedState expectedState
         ]
 
 
@@ -396,7 +390,7 @@ consciousMovementSuite =
                     expectedThings =
                         Grid.fromList [ ( ( 10, 21 ), bun ) ]
                 in
-                    movedThings |> equal expectedThings
+                movedThings |> equal expectedThings
         , test "Can not move to an occupied tile" <|
             \() ->
                 let
@@ -414,8 +408,8 @@ consciousMovementSuite =
                     movedThings =
                         SweetBuns.attemptMove ( 14, 10 ) ( 15, 10 ) initialBoard
                 in
-                    -- Then it is not moved
-                    movedThings |> equal initialBoard.things
+                -- Then it is not moved
+                movedThings |> equal initialBoard.things
         , test "Can not move to an terrain tile" <|
             \() ->
                 let
@@ -431,8 +425,8 @@ consciousMovementSuite =
                     movedThings =
                         SweetBuns.attemptMove ( 0, 0 ) ( 0, -1 ) initialBoard
                 in
-                    -- Then it is not moved
-                    movedThings |> equal initialBoard.things
+                -- Then it is not moved
+                movedThings |> equal initialBoard.things
         , test "Can move to an occupied tile if ingredients are mixable" <|
             \() ->
                 let
@@ -454,7 +448,7 @@ consciousMovementSuite =
                     expectedThings =
                         Grid.fromList [ ( ( 15, 10 ), bun ) ]
                 in
-                    movedThings |> equal expectedThings
+                movedThings |> equal expectedThings
         , test "Can move by swaping places, if it destabilizes the grid" <|
             \() ->
                 let
@@ -485,7 +479,7 @@ consciousMovementSuite =
                             , ( ( 0, 0 ), Flour (Just Sugar) )
                             ]
                 in
-                    movedThings |> equal expectedThings
+                movedThings |> equal expectedThings
         , test "Can not move by swaping places, if the result is stable" <|
             \() ->
                 let
@@ -508,8 +502,8 @@ consciousMovementSuite =
                     movedThings =
                         SweetBuns.attemptMove ( 0, 1 ) ( 0, 2 ) initialBoard
                 in
-                    -- Then nothing happens (since it causes no chain reaction)
-                    movedThings |> equal initialBoard.things
+                -- Then nothing happens (since it causes no chain reaction)
+                movedThings |> equal initialBoard.things
         , describe "Can move to any tile in a cross pattern"
             (let
                 -- Given a bun
@@ -528,13 +522,13 @@ consciousMovementSuite =
                         expectedThings =
                             Grid.fromList [ ( targetCoords, bun ) ]
                     in
-                        movedThings |> equal expectedThings
+                    movedThings |> equal expectedThings
              in
-                [ fuzz int "(verically)" <|
-                    \y -> testMoveOk ( 10, y )
-                , fuzz int "(horizontally)" <|
-                    \x -> testMoveOk ( x, 10 )
-                ]
+             [ fuzz int "(verically)" <|
+                \y -> testMoveOk ( 10, y )
+             , fuzz int "(horizontally)" <|
+                \x -> testMoveOk ( x, 10 )
+             ]
             )
         , test "Can not move tiles outside cross pattern" <|
             \() ->
@@ -551,7 +545,7 @@ consciousMovementSuite =
 
                     -- Then is prevented
                 in
-                    movedThings |> equal initialBoard.things
+                movedThings |> equal initialBoard.things
         ]
 
 
@@ -573,10 +567,10 @@ gameProgressSuite =
                             Grid.fromList [ ( ( 0, 1 ), water ) ]
                         }
                 in
-                    -- When checking if game over
-                    SweetBuns.isGameOver board
-                        -- Then it is game over
-                        |> Expect.true "Supposed to be 'Game over'"
+                -- When checking if game over
+                SweetBuns.isGameOver board
+                    -- Then it is game over
+                    |> Expect.true "Supposed to be 'Game over'"
         , test "Not Game over if all spawn tiles, but falling cold free one of them" <|
             \() ->
                 let
@@ -592,10 +586,10 @@ gameProgressSuite =
                             Grid.fromList [ ( ( 0, 2 ), water ) ]
                         }
                 in
-                    -- When checking if game over
-                    SweetBuns.isGameOver board
-                        -- Then it is not game over
-                        |> Expect.false "Not supposed to be 'Game over'"
+                -- When checking if game over
+                SweetBuns.isGameOver board
+                    -- Then it is not game over
+                    |> Expect.false "Not supposed to be 'Game over'"
         ]
 
 

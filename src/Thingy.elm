@@ -1,9 +1,9 @@
 module Thingy exposing (Flavour(..), Thingy(..), isCollectableBun, isFaller, mixIngredients, spriteSide, toHtml, viewInfo)
 
-import String exposing (fromInt)
 import Html exposing (Html, text)
 import Html.Attributes as Att exposing (class, id, style)
 import NeoSprite exposing (Sheet, Sprite)
+import String exposing (fromInt)
 
 
 {-| Helper preview program to used to check that all sprites are rendered correctly.
