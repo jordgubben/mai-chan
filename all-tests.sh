@@ -1,9 +1,9 @@
 #!/bin/bash
 
 echo "~Test game~"
-elm-test
+npx elm-test
 
 echo "~Test 'game-board' package~" 
 cd deps/game-board/
-elm-test
+npx elm-test
 cd -
