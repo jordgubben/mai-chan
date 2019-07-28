@@ -69,7 +69,7 @@ spawnSuite =
                                         equal (Just thing) (things |> List.head)
 
                                     _ ->
-                                        Expect.fail ("Expected a spawner at " ++ toString coords)
+                                        Expect.fail ("Expected a spawner at " ++ Debug.toString coords)
                             )
                         |> Maybe.withDefault (Expect.fail "Should spawn something")
         , fuzz int "Spawners can spawn one of several things, but nothing else than defined" <|
@@ -101,7 +101,7 @@ spawnSuite =
                         |> Maybe.map
                             (\( _, thing ) ->
                                 Expect.true
-                                    ("Should be one of " ++ (toString spawnables))
+                                    ("Should be one of " ++ (Debug.toString spawnables))
                                     (List.member thing spawnables)
                             )
                         |> Maybe.withDefault (Expect.fail "Should spawn something")

@@ -58,11 +58,11 @@ testMix message ( ingredient1, ingredient2 ) expectedResult =
     describe message
         [ test
             ("Mixing ["
-                ++ (ingredient1 |> toString)
+                ++ (ingredient1 |> Debug.toString)
                 ++ "] with ["
-                ++ (ingredient2 |> toString)
+                ++ (ingredient2 |> Debug.toString)
                 ++ "] should produce ["
-                ++ (expectedResult |> toString)
+                ++ (expectedResult |> Debug.toString)
                 ++ "]"
             )
           <|
@@ -70,11 +70,11 @@ testMix message ( ingredient1, ingredient2 ) expectedResult =
                 Thingy.mixIngredients ingredient1 ingredient2 |> equal (expectedResult)
         , test
             ("Mixing ["
-                ++ (ingredient2 |> toString)
+                ++ (ingredient2 |> Debug.toString)
                 ++ "] with ["
-                ++ (ingredient1 |> toString)
+                ++ (ingredient1 |> Debug.toString)
                 ++ "] should produce ["
-                ++ (expectedResult |> toString)
+                ++ (expectedResult |> Debug.toString)
                 ++ "]"
             )
           <|
