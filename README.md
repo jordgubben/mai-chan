@@ -18,8 +18,6 @@ Running this script puts a releable game bundle under the `build/` folder.
   $ ./publi.sh
 ```
 
-(Assumes Elm 0.18 is installed)
-
 Contrubuting
 ------------
 This game is intended to be a collaborative and playful effort.
