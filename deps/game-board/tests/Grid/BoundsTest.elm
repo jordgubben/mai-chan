@@ -1,8 +1,8 @@
 module Grid.BoundsTest exposing (boundsSuite)
 
+import Expect exposing (Expectation)
 import Grid exposing (Grid)
 import Grid.Bounds as Bounds
-import Expect exposing (Expectation)
 import Test exposing (..)
 
 
@@ -11,7 +11,7 @@ boundsSuite =
     describe "Bounds"
         [ describe "Grid.numCols"
             [ test "Can determine number of columns in the grid grid" <|
-                (\() -> (Bounds.numCols rectangularExampleGrid) |> Expect.equal 301)
+                \() -> Bounds.numCols rectangularExampleGrid |> Expect.equal 301
             , test "Defaults to 0 on an empty grid"
                 (\() ->
                     Bounds.numCols emptyGrid
@@ -20,7 +20,7 @@ boundsSuite =
             ]
         , describe "Bounds.numRows"
             [ test "Can determine number of rows in the grid" <|
-                (\() -> (Bounds.numRows rectangularExampleGrid) |> Expect.equal 31)
+                \() -> Bounds.numRows rectangularExampleGrid |> Expect.equal 31
             , test "Defaults to 0 on an empty grid"
                 (\() ->
                     Bounds.numRows emptyGrid
@@ -30,7 +30,7 @@ boundsSuite =
         , describe
             "Bounds.minX"
             [ test "Can determine the left most column of the grid" <|
-                (\() -> (Bounds.minX rectangularExampleGrid) |> Expect.equal -100)
+                \() -> Bounds.minX rectangularExampleGrid |> Expect.equal -100
             , test "Defaults to 0 on an empty grid"
                 (\() ->
                     Bounds.minX emptyGrid
@@ -39,7 +39,7 @@ boundsSuite =
             ]
         , describe "Bounds.maxX"
             [ test "Can determine the right most column of the grid" <|
-                (\() -> (Bounds.maxX rectangularExampleGrid) |> Expect.equal 200)
+                \() -> Bounds.maxX rectangularExampleGrid |> Expect.equal 200
             , test "Defaults to 0 on an empty grid"
                 (\() ->
                     Bounds.maxX emptyGrid
@@ -48,7 +48,7 @@ boundsSuite =
             ]
         , describe "Bounds.minY"
             [ test "Can determine the lowest row of the grid" <|
-                (\() -> (Bounds.minY rectangularExampleGrid) |> Expect.equal -10)
+                \() -> Bounds.minY rectangularExampleGrid |> Expect.equal -10
             , test "Defaults to 0 on an empty grid"
                 (\() ->
                     Bounds.minY emptyGrid
@@ -57,7 +57,7 @@ boundsSuite =
             ]
         , describe "Bounds.maxY"
             [ test "Can determine the gighest row of the grid" <|
-                (\() -> (Bounds.maxY rectangularExampleGrid) |> Expect.equal 20)
+                \() -> Bounds.maxY rectangularExampleGrid |> Expect.equal 20
             , test "Defaults to 0 on an empty grid"
                 (\() ->
                     Bounds.maxY emptyGrid

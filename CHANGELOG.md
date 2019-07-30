@@ -1,6 +1,12 @@
 Changelog
 =========
 
+v0.3
+----
+...
+
+ - Using Elm 0.19
+ 
 v0.2
 ----
 First release from a separate repository on Github. 

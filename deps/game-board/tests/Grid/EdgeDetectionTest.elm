@@ -1,10 +1,11 @@
-module Grid.EdgeDetectionTest exposing (..)
+module Grid.EdgeDetectionTest exposing (allEdges, edgesSuite, noEdges, terrainSculptingSuite)
 
+import Expect exposing (Expectation)
+import Fuzz exposing (..)
 import Grid.EdgeDetection as EdgeDetection exposing (Coords, EdgeSet)
 import Set exposing (Set)
 import Test exposing (..)
-import Fuzz exposing (..)
-import Expect exposing (Expectation)
+
 
 
 -- Test: Terrain scuplting
@@ -13,11 +14,11 @@ import Expect exposing (Expectation)
 terrainSculptingSuite =
     describe "Terrain sculpting"
         [ describe "TerrainPalette"
-            [ fuzz4 bool bool bool bool "Can store and retrive tiles based on EdgeSet" <|
-                (\t b l r ->
+            [ fuzz2 (tuple ( bool, bool )) (tuple ( bool, bool )) "Can store and retrive tiles based on EdgeSet" <|
+                \( t, b ) ( l, r ) ->
                     let
                         edgeSet =
-                            (EdgeSet t b l r)
+                            EdgeSet t b l r
 
                         exampleTile =
                             "Example tile"
@@ -26,9 +27,8 @@ terrainSculptingSuite =
                             EdgeDetection.emptyPalette
                                 |> EdgeDetection.addEdgeTile edgeSet exampleTile
                     in
-                        EdgeDetection.getEdgeTile edgeSet palette
-                            |> Expect.equal (Just exampleTile)
-                )
+                    EdgeDetection.getEdgeTile edgeSet palette
+                        |> Expect.equal (Just exampleTile)
             ]
         ]
 

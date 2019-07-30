@@ -1,4 +1,4 @@
-module FloatingIslandsTiles exposing (..)
+module FloatingIslandsTiles exposing (Tile, grid, main, renderTile, sheet, staticTile, turfEdgeBottom, turfEdgeBottomLeft, turfEdgeBottomLeftRight, turfEdgeBottomRight, turfEdgeLeft, turfEdgeLeftRight, turfEdgeRight, turfEdgeTop, turfEdgeTopBottom, turfEdgeTopBottomLeft, turfEdgeTopBottomRight, turfEdgeTopLeft, turfEdgeTopLeftRight, turfEdgeTopRight, turfNoEdges, turfSoloTile)
 
 {-| Example displaying a tilemap
 
@@ -8,15 +8,15 @@ Tile source:
 
 -}
 
+import Grid
 import Html exposing (Html)
 import Html.Attributes exposing (style)
-import NeoSprite exposing (Sprite, Sheet)
-import Grid
+import NeoSprite exposing (Sheet, Sprite)
 
 
 main : Html msg
 main =
-    Html.div [ style [ ( "background-color", "black" ) ] ]
+    Html.div [ style "background-color" "black" ]
         [ Grid.toHtmlDiv ( 16, 16 ) renderTile grid
         ]
 

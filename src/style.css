@@ -1,14 +1,13 @@
 body {
 	background-color: #e98097; /* Cartridge pink */
-
 }
 
 .debug {
 	display: none;
 }
 
-div#game {
-	width: 394; /* 384 + 5*2 */
+div#game-container {
+	width: 394px; /* 384 + 5*2 */
 	margin: auto;
 
 	background-color: white;

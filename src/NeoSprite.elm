@@ -1,7 +1,8 @@
-module NeoSprite exposing (Sprite, Sheet, fromSheet, toSvg, toHtml)
+module NeoSprite exposing (Sheet, Sprite, fromSheet, toHtml, toSvg)
 
 import Html exposing (Html, text)
 import Html.Attributes exposing (style)
+import String exposing (fromInt)
 import Svg exposing (Svg)
 import Svg.Attributes as SvgAt
 
@@ -124,15 +125,15 @@ toSvg sprite ( x, y ) =
                    )
                 ++ ")"
     in
-        Svg.image
-            [ SvgAt.x (x - sprite.offsetX |> fromInt)
-            , SvgAt.y (y - sprite.offsetY |> fromInt)
-            , SvgAt.width (sprite.imageWidth |> fromInt)
-            , SvgAt.height (sprite.imageHeight |> fromInt)
-            , SvgAt.xlinkHref sprite.imageUrl
-            , SvgAt.clipPath imageInset
-            ]
-            []
+    Svg.image
+        [ SvgAt.x (x - sprite.offsetX |> fromInt)
+        , SvgAt.y (y - sprite.offsetY |> fromInt)
+        , SvgAt.width (sprite.imageWidth |> fromInt)
+        , SvgAt.height (sprite.imageHeight |> fromInt)
+        , SvgAt.xlinkHref sprite.imageUrl
+        , SvgAt.clipPath imageInset
+        ]
+        []
 
 
 {-| Convert sprite to HTML.
@@ -140,18 +141,15 @@ toSvg sprite ( x, y ) =
 toHtml : Sprite -> Html msg
 toHtml sprite =
     Html.span
-        [ style
-            [ ( "display", "inline-block" )
-            , ( "background-image", ("url('" ++ sprite.imageUrl ++ "')") )
-            , ( "width", (sprite.spriteWidth |> px) )
-            , ( "height", (sprite.spriteHeight |> px) )
-            , ( "background-position"
-              , ([ 0 - sprite.offsetX, 0 - sprite.offsetY ]
-                    |> List.map px
-                    |> String.join " "
-                )
-              )
-            ]
+        [ style "display" "inline-block"
+        , style "background-image" ("url('" ++ sprite.imageUrl ++ "')")
+        , style "width" (sprite.spriteWidth |> px)
+        , style "height" (sprite.spriteHeight |> px)
+        , style "background-position"
+            ([ 0 - sprite.offsetX, 0 - sprite.offsetY ]
+                |> List.map px
+                |> String.join " "
+            )
         ]
         []
 
@@ -159,11 +157,3 @@ toHtml sprite =
 px : Int -> String
 px =
     fromInt >> (\s -> s ++ "px")
-
-
-{-| Convert Int to String.
-(Simplify migration to Elm 0.19)
--}
-fromInt : Int -> String
-fromInt i =
-    i |> toString
