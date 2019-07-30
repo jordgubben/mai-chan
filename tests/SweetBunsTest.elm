@@ -1,4 +1,4 @@
-module SweetBunsTest exposing (bun, chilli, collectSuite, consciousMovementSuite, emptyBoard, expectNoMovemenemt, fallingSuite, flour, gameProgressSuite, spawnSuite, sugar, water)
+module SweetBunsTest exposing (collectSuite, consciousMovementSuite, fallingSuite, gameProgressSuite, spawnSuite)
 
 import Dict
 import Expect exposing (Expectation, equal, fail)

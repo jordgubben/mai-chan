@@ -1,4 +1,4 @@
-module SweetBuns exposing (Board, FloorTile(..), Highlight(..), Model, Msg(..), RenderableTile, activateTile, applyGravity, attemptMove, boardSize, collectThings, fallInterval, fillBoard, findSpawnPoints, getPossibleHighlight, getTileColor, initGame, initialModel, initialThings, isBunCollector, isGameOver, isObstacleTile, isPossibleMove, isStable, isValidMove, kitchenCollectors, kitchenFloor, kitchenLevel, kitchenSpawners, kitchenWalls, main, moveMixing, obstacleTileArea, pickRandom, px, renderTile, restartGame, selectTile, spawnInterval, spawnSingelThingRnd, spawnThings, spawnableFlavours, spawnables, subscriptions, tileSide, update, view, viewBoard, viewBoardContainer, viewDebug, viewGameOver, viewInfo, viewScore)
+module SweetBuns exposing (Board, FloorTile(..), applyGravity, attemptMove, collectThings, isGameOver, isStable, spawnSingelThingRnd)
 
 import Browser
 import Delay exposing (TimeUnit(..))
