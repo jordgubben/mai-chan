@@ -25,7 +25,7 @@ main =
         }
 
 
-{-| Complete game model
+{-| Complete game model.
 -}
 type alias Model =
     { selectedTile : Maybe Coords
@@ -36,6 +36,8 @@ type alias Model =
     }
 
 
+{-| Subset relevant to most operations.
+-}
 type alias Board =
     { things : Grid Thingy
     , floor : Grid FloorTile
@@ -52,7 +54,7 @@ initialModel =
     }
 
 
-{-| Overall game messages
+{-| Overall game messages.
 -}
 type Msg
     = SelectTile Coords
@@ -64,6 +66,10 @@ type Msg
     | RestartGame
 
 
+{-| Background tile
+
+ The set of backgromund tiles are intended to vary fron level to level.
+-}
 type FloorTile
     = PlainTile
     | Spawner (List Thingy)
@@ -71,7 +77,7 @@ type FloorTile
     | WallTile
 
 
-{-| Complete tile used produced when rendering
+{-| Complete tile used produced when rendering.
 -}
 type alias RenderableTile =
     { content : Maybe Thingy
@@ -139,7 +145,7 @@ update msg model =
             )
 
 
-{-| Start game with a half full board.
+{-| Start a first game with a half full board.
 -}
 initGame : Posix -> Model -> Model
 initGame time model =
@@ -153,6 +159,8 @@ initGame time model =
     { model | seed = seed_, things = Dict.union model.things newThings }
 
 
+{-| Start another game after a game over
+-}
 restartGame : Model -> Model
 restartGame model =
     let
@@ -175,7 +183,6 @@ fillBoard fillSeed =
         filledRegion =
             { boardSize | height = boardSize.height - 1 }
 
-        --
         -- Start with more Water and Flour than Flavouring
         filler =
             [ Water Nothing
@@ -261,8 +268,7 @@ activateTile coords things =
 
 {-| Detect game over.
 
-The game is over if all spawn points are covered,
-even after tings that could fall have done so.
+The game is over if all spawn points are still covered after things have fallen.
 
 -}
 isGameOver : Board -> Bool
@@ -292,7 +298,7 @@ isGameOver { floor, things } =
     allSpawnersOccupied && boardStable
 
 
-{-| Spawn ingredients at spawn points
+{-| Spawn ingredients at spawn points.
 -}
 spawnThings : Model -> Model
 spawnThings model =
@@ -352,7 +358,7 @@ findSpawnPoints level =
             )
 
 
-{-| Pick a random element from a list
+{-| Pick a random element from a list.
 -}
 pickRandom : Seed -> List a -> ( Maybe a, Seed )
 pickRandom seed list =
@@ -367,14 +373,14 @@ pickRandom seed list =
     )
 
 
-{-| Check if a move is possible, so that it can be hilighted properly
+{-| Check if a move is possible, so that it can be highlighted properly.
 -}
 isPossibleMove : Board -> Coords -> Coords -> Bool
 isPossibleMove board from to =
     attemptMove from to board /= board.things
 
 
-{-| Handle players attempt to move something
+{-| Handle players attempt to move something.
 -}
 attemptMove : Coords -> Coords -> Board -> Grid Thingy
 attemptMove from to { floor, things } =
@@ -405,7 +411,7 @@ attemptMove from to { floor, things } =
         things
 
 
-{-| Determine if a move from one place to another is valid, irrespective of environment.
+{-| Determine if a move is valid based only on coordinates, ignoring Board state.
 -}
 isValidMove : Coords -> Coords -> Bool
 isValidMove from to =
@@ -427,7 +433,7 @@ isStable terrain things =
     things == applyGravity terrain things
 
 
-{-| Let things fall down where possible, poretially causing mixing of ingredients.
+{-| Let things fall where possible, potetially causing mixing of ingredients.
 -}
 applyGravity : Set Coords -> Grid Thingy -> Grid Thingy
 applyGravity terrain things =
@@ -458,6 +464,8 @@ applyGravity terrain things =
         obstacleThings
 
 
+{-| Filter out the Area where FloorTile are obstacles
+-}
 obstacleTileArea : Grid FloorTile -> Set Coords
 obstacleTileArea =
     Dict.filter (always isObstacleTile) >> Dict.keys >> Set.fromList
@@ -555,7 +563,7 @@ subscriptions model =
         Sub.none
 
 
-{-| Increases the spawn when the board fills up.
+{-| Spawn intervall (relative to  portion of board filled)Increases the spawn when the board fills up.
 
     Increasing the spawn intervall means we give the player more
     time to think when the board is getting crammed.
