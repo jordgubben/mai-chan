@@ -1,8 +1,17 @@
-module SweetBuns exposing (Board, FloorTile(..), applyGravity, attemptMove, collectThings, isGameOver, isStable, spawnSingelThingRnd)
+module SweetBuns exposing
+    ( Board
+    , applyGravity
+    , attemptMove
+    , collectThings
+    , isGameOver
+    , isStable
+    , spawnSingelThingRnd
+    )
 
 import Browser
 import Delay exposing (TimeUnit(..))
 import Dict
+import FloorTile exposing (FloorTile(..))
 import Grid exposing (..)
 import Html exposing (Html, text)
 import Html.Attributes as Att exposing (class, id, style)
@@ -66,17 +75,6 @@ type Msg
     | RestartGame
 
 
-{-| Background tile
-
- The set of backgromund tiles are intended to vary fron level to level.
--}
-type FloorTile
-    = PlainTile
-    | Spawner (List Thingy)
-    | BunCollector
-    | WallTile
-
-
 {-| Complete tile used produced when rendering.
 -}
 type alias RenderableTile =
@@ -126,7 +124,7 @@ update msg model =
             ( { model
                 | things =
                     applyGravity
-                        (obstacleTileArea kitchenLevel)
+                        (FloorTile.obstacleTileArea kitchenLevel)
                         model.things
               }
             , Delay.after 1 Second Collect
@@ -242,7 +240,7 @@ selectTile coords model =
             ( { model | selectedTile = Just coords }, Cmd.none )
 
 
-{-| Activate a tile (triggerd by double clicking)
+{-| Activate a Thingy (triggerd by double clicking)
 
 Acitvates the thing at given coordinates
 (but only if there is something there).
@@ -276,7 +274,7 @@ isGameOver { floor, things } =
     let
         spawnPoints : Set Coords
         spawnPoints =
-            findSpawnPoints floor
+            FloorTile.spawnPoints floor
                 |> List.map Tuple.first
                 |> Set.fromList
 
@@ -293,7 +291,7 @@ isGameOver { floor, things } =
                 |> Set.isEmpty
 
         boardStable =
-            isStable (obstacleTileArea floor) things
+            isStable (FloorTile.obstacleTileArea floor) things
     in
     allSpawnersOccupied && boardStable
 
@@ -323,7 +321,7 @@ spawnSingelThingRnd seed level spawnObstacles =
         -- Pick a random unoccupied spawners coordinates
         ( singlePoint, seed_ ) =
             pickRandom seed
-                (findSpawnPoints level
+                (FloorTile.spawnPoints level
                     |> List.filter (Tuple.first >> (\b a -> Set.member a b) spawnObstacles >> not)
                 )
     in
@@ -341,21 +339,6 @@ spawnSingelThingRnd seed level spawnObstacles =
             Nothing
     , seed_
     )
-
-
-findSpawnPoints : Grid FloorTile -> List ( Coords, List Thingy )
-findSpawnPoints level =
-    level
-        |> Dict.toList
-        |> List.filterMap
-            (\( coords, tile ) ->
-                case tile of
-                    Spawner thing ->
-                        Just ( coords, thing )
-
-                    _ ->
-                        Nothing
-            )
 
 
 {-| Pick a random element from a list.
@@ -391,7 +374,7 @@ attemptMove from to { floor, things } =
 
     else if
         Grid.get to floor
-            |> Maybe.map isObstacleTile
+            |> Maybe.map FloorTile.isObstacleTile
             |> Maybe.withDefault False
     then
         things
@@ -403,7 +386,7 @@ attemptMove from to { floor, things } =
         -- If movement could not be prefomed in any other way,
         -- Then let the things trade places if that causes a chain reaction
 
-    else if not (Grid.swap from to things |> isStable (obstacleTileArea floor)) then
+    else if not (Grid.swap from to things |> isStable (FloorTile.obstacleTileArea floor)) then
         Grid.swap from to things
         -- Else change nothing
 
@@ -464,23 +447,6 @@ applyGravity terrain things =
         obstacleThings
 
 
-{-| Filter out the Area where FloorTile are obstacles
--}
-obstacleTileArea : Grid FloorTile -> Set Coords
-obstacleTileArea =
-    Dict.filter (always isObstacleTile) >> Dict.keys >> Set.fromList
-
-
-isObstacleTile : FloorTile -> Bool
-isObstacleTile tile =
-    case tile of
-        WallTile ->
-            True
-
-        _ ->
-            False
-
-
 {-| If possible, move thing from one set of coords to another.
 Will mix ingredients if possible.
 If move can not be preformed, then the original unchanged grid is returned.
@@ -511,7 +477,7 @@ collectThings : Board -> ( Grid Thingy, Int )
 collectThings { floor, things } =
     let
         collectionPoints =
-            floor |> Dict.filter (\_ tile -> isBunCollector tile) |> Dict.keys |> Set.fromList
+            floor |> Dict.filter (\_ tile -> FloorTile.isBunCollector tile) |> Dict.keys |> Set.fromList
 
         -- Collect thing if it is a _bun_ on a collection point
         ( collectedThings, remainingThings ) =
@@ -523,16 +489,6 @@ collectThings { floor, things } =
                     )
     in
     ( remainingThings, 100 * Dict.size collectedThings )
-
-
-isBunCollector : FloorTile -> Bool
-isBunCollector floorTile =
-    case floorTile of
-        BunCollector ->
-            True
-
-        _ ->
-            False
 
 
 
@@ -551,7 +507,7 @@ subscriptions model =
         Sub.batch
             ([ Time.every (spawnInterval model) (\_ -> Spawn) ]
                 -- Only Have things fall there is something thst could fall (save messages)
-                ++ (if not <| isStable (obstacleTileArea kitchenLevel) model.things then
+                ++ (if not <| isStable (FloorTile.obstacleTileArea kitchenLevel) model.things then
                         [ Time.every fallInterval (\_ -> Fall) ]
 
                     else
@@ -563,7 +519,7 @@ subscriptions model =
         Sub.none
 
 
-{-| Spawn intervall (relative to  portion of board filled)Increases the spawn when the board fills up.
+{-| Spawn intervall (relative to portion of board filled)Increases the spawn when the board fills up.
 
     Increasing the spawn intervall means we give the player more
     time to think when the board is getting crammed.
@@ -825,6 +781,8 @@ viewDebug model =
         ]
 
 
+{-| Render all the layers of a single Grid cell
+-}
 renderTile : Coords -> RenderableTile -> Html Msg
 renderTile coords tile =
     Html.div
@@ -842,6 +800,8 @@ renderTile coords tile =
         ]
 
 
+{-| Determine tile collor, first by Highlight then by FloorTile
+-}
 getTileColor : RenderableTile -> String
 getTileColor { highlight, floor } =
     case ( highlight, floor ) of

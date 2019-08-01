@@ -2,11 +2,12 @@ module SweetBunsTest exposing (collectSuite, consciousMovementSuite, fallingSuit
 
 import Dict
 import Expect exposing (Expectation, equal, fail)
+import FloorTile exposing (FloorTile(..))
 import Fuzz exposing (..)
 import Grid
 import Random exposing (Seed)
 import Set
-import SweetBuns exposing (Board, FloorTile(..))
+import SweetBuns exposing (Board)
 import Test exposing (..)
 import Thingy exposing (Flavour(..), Thingy(..))
 
