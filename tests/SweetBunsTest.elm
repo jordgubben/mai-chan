@@ -367,6 +367,58 @@ fallingSuite =
                         Grid.fromList [ ( ( 0, 0 ), bun ), ( ( 0, -1 ), Obstacle ) ]
                 in
                 equal movedState expectedState
+        , describe "Fall prediction"
+            [ test "A single Bun on an otherwise empty board should fall" <|
+                \() ->
+                    SweetBuns.shouldFall ( 0, 0 )
+                        { emptyBoard
+                            | things = Grid.fromList [ ( ( 0, 0 ), bun ) ]
+                        }
+                        |> equal True
+            , test "A single Obstacle on an otherwise empty board should *not* fall" <|
+                \() ->
+                    SweetBuns.shouldFall ( 0, 0 )
+                        { emptyBoard
+                            | things = Grid.fromList [ ( ( 0, 0 ), Obstacle ) ]
+                        }
+                        |> equal False
+            , test "Water on top of Flour should 'fall'" <|
+                \() ->
+                    SweetBuns.shouldFall ( 0, 0 )
+                        { emptyBoard
+                            | things =
+                                Grid.fromList
+                                    [ ( ( 0, 1 ), water )
+                                    , ( ( 0, 0 ), flour )
+                                    ]
+                        }
+                        |> equal True
+            , test "Water on top of an Obstacle Flour should *not* fall" <|
+                \() ->
+                    SweetBuns.shouldFall ( 0, 0 )
+                        { emptyBoard
+                            | things =
+                                Grid.fromList
+                                    [ ( ( 0, 1 ), water )
+                                    , ( ( 0, 0 ), Obstacle )
+                                    ]
+                        }
+                        |> equal False
+            , test "Flour on top of a WallTile should *not* fall" <|
+                \() ->
+                    SweetBuns.shouldFall ( 0, 0 )
+                        { emptyBoard
+                            | things =
+                                Grid.fromList
+                                    [ ( ( 0, 1 ), water )
+                                    ]
+                            , floor =
+                                Grid.fromList
+                                    [ ( ( 0, 0 ), WallTile )
+                                    ]
+                        }
+                        |> equal False
+            ]
         ]
 
 

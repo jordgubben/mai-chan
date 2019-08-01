@@ -5,6 +5,7 @@ module SweetBuns exposing
     , collectThings
     , isGameOver
     , isStable
+    , shouldFall
     , spawnSingelThingRnd
     )
 
@@ -425,14 +426,22 @@ isStable terrain things =
 applyGravity : Set Coords -> Grid Thingy -> Grid Thingy
 applyGravity terrain things =
     let
-        ( fallers, obstacleThings ) =
-            Dict.partition (always Thingy.isFaller) things
+        ( fallers, nonFallers ) =
+            partitionFallers
+                { things = things
+                , floor =
+                    -- Recreate wall tiles (refactor potential)
+                    terrain
+                        |> Set.toList
+                        |> List.map (\c -> ( c, WallTile ))
+                        |> Grid.fromList
+                }
 
         obstacles : Set Coords
         obstacles =
             Set.union
                 terrain
-                (obstacleThings |> Dict.keys |> Set.fromList)
+                (nonFallers |> Dict.keys |> Set.fromList)
 
         fallers_ =
             List.foldl
@@ -446,9 +455,56 @@ applyGravity terrain things =
                 fallers
                 (Dict.keys fallers)
     in
+    -- Join things again, with updated falers overwriting nonFallers
     Dict.union
         fallers_
-        obstacleThings
+        nonFallers
+
+
+partitionFallers : Board -> ( Grid Thingy, Grid Thingy )
+partitionFallers board =
+    Dict.partition (\coords _ -> shouldFall coords board) board.things
+
+
+shouldFall : Coords -> Board -> Bool
+shouldFall ( x, y ) board =
+    let
+        faller =
+            Grid.get ( x, y ) board.things
+                |> Maybe.map Thingy.isFaller
+                |> Maybe.withDefault False
+
+        vacancyBelow =
+            isEmptyTile ( x, y - 1 ) board
+
+        mixableBelow =
+            Maybe.map2 Thingy.mixIngredients
+                (Grid.get ( x, y ) board.things)
+                (Grid.get ( x, y - 1 ) board.things)
+                |> Maybe.map (always True)
+                |> Maybe.withDefault False
+    in
+    faller && (vacancyBelow || mixableBelow)
+
+
+isEmptyTile : Coords -> Board -> Bool
+isEmptyTile coords { things, floor } =
+    let
+        thing =
+            Grid.get coords things
+
+        floorTile =
+            Grid.get coords floor
+    in
+    case ( thing, floorTile ) of
+        ( Just _, _ ) ->
+            False
+
+        ( Nothing, Just f ) ->
+            FloorTile.isObstacleTile f
+
+        ( Nothing, Nothing ) ->
+            True
 
 
 {-| If possible, move thing from one set of coords to another.
