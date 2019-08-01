@@ -16,6 +16,7 @@ import Grid exposing (..)
 import Html exposing (Html, text)
 import Html.Attributes as Att exposing (class, id, style)
 import Html.Events exposing (onClick, onDoubleClick)
+import Kitchen exposing (level)
 import Random exposing (Seed)
 import Set exposing (Set)
 import String exposing (fromFloat, fromInt)
@@ -56,7 +57,7 @@ type alias Board =
 initialModel : Model
 initialModel =
     { selectedTile = Nothing
-    , things = initialThings
+    , things = Kitchen.level.things
     , moveCount = 0
     , totalScore = 0
     , seed = Random.initialSeed 0
@@ -104,14 +105,14 @@ update msg model =
             ( restartGame model, Cmd.none )
 
         SelectTile coords ->
-            if not <| isGameOver { floor = kitchenLevel, things = model.things } then
+            if not <| isGameOver { floor = level.floor, things = model.things } then
                 selectTile coords model
 
             else
                 ( model, Cmd.none )
 
         ActivateTile coords ->
-            if not <| isGameOver { floor = kitchenLevel, things = model.things } then
+            if not <| isGameOver { floor = level.floor, things = model.things } then
                 ( { model | things = activateTile coords model.things }, Cmd.none )
 
             else
@@ -124,7 +125,7 @@ update msg model =
             ( { model
                 | things =
                     applyGravity
-                        (FloorTile.obstacleTileArea kitchenLevel)
+                        (FloorTile.obstacleTileArea level.floor)
                         model.things
               }
             , Delay.after 1 Second Collect
@@ -133,7 +134,7 @@ update msg model =
         Collect ->
             let
                 ( things_, scoreIncrement ) =
-                    collectThings { floor = kitchenLevel, things = model.things }
+                    collectThings { floor = level.floor, things = model.things }
             in
             ( { model
                 | things = things_
@@ -167,7 +168,7 @@ restartGame model =
     in
     { model
         | seed = seed_
-        , things = Dict.union initialThings newThings
+        , things = Dict.union level.things newThings
         , moveCount = 0
         , totalScore = 0
     }
@@ -178,8 +179,11 @@ restartGame model =
 fillBoard : Seed -> ( Grid Thingy, Seed )
 fillBoard fillSeed =
     let
+        boardSize =
+            level.size
+
         filledRegion =
-            { boardSize | height = boardSize.height - 1 }
+            { boardSize | height = level.size.height - 1 }
 
         -- Start with more Water and Flour than Flavouring
         filler =
@@ -222,7 +226,7 @@ selectTile coords model =
                     attemptMove
                         moverCoords
                         coords
-                        { floor = kitchenLevel, things = model.things }
+                        { floor = level.floor, things = model.things }
             in
             ( { model
                 | things = things_
@@ -302,7 +306,7 @@ spawnThings : Model -> Model
 spawnThings model =
     let
         ( spawnedThing, seed_ ) =
-            spawnSingelThingRnd model.seed kitchenLevel (model.things |> Dict.keys |> Set.fromList)
+            spawnSingelThingRnd model.seed level.floor (model.things |> Dict.keys |> Set.fromList)
 
         things_ =
             spawnedThing
@@ -503,11 +507,11 @@ collectThings { floor, things } =
 -}
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    if not <| isGameOver { floor = kitchenLevel, things = model.things } then
+    if not <| isGameOver { floor = level.floor, things = model.things } then
         Sub.batch
             ([ Time.every (spawnInterval model) (\_ -> Spawn) ]
                 -- Only Have things fall there is something thst could fall (save messages)
-                ++ (if not <| isStable (FloorTile.obstacleTileArea kitchenLevel) model.things then
+                ++ (if not <| isStable (FloorTile.obstacleTileArea level.floor) model.things then
                         [ Time.every fallInterval (\_ -> Fall) ]
 
                     else
@@ -549,7 +553,7 @@ spawnInterval { things } =
             Dict.size things |> toFloat
 
         totalArea =
-            (boardSize.width * boardSize.height) |> toFloat
+            (level.size.width * level.size.height) |> toFloat
 
         coveredPortion =
             coveredArea / totalArea
@@ -633,7 +637,7 @@ viewBoardContainer model =
         , style "left" "0"
         ]
         [ viewBoard model
-        , if isGameOver { floor = kitchenLevel, things = model.things } then
+        , if isGameOver { floor = level.floor, things = model.things } then
             viewGameOver
 
           else
@@ -648,9 +652,9 @@ viewBoard model =
     let
         finalGrid : Grid RenderableTile
         finalGrid =
-            Grid.drawBox PlainTile boardSize
-                |> Grid.translate ( 0, 1 - boardSize.height )
-                |> Dict.intersect kitchenLevel
+            Grid.drawBox PlainTile level.size
+                |> Grid.translate ( 0, 1 - level.size.height )
+                |> Dict.intersect level.floor
                 -- Convert to full tiles
                 |> Dict.map (\_ floorTile -> RenderableTile Nothing Nothing floorTile)
                 -- Render highlighed tiles
@@ -677,7 +681,7 @@ getPossibleHighlight { things, selectedTile } tileCoords =
                     Just SelectedMover
 
                 else if isValidMove selectedCoords tileCoords then
-                    if isPossibleMove { floor = kitchenLevel, things = things } selectedCoords tileCoords then
+                    if isPossibleMove { floor = level.floor, things = things } selectedCoords tileCoords then
                         Just PossibleMovementDestination
 
                     else
@@ -695,7 +699,7 @@ viewInfo tile =
         [ id "tile-info"
         , class "info-box"
         , style "position" "absolute"
-        , (\( a, b ) -> style a b) (( "width", boardSize.width * tileSide ) |> px)
+        , (\( a, b ) -> style a b) (( "width", level.size.width * tileSide ) |> px)
         , (\( a, b ) -> style a b) (( "height", 3 * (tileSide // 2) ) |> px)
         , (\( a, b ) -> style a b) (( "bottom", 0 ) |> px)
         , (\( a, b ) -> style a b) (( "left", 0 ) |> px)
@@ -773,7 +777,7 @@ viewDebug model =
         , Html.p [] [ "Spawn interval: " ++ (spawnInterval model |> fromFloat) ++ "ms" |> text ]
         , Html.p []
             [ "Game over? "
-                ++ (isGameOver { floor = kitchenLevel, things = model.things }
+                ++ (isGameOver { floor = level.floor, things = model.things }
                         |> strFromBool
                    )
                 |> text
@@ -846,73 +850,6 @@ px ( name, value ) =
     ( name, (value |> fromInt) ++ "px" )
 
 
-
--- LEVEL
-
-
 tileSide : Int
 tileSide =
     Thingy.spriteSide
-
-
-initialThings : Grid Thingy
-initialThings =
-    Grid.empty
-
-
-kitchenLevel : Grid FloorTile
-kitchenLevel =
-    kitchenFloor
-        |> Dict.union kitchenSpawners
-        |> Dict.union kitchenCollectors
-        |> Dict.union kitchenWalls
-
-
-kitchenSpawners : Grid FloorTile
-kitchenSpawners =
-    Grid.drawBox (Spawner spawnables) { width = 6, height = 1 }
-        |> Grid.translate ( 0, 0 )
-
-
-{-| Spawnable things.
-Weighted so that Flour, Water and Flavourings spawn 1/3 of the time each.
-(Thus preventing an abundance of Flavourings)
--}
-spawnables : List Thingy
-spawnables =
-    List.concat
-        [ spawnableFlavours
-        , List.repeat (List.length spawnableFlavours) (Water Nothing)
-        , List.repeat (List.length spawnableFlavours) (Flour Nothing)
-        ]
-
-
-spawnableFlavours : List Thingy
-spawnableFlavours =
-    [ Flavouring { flavour = Sugar, packaged = False }
-    , Flavouring { flavour = Chilli, packaged = False }
-    , Flavouring { flavour = Chocolate, packaged = False }
-    ]
-
-
-kitchenCollectors : Grid FloorTile
-kitchenCollectors =
-    Grid.drawBox BunCollector { boardSize | height = 1 }
-        |> Grid.translate ( 0, -5 )
-
-
-kitchenFloor : Grid FloorTile
-kitchenFloor =
-    Grid.drawBox PlainTile { width = 6, height = 6 }
-        |> Grid.translate ( 0, -5 )
-
-
-kitchenWalls : Grid FloorTile
-kitchenWalls =
-    Grid.lineRect WallTile { width = 8, height = 8 }
-        |> Grid.translate ( -1, -6 )
-
-
-boardSize : Size Int
-boardSize =
-    Size 6 6
