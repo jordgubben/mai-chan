@@ -429,7 +429,7 @@ applyGravity : Set Coords -> Grid Thingy -> Grid Thingy
 applyGravity terrain things =
     let
         ( fallers, nonFallers ) =
-            partitionFallers
+            partitionFallers <|
                 { things = things
                 , floor =
                     -- Recreate wall tiles (refactor potential)
@@ -439,28 +439,16 @@ applyGravity terrain things =
                         |> Grid.fromList
                 }
 
-        obstacles : Set Coords
-        obstacles =
-            Set.union
-                terrain
-                (nonFallers |> Dict.keys |> Set.fromList)
-
+        -- Move fallers down one step
         fallers_ =
-            List.foldl
-                (\( x, y ) m ->
-                    if not (Set.member ( x, y - 1 ) obstacles) then
-                        moveMixing ( x, y ) ( x, y - 1 ) m
+            Grid.translate ( 0, -1 ) fallers |> Dict.toList
 
-                    else
-                        m
-                )
-                fallers
-                (Dict.keys fallers)
+        mergeMixing : ( Coords, Thingy ) -> Grid Thingy -> Grid Thingy
+        mergeMixing ( coords, thing ) mergedThings =
+            putMixing coords thing mergedThings
     in
-    -- Join things again, with updated falers overwriting nonFallers
-    Dict.union
-        fallers_
-        nonFallers
+    -- Merge the moved fallers back in tho the gtid of non-fallers
+    List.foldl mergeMixing nonFallers fallers_
 
 
 partitionFallers : Board -> ( Grid Thingy, Grid Thingy )
@@ -483,7 +471,7 @@ shouldFall ( x, y ) board =
             Maybe.map2 Thingy.mixIngredients
                 (Grid.get ( x, y ) board.things)
                 (Grid.get ( x, y - 1 ) board.things)
-                |> Maybe.map (always True)
+                |> Maybe.map (\m -> m /= Nothing)
                 |> Maybe.withDefault False
     in
     faller && (vacancyBelow || mixableBelow)
@@ -507,6 +495,21 @@ isEmptyTile coords { things, floor } =
 
         ( Nothing, Nothing ) ->
             True
+
+
+{-| Move or Mix a Thingy onto the given coords.
+-}
+putMixing coords newThing things =
+    case Grid.get coords things of
+        Just occupant ->
+            Dict.insert coords
+                (Thingy.mixIngredients newThing occupant
+                    |> Maybe.withDefault newThing
+                )
+                things
+
+        Nothing ->
+            Dict.insert coords newThing things
 
 
 {-| If possible, move thing from one set of coords to another.

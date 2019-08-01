@@ -384,7 +384,7 @@ fallingSuite =
                         |> equal False
             , test "Water on top of Flour should 'fall'" <|
                 \() ->
-                    SweetBuns.shouldFall ( 0, 0 )
+                    SweetBuns.shouldFall ( 0, 1 )
                         { emptyBoard
                             | things =
                                 Grid.fromList
@@ -393,6 +393,17 @@ fallingSuite =
                                     ]
                         }
                         |> equal True
+            , test "Water on top of more Water should *not* fall" <|
+                \() ->
+                    SweetBuns.shouldFall ( 0, 1 )
+                        { emptyBoard
+                            | things =
+                                Grid.fromList
+                                    [ ( ( 0, 1 ), water )
+                                    , ( ( 0, 0 ), water )
+                                    ]
+                        }
+                        |> equal False
             , test "Water on top of an Obstacle Flour should *not* fall" <|
                 \() ->
                     SweetBuns.shouldFall ( 0, 0 )
