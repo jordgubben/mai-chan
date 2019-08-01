@@ -3,6 +3,7 @@ module SweetBuns exposing
     , applyGravity
     , attemptMove
     , collectThings
+    , isEmptyTile
     , isGameOver
     , isStable
     , shouldFall
@@ -502,7 +503,7 @@ isEmptyTile coords { things, floor } =
             False
 
         ( Nothing, Just f ) ->
-            FloorTile.isObstacleTile f
+            not <| FloorTile.isObstacleTile f
 
         ( Nothing, Nothing ) ->
             True

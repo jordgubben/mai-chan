@@ -367,7 +367,7 @@ fallingSuite =
                         Grid.fromList [ ( ( 0, 0 ), bun ), ( ( 0, -1 ), Obstacle ) ]
                 in
                 equal movedState expectedState
-        , describe "Fall prediction"
+        , describe "SweetBuns.shouldFall – Fall prediction"
             [ test "A single Bun on an otherwise empty board should fall" <|
                 \() ->
                     SweetBuns.shouldFall ( 0, 0 )
@@ -419,6 +419,30 @@ fallingSuite =
                         }
                         |> equal False
             ]
+        , describe "SweetBuns.isEmptyTile – Movement posibilities"
+            (let
+                tileCoords =
+                    ( 0, 0 )
+
+                testIsEmpty msg board expectedResult =
+                    test msg <|
+                        \() ->
+                            SweetBuns.isEmptyTile tileCoords board
+                                |> equal expectedResult
+             in
+             [ testIsEmpty "Completely empty cell is empty" emptyBoard True
+             , testIsEmpty "PlainTile tile is empty"
+                { emptyBoard
+                    | floor = Grid.fromList [ ( tileCoords, PlainTile ) ]
+                }
+                True
+             , testIsEmpty "WallTile tile is empty"
+                { emptyBoard
+                    | floor = Grid.fromList [ ( tileCoords, WallTile ) ]
+                }
+                False
+             ]
+            )
         ]
 
 
