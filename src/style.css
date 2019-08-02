@@ -12,3 +12,14 @@ div#game-container {
 
 	background-color: white;
 }
+
+div.renderable-tile {
+	position: relative;
+}
+
+div.falling {
+	position: absolute;
+	top: 8px; /* Nudge down to signify fall */
+}
+
+div.idle {}

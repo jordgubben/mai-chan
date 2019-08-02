@@ -83,6 +83,7 @@ type Msg
 type alias RenderableTile =
     { content : Maybe Thingy
     , highlight : Maybe Highlight
+    , falling : Bool
     , floor : FloorTile
     }
 
@@ -711,13 +712,17 @@ viewBoardContainer model =
 viewBoard : Model -> Html Msg
 viewBoard model =
     let
+        board : Board
+        board =
+            { things = model.things, floor = level.floor }
+
         finalGrid : Grid RenderableTile
         finalGrid =
             Grid.drawBox PlainTile level.size
                 |> Grid.translate ( 0, 1 - level.size.height )
                 |> Dict.intersect level.floor
                 -- Convert to full tiles
-                |> Dict.map (\_ floorTile -> RenderableTile Nothing Nothing floorTile)
+                |> Dict.map (\coords floorTile -> RenderableTile Nothing Nothing (shouldFall coords board) floorTile)
                 -- Render highlighed tiles
                 |> Dict.map (\tileCoords tile -> { tile | highlight = getPossibleHighlight model tileCoords })
                 -- Render buns
@@ -861,8 +866,19 @@ renderTile coords tile =
         , style "border" "1px solid darkgray"
         , onClick (SelectTile coords)
         , onDoubleClick (ActivateTile coords)
+        , class "renderable-tile"
         ]
-        [ tile.content |> Maybe.map Thingy.toHtml |> Maybe.withDefault (text "")
+        [ Html.div
+            [ class
+                (if tile.falling then
+                    "falling"
+
+                 else
+                    "idle"
+                )
+            ]
+            [ tile.content |> Maybe.map Thingy.toHtml |> Maybe.withDefault (text "")
+            ]
         , Html.span
             [ class "debug", style "font-size" "25%" ]
             [ Html.text (strFromCoords coords) ]
