@@ -399,7 +399,6 @@ toHtmlDiv ( cellWidth, cellHeight ) viewContent grid =
                     , ( "height", cellHeight ) |> px
                     , ( "bottom", cellBottom ) |> px
                     , ( "left", cellLeft ) |> px
-                    , ( "overflow", "hidden" )
                     ]
                         |> List.map (\( n, v ) -> style n v)
             in
