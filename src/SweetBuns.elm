@@ -128,9 +128,7 @@ update msg model =
         Fall ->
             ( { model
                 | things =
-                    applyGravity
-                        (FloorTile.obstacleTileArea level.floor)
-                        model.things
+                    applyGravity { floor = level.floor, things = model.things }
               }
             , Delay.after 1 Second Collect
             )
@@ -278,17 +276,17 @@ The game is over if all spawn points are still covered after things have fallen.
 
 -}
 isGameOver : Board -> Bool
-isGameOver { floor, things } =
+isGameOver board =
     let
         spawnPoints : Set Coords
         spawnPoints =
-            FloorTile.spawnPoints floor
+            FloorTile.spawnPoints board.floor
                 |> List.map Tuple.first
                 |> Set.fromList
 
         occupants : Set Coords
         occupants =
-            things
+            board.things
                 |> Dict.keys
                 |> Set.fromList
 
@@ -299,7 +297,7 @@ isGameOver { floor, things } =
                 |> Set.isEmpty
 
         boardStable =
-            isStable (FloorTile.obstacleTileArea floor) things
+            isStable board
     in
     allSpawnersOccupied && boardStable
 
@@ -394,7 +392,7 @@ attemptMove from to { floor, things } =
         -- If movement could not be prefomed in any other way,
         -- Then let the things trade places if that causes a chain reaction
 
-    else if not (Grid.swap from to things |> isStable (FloorTile.obstacleTileArea floor)) then
+    else if not (Grid.swap from to things |> (\t -> isStable {floor = floor, things = t})) then
         Grid.swap from to things
         -- Else change nothing
 
@@ -419,25 +417,22 @@ isValidMove from to =
     dx == 0 || dy == 0
 
 
-isStable : Set Coords -> Grid Thingy -> Bool
-isStable terrain things =
-    things == applyGravity terrain things
+{-| Is the board stable (or is something about to fall)?
+-}
+isStable : Board -> Bool
+isStable board =
+        board.things == applyGravity board
 
 
 {-| Let things fall where possible, potetially causing mixing of ingredients.
 -}
-applyGravity : Set Coords -> Grid Thingy -> Grid Thingy
-applyGravity terrain things =
+applyGravity : Board -> Grid Thingy
+applyGravity {floor,  things} =
     let
         ( fallers, nonFallers ) =
             partitionFallers <|
                 { things = things
-                , floor =
-                    -- Recreate wall tiles (refactor potential)
-                    terrain
-                        |> Set.toList
-                        |> List.map (\c -> ( c, WallTile ))
-                        |> Grid.fromList
+                , floor = floor
                 }
 
         -- Move fallers down one step
@@ -573,7 +568,7 @@ subscriptions model =
         Sub.batch
             ([ Time.every (spawnInterval model) (\_ -> Spawn) ]
                 -- Only Have things fall there is something thst could fall (save messages)
-                ++ (if not <| isStable (FloorTile.obstacleTileArea level.floor) model.things then
+                ++ (if not <| isStable {things = model.things, floor = level.floor} then
                         [ Time.every fallInterval (\_ -> Fall) ]
 
                     else

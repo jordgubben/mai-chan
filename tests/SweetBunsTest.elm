@@ -223,12 +223,15 @@ fallingSuite =
             \_ ->
                 let
                     -- Given a single bun (free of obstacles)
+                    initialState : Board
                     initialState =
-                        Grid.fromList [ ( ( 2, 1 ), bun ) ]
+                        { emptyBoard | 
+                         things = Grid.fromList [ ( ( 2, 1 ), bun ) ]
+                        }
 
                     -- When progressing movement
                     movedState =
-                        SweetBuns.applyGravity Set.empty initialState
+                        SweetBuns.applyGravity initialState
 
                     -- Then it moves down
                     expectedState =
@@ -239,15 +242,21 @@ fallingSuite =
             (\_ ->
                 let
                     -- Given a single grounded bun
-                    initialState =
-                        Grid.fromList [ ( ( 0, 1 ), bun ) ]
-
-                    terrain =
-                        Set.fromList [ ( 0, 0 ) ]
+                    initialBoard : Board
+                    initialBoard = {
+                        things =
+                            [ ( ( 0, 1 ), bun ) ]
+                            |> Grid.fromList
+                        ,
+                        floor =
+                            [ ( 0, 0 ) ]
+                            |> List.map (\c -> (c, WallTile))
+                            |> Grid.fromList
+                        }
 
                     -- When checking if stable
                     stability =
-                        SweetBuns.isStable terrain initialState
+                        SweetBuns.isStable initialBoard
                 in
                 -- Then is stable
                 Expect.true "Should be stable" stability
@@ -256,15 +265,21 @@ fallingSuite =
             (\_ ->
                 let
                     -- Given a single slightly elevated  bun
-                    initialState =
-                        Grid.fromList [ ( ( 0, 2 ), bun ) ]
-
-                    terrain =
-                        Set.fromList [ ( 0, 0 ) ]
+                    initialBoard : Board
+                    initialBoard = {
+                        things =
+                            [ ( ( 0, 2 ), bun ) ]
+                            |> Grid.fromList
+                        ,
+                        floor =
+                            [ ( 0, 0 ) ]
+                            |> List.map (\c -> (c, WallTile))
+                            |> Grid.fromList
+                        }
 
                     -- When checking if stable
                     stability =
-                        SweetBuns.isStable terrain initialState
+                        SweetBuns.isStable initialBoard
                 in
                 -- Then is not stable
                 Expect.false "Should not be stable" stability
@@ -327,46 +342,51 @@ fallingSuite =
             \_ ->
                 let
                     -- Given two buns destined to end up tn the same place
-                    initialState =
-                        Grid.fromList
-                            [ ( ( 1, 2 ), bun )
-                            , ( ( 1, 1 ), bun )
-                            , ( ( 2, 1 ), bun )
-                            ]
+                    initialBoard : Board
+                    initialBoard = {
+                            things = Grid.fromList
+                                [ ( ( 1, 2 ), bun )
+                                , ( ( 1, 1 ), bun )
+                                , ( ( 2, 1 ), bun )
+                                ]
+                            , floor =
+                                [ ( 0, 0 ), ( 1, 0 ), ( 2, 0 ), ( 3, 1 ) ]
+                                    |> List.map (\c -> ( c, WallTile ))
+                                    |> Grid.fromList
+                        }
 
-                    terrain =
-                        [ ( 0, 0 ), ( 1, 0 ), ( 2, 0 ), ( 3, 1 ) ]
-                            |> Set.fromList
 
                     -- When progressing movement
-                    movedState =
-                        SweetBuns.applyGravity terrain initialState
+                    movedThings =
+                        SweetBuns.applyGravity initialBoard
 
                     -- Then all buns still are there
                     -- (Exact placement is not relevant)
                 in
-                equal (Dict.size movedState) (Dict.size initialState)
+                equal (Dict.size movedThings) (Dict.size initialBoard.things)
         , test "Mixable ingredients can be moved onto each other, combining into a new Thing" <|
             \() ->
                 let
                     -- Given Water that is on top of Flour
                     -- And Flour in turn sitting on top of an obstacle (that does not fall)
-                    initialState =
-                        Grid.fromList
-                            [ ( ( 0, 1 ), water )
-                            , ( ( 0, 0 ), flour )
-                            , ( ( 0, -1 ), Obstacle )
-                            ]
+                    initialBoard : Board
+                    initialBoard = { emptyBoard |
+                            things = Grid.fromList
+                                [ ( ( 0, 1 ), water )
+                                , ( ( 0, 0 ), flour )
+                                , ( ( 0, -1 ), Obstacle )
+                                ]
+                        }
 
                     -- When the Water moves (down)
-                    movedState =
-                        SweetBuns.applyGravity Set.empty initialState
+                    movedThings =
+                        SweetBuns.applyGravity initialBoard
 
                     -- Then a Bun is created
                     expectedState =
                         Grid.fromList [ ( ( 0, 0 ), bun ), ( ( 0, -1 ), Obstacle ) ]
                 in
-                equal movedState expectedState
+                equal movedThings expectedState
         , describe "SweetBuns.shouldFall – Fall prediction"
             [ test "A single Bun on an otherwise empty board should fall" <|
                 \() ->
@@ -721,4 +741,14 @@ bun =
 -}
 expectNoMovemenemt : Set.Set Grid.Coords -> Grid.Grid Thingy -> Expectation
 expectNoMovemenemt terrain buns =
-    SweetBuns.applyGravity terrain buns |> equal buns
+    let
+        board = {
+            floor = terrain
+                        |> Set.toList
+                        |> List.map (\c -> ( c, WallTile ))
+                        |> Grid.fromList
+            , things = buns
+
+            }
+    in
+        SweetBuns.applyGravity board |> equal buns
