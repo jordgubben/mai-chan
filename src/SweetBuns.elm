@@ -392,7 +392,7 @@ attemptMove from to { floor, things } =
         -- If movement could not be prefomed in any other way,
         -- Then let the things trade places if that causes a chain reaction
 
-    else if not (Grid.swap from to things |> (\t -> isStable {floor = floor, things = t})) then
+    else if not (Grid.swap from to things |> (\t -> isStable { floor = floor, things = t })) then
         Grid.swap from to things
         -- Else change nothing
 
@@ -421,13 +421,13 @@ isValidMove from to =
 -}
 isStable : Board -> Bool
 isStable board =
-        board.things == applyGravity board
+    board.things == applyGravity board
 
 
 {-| Let things fall where possible, potetially causing mixing of ingredients.
 -}
 applyGravity : Board -> Grid Thingy
-applyGravity {floor,  things} =
+applyGravity { floor, things } =
     let
         ( fallers, nonFallers ) =
             partitionFallers <|
@@ -568,7 +568,7 @@ subscriptions model =
         Sub.batch
             ([ Time.every (spawnInterval model) (\_ -> Spawn) ]
                 -- Only Have things fall there is something thst could fall (save messages)
-                ++ (if not <| isStable {things = model.things, floor = level.floor} then
+                ++ (if not <| isStable { things = model.things, floor = level.floor } then
                         [ Time.every fallInterval (\_ -> Fall) ]
 
                     else
