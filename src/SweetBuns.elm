@@ -92,7 +92,6 @@ type Highlight
     = SelectedMover
     | PossibleMovementDestination
     | ForbiddenMovementDestination
-    | WillFall
 
 
 
@@ -735,27 +734,23 @@ viewBoard model =
 -}
 getPossibleHighlight : Model -> Coords -> Maybe Highlight
 getPossibleHighlight { things, selectedTile } tileCoords =
-    if shouldFall tileCoords { things = things, floor = level.floor } then
-        Just WillFall
+    case selectedTile of
+        Just selectedCoords ->
+            if tileCoords == selectedCoords then
+                Just SelectedMover
 
-    else
-        case selectedTile of
-            Just selectedCoords ->
-                if tileCoords == selectedCoords then
-                    Just SelectedMover
-
-                else if isValidMove selectedCoords tileCoords then
-                    if isPossibleMove { floor = level.floor, things = things } selectedCoords tileCoords then
-                        Just PossibleMovementDestination
-
-                    else
-                        Just ForbiddenMovementDestination
+            else if isValidMove selectedCoords tileCoords then
+                if isPossibleMove { floor = level.floor, things = things } selectedCoords tileCoords then
+                    Just PossibleMovementDestination
 
                 else
-                    Nothing
+                    Just ForbiddenMovementDestination
 
-            Nothing ->
+            else
                 Nothing
+
+        Nothing ->
+            Nothing
 
 
 viewInfo : Maybe Thingy -> Html msg
@@ -901,9 +896,6 @@ getTileColor { highlight, floor } =
 
         ( Just ForbiddenMovementDestination, _ ) ->
             "indianred"
-
-        ( Just WillFall, _ ) ->
-            "orange"
 
         ( Nothing, Spawner _ ) ->
             "antiquewhite"
