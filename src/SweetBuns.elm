@@ -854,6 +854,14 @@ viewDebug model =
 -}
 renderTile : Coords -> RenderableTile -> Html Msg
 renderTile coords tile =
+    let
+        cssClass =
+            if tile.falling then
+                "falling"
+
+            else
+                "idle"
+    in
     Html.div
         [ style "width" (fromInt tileSide ++ "px")
         , style "height" (fromInt tileSide ++ "px")
@@ -864,19 +872,19 @@ renderTile coords tile =
         , class "renderable-tile"
         ]
         [ Html.div
-            [ class
-                (if tile.falling then
-                    "falling"
-
-                 else
-                    "idle"
-                )
+            [ class cssClass
             ]
             [ tile.content |> Maybe.map Thingy.toHtml |> Maybe.withDefault (text "")
             ]
         , Html.span
-            [ class "debug", style "font-size" "25%" ]
-            [ Html.text (strFromCoords coords) ]
+            [ class "debug"
+            , style "font-size" "25%"
+            , style "position" "absolute"
+            , style "top" "0"
+            ]
+            [ Html.text (strFromCoords coords)
+            , Html.text cssClass
+            ]
         ]
 
 
@@ -921,7 +929,7 @@ strFromBool b =
 
 strFromCoords : Coords -> String
 strFromCoords ( x, y ) =
-    "(" ++ fromInt x ++ ", " ++ fromInt y
+    "(" ++ fromInt x ++ ", " ++ fromInt y ++ ")"
 
 
 px : ( String, Int ) -> ( String, String )
