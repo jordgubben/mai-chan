@@ -12,3 +12,29 @@ div#game-container {
 
 	background-color: white;
 }
+
+div.renderable-tile {
+	position: relative;
+}
+
+
+div.falling {
+	position: absolute;
+	animation-name:  fall;
+	animation-duration: 0.25s;
+	animation-timing-function: ease-in;
+	animation-fill-mode: both;
+}
+
+div.idle {}
+
+/* Fall animation */
+@keyframes fall {
+  from {
+	top: 0px;
+
+  }
+  to {
+	top: 64px;
+  }
+}

@@ -3,8 +3,10 @@ module SweetBuns exposing
     , applyGravity
     , attemptMove
     , collectThings
+    , isEmptyTile
     , isGameOver
     , isStable
+    , shouldFall
     , spawnSingelThingRnd
     )
 
@@ -81,6 +83,7 @@ type Msg
 type alias RenderableTile =
     { content : Maybe Thingy
     , highlight : Maybe Highlight
+    , falling : Bool
     , floor : FloorTile
     }
 
@@ -124,9 +127,7 @@ update msg model =
         Fall ->
             ( { model
                 | things =
-                    applyGravity
-                        (FloorTile.obstacleTileArea level.floor)
-                        model.things
+                    applyGravity { floor = level.floor, things = model.things }
               }
             , Delay.after 1 Second Collect
             )
@@ -274,17 +275,17 @@ The game is over if all spawn points are still covered after things have fallen.
 
 -}
 isGameOver : Board -> Bool
-isGameOver { floor, things } =
+isGameOver board =
     let
         spawnPoints : Set Coords
         spawnPoints =
-            FloorTile.spawnPoints floor
+            FloorTile.spawnPoints board.floor
                 |> List.map Tuple.first
                 |> Set.fromList
 
         occupants : Set Coords
         occupants =
-            things
+            board.things
                 |> Dict.keys
                 |> Set.fromList
 
@@ -295,7 +296,7 @@ isGameOver { floor, things } =
                 |> Set.isEmpty
 
         boardStable =
-            isStable (FloorTile.obstacleTileArea floor) things
+            isStable board
     in
     allSpawnersOccupied && boardStable
 
@@ -390,7 +391,7 @@ attemptMove from to { floor, things } =
         -- If movement could not be prefomed in any other way,
         -- Then let the things trade places if that causes a chain reaction
 
-    else if not (Grid.swap from to things |> isStable (FloorTile.obstacleTileArea floor)) then
+    else if not (Grid.swap from to things |> (\t -> isStable { floor = floor, things = t })) then
         Grid.swap from to things
         -- Else change nothing
 
@@ -415,40 +416,95 @@ isValidMove from to =
     dx == 0 || dy == 0
 
 
-isStable : Set Coords -> Grid Thingy -> Bool
-isStable terrain things =
-    things == applyGravity terrain things
+{-| Is the board stable (or is something about to fall)?
+-}
+isStable : Board -> Bool
+isStable board =
+    board.things == applyGravity board
 
 
 {-| Let things fall where possible, potetially causing mixing of ingredients.
 -}
-applyGravity : Set Coords -> Grid Thingy -> Grid Thingy
-applyGravity terrain things =
+applyGravity : Board -> Grid Thingy
+applyGravity { floor, things } =
     let
-        ( fallers, obstacleThings ) =
-            Dict.partition (always Thingy.isFaller) things
+        ( fallers, nonFallers ) =
+            partitionFallers <|
+                { things = things
+                , floor = floor
+                }
 
-        obstacles : Set Coords
-        obstacles =
-            Set.union
-                terrain
-                (obstacleThings |> Dict.keys |> Set.fromList)
-
+        -- Move fallers down one step
         fallers_ =
-            List.foldl
-                (\( x, y ) m ->
-                    if not (Set.member ( x, y - 1 ) obstacles) then
-                        moveMixing ( x, y ) ( x, y - 1 ) m
+            Grid.translate ( 0, -1 ) fallers |> Dict.toList
 
-                    else
-                        m
-                )
-                fallers
-                (Dict.keys fallers)
+        mergeMixing : ( Coords, Thingy ) -> Grid Thingy -> Grid Thingy
+        mergeMixing ( coords, thing ) mergedThings =
+            putMixing coords thing mergedThings
     in
-    Dict.union
-        fallers_
-        obstacleThings
+    -- Merge the moved fallers back in tho the gtid of non-fallers
+    List.foldl mergeMixing nonFallers fallers_
+
+
+partitionFallers : Board -> ( Grid Thingy, Grid Thingy )
+partitionFallers board =
+    Dict.partition (\coords _ -> shouldFall coords board) board.things
+
+
+shouldFall : Coords -> Board -> Bool
+shouldFall ( x, y ) board =
+    let
+        faller =
+            Grid.get ( x, y ) board.things
+                |> Maybe.map Thingy.isFaller
+                |> Maybe.withDefault False
+
+        vacancyBelow =
+            isEmptyTile ( x, y - 1 ) board
+
+        mixableBelow =
+            Maybe.map2 Thingy.mixIngredients
+                (Grid.get ( x, y ) board.things)
+                (Grid.get ( x, y - 1 ) board.things)
+                |> Maybe.map (\m -> m /= Nothing)
+                |> Maybe.withDefault False
+    in
+    faller && (vacancyBelow || mixableBelow)
+
+
+isEmptyTile : Coords -> Board -> Bool
+isEmptyTile coords { things, floor } =
+    let
+        thing =
+            Grid.get coords things
+
+        floorTile =
+            Grid.get coords floor
+    in
+    case ( thing, floorTile ) of
+        ( Just _, _ ) ->
+            False
+
+        ( Nothing, Just f ) ->
+            not <| FloorTile.isObstacleTile f
+
+        ( Nothing, Nothing ) ->
+            True
+
+
+{-| Move or Mix a Thingy onto the given coords.
+-}
+putMixing coords newThing things =
+    case Grid.get coords things of
+        Just occupant ->
+            Dict.insert coords
+                (Thingy.mixIngredients newThing occupant
+                    |> Maybe.withDefault newThing
+                )
+                things
+
+        Nothing ->
+            Dict.insert coords newThing things
 
 
 {-| If possible, move thing from one set of coords to another.
@@ -511,7 +567,7 @@ subscriptions model =
         Sub.batch
             ([ Time.every (spawnInterval model) (\_ -> Spawn) ]
                 -- Only Have things fall there is something thst could fall (save messages)
-                ++ (if not <| isStable (FloorTile.obstacleTileArea level.floor) model.things then
+                ++ (if not <| isStable { things = model.things, floor = level.floor } then
                         [ Time.every fallInterval (\_ -> Fall) ]
 
                     else
@@ -650,13 +706,17 @@ viewBoardContainer model =
 viewBoard : Model -> Html Msg
 viewBoard model =
     let
+        board : Board
+        board =
+            { things = model.things, floor = level.floor }
+
         finalGrid : Grid RenderableTile
         finalGrid =
             Grid.drawBox PlainTile level.size
                 |> Grid.translate ( 0, 1 - level.size.height )
                 |> Dict.intersect level.floor
                 -- Convert to full tiles
-                |> Dict.map (\_ floorTile -> RenderableTile Nothing Nothing floorTile)
+                |> Dict.map (\coords floorTile -> RenderableTile Nothing Nothing (shouldFall coords board) floorTile)
                 -- Render highlighed tiles
                 |> Dict.map (\tileCoords tile -> { tile | highlight = getPossibleHighlight model tileCoords })
                 -- Render buns
@@ -674,23 +734,23 @@ viewBoard model =
 -}
 getPossibleHighlight : Model -> Coords -> Maybe Highlight
 getPossibleHighlight { things, selectedTile } tileCoords =
-    selectedTile
-        |> Maybe.map
-            (\selectedCoords ->
-                if tileCoords == selectedCoords then
-                    Just SelectedMover
+    case selectedTile of
+        Just selectedCoords ->
+            if tileCoords == selectedCoords then
+                Just SelectedMover
 
-                else if isValidMove selectedCoords tileCoords then
-                    if isPossibleMove { floor = level.floor, things = things } selectedCoords tileCoords then
-                        Just PossibleMovementDestination
-
-                    else
-                        Just ForbiddenMovementDestination
+            else if isValidMove selectedCoords tileCoords then
+                if isPossibleMove { floor = level.floor, things = things } selectedCoords tileCoords then
+                    Just PossibleMovementDestination
 
                 else
-                    Nothing
-            )
-        |> Maybe.withDefault Nothing
+                    Just ForbiddenMovementDestination
+
+            else
+                Nothing
+
+        Nothing ->
+            Nothing
 
 
 viewInfo : Maybe Thingy -> Html msg
@@ -789,6 +849,14 @@ viewDebug model =
 -}
 renderTile : Coords -> RenderableTile -> Html Msg
 renderTile coords tile =
+    let
+        cssClass =
+            if tile.falling then
+                "falling"
+
+            else
+                "idle"
+    in
     Html.div
         [ style "width" (fromInt tileSide ++ "px")
         , style "height" (fromInt tileSide ++ "px")
@@ -796,11 +864,22 @@ renderTile coords tile =
         , style "border" "1px solid darkgray"
         , onClick (SelectTile coords)
         , onDoubleClick (ActivateTile coords)
+        , class "renderable-tile"
         ]
-        [ tile.content |> Maybe.map Thingy.toHtml |> Maybe.withDefault (text "")
+        [ Html.div
+            [ class cssClass
+            ]
+            [ tile.content |> Maybe.map Thingy.toHtml |> Maybe.withDefault (text "")
+            ]
         , Html.span
-            [ class "debug", style "font-size" "25%" ]
-            [ Html.text (strFromCoords coords) ]
+            [ class "debug"
+            , style "font-size" "25%"
+            , style "position" "absolute"
+            , style "top" "0"
+            ]
+            [ Html.text (strFromCoords coords)
+            , Html.text cssClass
+            ]
         ]
 
 
@@ -842,7 +921,7 @@ strFromBool b =
 
 strFromCoords : Coords -> String
 strFromCoords ( x, y ) =
-    "(" ++ fromInt x ++ ", " ++ fromInt y
+    "(" ++ fromInt x ++ ", " ++ fromInt y ++ ")"
 
 
 px : ( String, Int ) -> ( String, String )
